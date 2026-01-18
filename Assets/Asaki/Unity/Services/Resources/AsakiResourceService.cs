@@ -2,6 +2,7 @@ using Asaki.Core.Async;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Asaki.Unity.Extensions;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -68,7 +69,7 @@ namespace Asaki.Unity.Services.Resources
 		{
 			_timeoutSeconds = Mathf.Max(DefaultTimeoutSeconds, timeoutSeconds);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
 			return _strategy.InitializeAsync();
 		}

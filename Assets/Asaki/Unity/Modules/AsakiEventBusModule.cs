@@ -2,6 +2,7 @@ using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using UnityEngine; //用于打Log
 
@@ -33,9 +34,9 @@ namespace Asaki.Unity.Modules
 			}
 		}
 
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		public void OnDispose()

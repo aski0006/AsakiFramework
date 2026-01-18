@@ -6,6 +6,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Resources;
 using Asaki.Core.Scene;
 using Asaki.Unity.Services.Scene;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -17,30 +18,30 @@ namespace Asaki.Unity.Modules
 	public class AsakiSceneModule : IAsakiModule
 	{
 		private IAsakiSceneService _asakiSceneService;
-		private IAsakiEventService eventService;
-		private IAsakiResourceService resService;
-		private IAsakiAsyncService asyncService;
+		private IAsakiEventService _eventService;
+		private IAsakiResourceService _resService;
+		private IAsakiAsyncService _asyncService;
 
 		[AsakiInject]
 		public void Init(IAsakiEventService eventService, IAsakiResourceService resService, IAsakiAsyncService asyncService)
 		{
-			this.eventService = eventService;
-			this.resService = resService;
-			this.asyncService = asyncService;
+			this._eventService = eventService;
+			this._resService = resService;
+			this._asyncService = asyncService;
 		}
 		public void OnInit()
 		{
 
 			_asakiSceneService = new AsakiSceneService(
-				eventService,
-				asyncService,
-				resService);
+				_eventService,
+				_asyncService,
+				_resService);
 			_asakiSceneService.PerBuildScene();
 			AsakiContext.Register<IAsakiSceneService>(_asakiSceneService);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose()
 		{

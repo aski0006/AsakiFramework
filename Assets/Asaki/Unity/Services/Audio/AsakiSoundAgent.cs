@@ -3,17 +3,10 @@ using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Unity.Utils;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
 using UnityEngine;
-using AsakiSmartPool = Asaki.Core.Pooling.AsakiSmartPool;
-
-#if ASAKI_USE_UNITASK
-using Cysharp.Threading.Tasks;
-
-#else
-using System.Threading.Tasks;
-#endif
 
 namespace Asaki.Unity.Services.Audio
 {
@@ -27,7 +20,7 @@ namespace Asaki.Unity.Services.Audio
 
 		// 状态标记
 		public bool IsPlaying { get; private set; }
-		private bool _isPaused = false;
+		private bool _isPaused;
 		public bool IsPaused => _isPaused;
 
 		private void Awake()
@@ -84,7 +77,7 @@ namespace Asaki.Unity.Services.Audio
 		#if ASAKI_USE_UNITASK
 		public async UniTask PlayAsync(
 			#else
-        public async Task PlayAsync(
+        public async UniTask PlayAsync(
 			#endif
 			string resourcePath,
 			AsakiAudioParams p,
@@ -199,7 +192,7 @@ namespace Asaki.Unity.Services.Audio
 
 			// [Safe Call] 调用异步方法，并使用扩展方法 FireAndForget 处理异常
 			// 此时 FadeOutAndStop 返回具体的 Task/UniTask，Bridge 中的重载会生效
-			FadeOutAndStop(fadeDuration).FireAndForget(ex =>
+			FadeOutAndStop(fadeDuration).Forget(ex =>
 			{
 				// 忽略 OperationCanceledException，那是我们自己取消的
 				if (ex is not OperationCanceledException)
@@ -209,11 +202,7 @@ namespace Asaki.Unity.Services.Audio
 			});
 		}
 
-		#if ASAKI_USE_UNITASK
 		private async UniTask FadeOutAndStop(float duration)
-			#else
-        private async Task FadeOutAndStop(float duration)
-			#endif
 		{
 			if (_source == null) return;
 

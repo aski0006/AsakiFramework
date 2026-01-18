@@ -3,6 +3,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Context;
 using Asaki.Core.Simulation;
 using Asaki.Unity.Bridge;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -24,9 +25,9 @@ namespace Asaki.Unity.Modules
 			AsakiMonoDriver driver = _driverGo.AddComponent<AsakiMonoDriver>();
 			driver.Initialize(_service);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose()
 		{

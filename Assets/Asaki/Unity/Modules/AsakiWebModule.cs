@@ -4,6 +4,7 @@ using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Network;
 using Asaki.Unity.Services.Network;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -21,9 +22,9 @@ namespace Asaki.Unity.Modules
 			_asakiWebService.Setup(asakiConfig.WebConfig);
 			AsakiContext.Register<IAsakiWebService>(_asakiWebService);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose()
 		{

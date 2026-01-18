@@ -1,6 +1,7 @@
 ﻿using Asaki.Core.Async;
 using Asaki.Core.Resources;
 using Asaki.Unity.Utils;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,11 +18,11 @@ namespace Asaki.Unity.Services.Resources.Strategies
 		{
 			_async = async;
 		}
-		public Task InitializeAsync()
+		public UniTask InitializeAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
-		public async Task<Object> LoadAssetInternalAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+		public async UniTask<Object> LoadAssetInternalAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
 		{
 			ResourceRequest request = UnityEngine.Resources.LoadAsync(location, type);
 
@@ -58,7 +59,7 @@ namespace Asaki.Unity.Services.Resources.Strategies
 			if (asset is not GameObject)
 				UnityEngine.Resources.UnloadAsset(asset);
 		}
-		public async Task UnloadUnusedAssets(CancellationToken token)
+		public async UniTask UnloadUnusedAssets(CancellationToken token)
 		{
 			AsyncOperation op = UnityEngine.Resources.UnloadUnusedAssets();
 			if (_async != null)

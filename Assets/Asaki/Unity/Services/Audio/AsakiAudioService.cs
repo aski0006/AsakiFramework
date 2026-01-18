@@ -76,7 +76,7 @@ namespace Asaki.Unity.Services.Audio
 			if (_config != null) _config.InitializeLookup();
 		}
 
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			await _poolService.PrewarmAsync(_agentAssetKey, _initialPoolSize);
 		}

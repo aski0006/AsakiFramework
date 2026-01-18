@@ -7,6 +7,7 @@ using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Core.UI;
 using Asaki.Unity.Services.UI;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -20,16 +21,16 @@ namespace Asaki.Unity.Modules
 	public class AsakiUIModule : IAsakiModule
 	{
 		private AsakiUIManageService _uiManageService;
-		private IAsakiEventService eventService;
-		private IAsakiResourceService resourceService;
-		private IAsakiPoolService poolService;
+		private IAsakiEventService _eventService;
+		private IAsakiResourceService _resourceService;
+		private IAsakiPoolService _poolService;
 
 		[AsakiInject]
 		public void Init(IAsakiEventService eventService, IAsakiResourceService resourceService, IAsakiPoolService poolService)
 		{
-			this.eventService = eventService;
-			this.resourceService = resourceService;
-			this.poolService = poolService;
+			this._eventService = eventService;
+			this._resourceService = resourceService;
+			this._poolService = poolService;
 		}
 		public void OnInit()
 		{
@@ -41,9 +42,9 @@ namespace Asaki.Unity.Modules
 				config.UIConfig,
 				config.UIConfig.ReferenceResolution,
 				config.UIConfig.MatchWidthOrHeight,
-				eventService,
-				resourceService,
-				poolService
+				_eventService,
+				_resourceService,
+				_poolService
 			);
 
 			// 内部 OnInit 会调用 Resources 接口，此时 Resources 已注册
@@ -52,7 +53,7 @@ namespace Asaki.Unity.Modules
 			AsakiContext.Register<IAsakiUIService>(_uiManageService);
 		}
 
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			if (_uiManageService != null)
 			{

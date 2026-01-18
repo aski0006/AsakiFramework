@@ -4,7 +4,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Configuration;
 using Asaki.Core.Context;
 using Asaki.Unity.Services.Configuration;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
@@ -25,7 +25,7 @@ namespace Asaki.Unity.Modules
 			AsakiContext.Register(_configService);
 			_configService.OnInit();
 		}
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			await _configService.OnInitAsync();
 		}

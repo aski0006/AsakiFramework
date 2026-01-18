@@ -7,6 +7,7 @@ using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Unity.Services.Resources;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -43,9 +44,9 @@ namespace Asaki.Unity.Modules
 			ALog.Info("[Asaki] Pooling Service initialized (Async-Native Mode).");
 		}
 
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		public void OnDispose() { }

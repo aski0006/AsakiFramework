@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace Asaki.Core.Context
 {
@@ -26,7 +27,7 @@ namespace Asaki.Core.Context
 		/// <para>时机：所有模块完成 OnInit 后，按 DAG 顺序依次调用。</para>
 		/// <para>职责：执行耗时的异步操作，如资源加载、网络连接、数据库预热。</para>
 		/// </summary>
-		Task OnInitAsync();
+		UniTask OnInitAsync();
 
 		/// <summary>
 		/// [销毁阶段]

@@ -1,8 +1,7 @@
-﻿#if ASAKI_USE_ADDRESSABLE
-
-using Asaki.Core.Async;
+﻿using Asaki.Core.Async;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,13 +23,13 @@ namespace Asaki.Unity.Services.Resources.Strategies
 			_async = async;
 		}
 
-		public async Task InitializeAsync()
+		public async UniTask InitializeAsync()
 		{
 			var handle = Addressables.InitializeAsync();
 			await handle.Task;
 		}
 
-		public async Task<Object> LoadAssetInternalAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+		public async UniTask<Object> LoadAssetInternalAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
 		{
 			// [关键修复] 根据请求的类型，分发到正确的泛型方法
 			// Addressables 必须显式调用 LoadAssetAsync<Sprite> 才能加载出 Sprite 子资源
@@ -46,7 +45,7 @@ namespace Asaki.Unity.Services.Resources.Strategies
 		/// <summary>
 		/// [新增] 泛型加载核心逻辑，复用进度处理代码
 		/// </summary>
-		private async Task<Object> LoadAssetGenericAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : Object
+		private async UniTask<Object> LoadAssetGenericAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : Object
 		{
 			// 使用泛型 T 发起加载
 			var handle = Addressables.LoadAssetAsync<T>(location);
@@ -103,7 +102,7 @@ namespace Asaki.Unity.Services.Resources.Strategies
 			}
 		}
 
-		public async Task UnloadUnusedAssets(CancellationToken token)
+		public async UniTask UnloadUnusedAssets(CancellationToken token)
 		{
 			// 注意：Addressables 自身没有 UnloadUnusedAssets 概念，它依赖引用计数。
 			// 但底层仍是 Unity 资源，所以调用 Resources.UnloadUnusedAssets 依然有助于清理无引用的原生资源
@@ -150,4 +149,3 @@ namespace Asaki.Unity.Services.Resources.Strategies
 		}
 	}
 }
-#endif

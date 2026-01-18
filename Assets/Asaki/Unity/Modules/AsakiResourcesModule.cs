@@ -6,6 +6,7 @@ using Asaki.Core.Configs;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Asaki.Unity.Services.Resources;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -41,7 +42,7 @@ namespace Asaki.Unity.Modules
 			ALog.Info($"[Asaki] Resources initialized in {mode} mode.");
 		}
 
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			// 4. 执行异步初始化 (加载 Manifest 等)
 			if (_resourceService != null)

@@ -159,9 +159,9 @@ namespace Asaki.Unity.Services.Serialization
 		/// 预留接口以便于未来可能添加的异步初始化逻辑（如云存储同步验证）。
 		/// </summary>
 		/// <returns>已完成的Task实例</returns>
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		/// <summary>

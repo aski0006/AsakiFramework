@@ -4,6 +4,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
@@ -33,9 +34,9 @@ namespace Asaki.Unity.Modules
 			}
 		}
 
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		public void OnDispose()

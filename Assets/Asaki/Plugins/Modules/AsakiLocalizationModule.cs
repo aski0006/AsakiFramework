@@ -6,7 +6,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Plugins.Localization;
 using Asaki.Unity.Modules;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Plugins.Modules
 {
@@ -40,9 +40,9 @@ namespace Asaki.Plugins.Modules
 			AsakiContext.Register(_asakiLocalizationService);
 			ALog.Info("AsakiLocalizationModule Initialized.");
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose()
 		{

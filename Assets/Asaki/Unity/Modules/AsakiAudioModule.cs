@@ -6,6 +6,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Unity.Services.Audio;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -18,14 +19,14 @@ namespace Asaki.Unity.Modules
 	public class AsakiAudioModule : IAsakiModule
 	{
 		private IAsakiAudioService _audioService;
-		private IAsakiResourceService resource;
-		private IAsakiPoolService poolService;
+		private IAsakiResourceService _resource;
+		private IAsakiPoolService _poolService;
 
 		[AsakiInject]
 		public void Init(IAsakiResourceService resource, IAsakiPoolService poolService)
 		{
-			this.resource = resource;
-			this.poolService = poolService;
+			this._resource = resource;
+			this._poolService = poolService;
 		}
 
 		public void OnInit()
@@ -34,8 +35,8 @@ namespace Asaki.Unity.Modules
 			if (!config) return;
 
 			_audioService = new AsakiAudioService(
-				resource,
-				poolService,
+				_resource,
+				_poolService,
 				config.AudioConfig,
 				config.AudioConfig.SoundAgentPrefabAssetKey,
 				config.AudioConfig.InitialPoolSize
@@ -46,7 +47,7 @@ namespace Asaki.Unity.Modules
 			AsakiContext.Register(_audioService);
 		}
 
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			await _audioService.OnInitAsync();
 		}

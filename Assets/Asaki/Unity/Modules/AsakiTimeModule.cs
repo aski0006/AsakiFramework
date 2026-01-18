@@ -4,6 +4,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Simulation;
 using Asaki.Core.Time;
 using Asaki.Unity.Services.Time;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -12,28 +13,28 @@ namespace Asaki.Unity.Modules
 	public class AsakiTimeModule : IAsakiModule
 	{
 		private IAsakiTimerService _asakiTimerService;
-		private IAsakiSimulationService simulation;
+		private IAsakiSimulationService _simulation;
 
 		[AsakiInject]
 		public void Init(IAsakiSimulationService simulation)
 		{
-			this.simulation = simulation;
+			this._simulation = simulation;
 		}
 		public void OnInit()
 		{
 			_asakiTimerService = new AsakiTimerService();
-			simulation.Register(_asakiTimerService);
+			_simulation.Register(_asakiTimerService);
 
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose()
 		{
-			simulation?.Unregister(_asakiTimerService);
+			_simulation?.Unregister(_asakiTimerService);
 			_asakiTimerService.Dispose();
-			simulation = null;
+			_simulation = null;
 			_asakiTimerService = null;
 		}
 	}

@@ -5,6 +5,7 @@ using Asaki.Core.Async;
 using Asaki.Core.Attributes;
 using Asaki.Core.Network;
 using Asaki.Unity.Services.Network;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -32,9 +33,9 @@ namespace Asaki.Unity.Modules
 			);
 			AsakiContext.Register(_asakiDownloadService);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 		public void OnDispose() { }
 	}

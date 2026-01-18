@@ -2,6 +2,8 @@
 using Asaki.Core.Context;
 using Asaki.Core.Async;
 using Asaki.Core.Attributes;
+using Asaki.Unity.Services.Async;
+using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
@@ -9,19 +11,18 @@ namespace Asaki.Unity.Modules
 	[AsakiModule(100)]
 	public class AsakiAsyncModule : IAsakiModule
 	{
-		private Services.Coroutines.AsakiAsyncProvider _provider;
+		private IAsakiAsyncService _asakiAsyncService;
 		public void OnInit()
 		{
 			// 1. 创建具体服务实现
-			_provider = new Services.Coroutines.AsakiAsyncProvider();
-
+			_asakiAsyncService = new AsakiAsyncProvider();
 			// 2. 注册服务接口 (供其他模块通过 Get<IAsakiAsyncService> 获取)
-			AsakiContext.Register<IAsakiAsyncService>(_provider);
+			AsakiContext.Register(_asakiAsyncService);
 		}
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
 			// Coroutines 服务本身无需异步初始化
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		public void OnDispose() { }

@@ -74,7 +74,7 @@ namespace Asaki.Unity.Services.Configuration
 		}
 
 
-		public async Task OnInitAsync()
+		public async UniTask OnInitAsync()
 		{
 			var preloadTypes = _metadataCache
 			                   .Where(kvp => kvp.Value.Strategy == AsakiConfigLoadStrategy.Preload)

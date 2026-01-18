@@ -7,6 +7,7 @@ using Asaki.Core.Resources;
 using Asaki.Core.Simulation;
 using Asaki.Core.UI;
 using Asaki.Unity.Extensions;
+using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -70,7 +71,7 @@ namespace Asaki.Unity.Services.UI
 			}
 		}
 
-		public Task OnInitAsync()
+		public UniTask OnInitAsync()
 		{
 			if (_uiConfig != null)
 			{
@@ -80,7 +81,7 @@ namespace Asaki.Unity.Services.UI
 			{
 				ALog.Warn("[AsakiUI] No UIConfig assigned in AsakiConfig!");
 			}
-			return Task.CompletedTask;
+			return UniTask.CompletedTask;
 		}
 
 		public async Task<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default(CancellationToken))
