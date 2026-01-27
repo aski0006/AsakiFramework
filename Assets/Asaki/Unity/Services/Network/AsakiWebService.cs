@@ -125,7 +125,7 @@ namespace Asaki.Unity.Services.Network
 		/// 
 		/// <b>性能优化：</b>使用SendWebRequestAsTask扩展避免协程GC分配
 		/// </remarks>
-		public async Task<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken cancellationToken = default)
+		public async UniTask<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken token = default)
 			where TResponse : IAsakiSavable, new()
 		{
 			CheckDisposed();
@@ -138,16 +138,16 @@ namespace Asaki.Unity.Services.Network
 				foreach (IAsakiWebInterceptor i in _interceptors) i.OnRequest(uwr);
 
 				// 创建取消注册，确保取消时调用Abort
-				using (cancellationToken.Register(() => uwr.Abort()))
+			using (token.Register(() => uwr.Abort()))
 				{
 					try
 					{
 						await uwr.SendWebRequestAsTask();
 					}
-					catch (UnityWebRequestException ex) when (cancellationToken.IsCancellationRequested)
+					catch (UnityWebRequestException ex) when (token.IsCancellationRequested)
 					{
 						// 当取消被触发时，Abort会产生异常，需要识别并转换
-						throw new OperationCanceledException("Request was cancelled", ex, cancellationToken);
+						throw new OperationCanceledException("Request was cancelled", ex, token);
 					}
 				}
 
@@ -169,7 +169,7 @@ namespace Asaki.Unity.Services.Network
 		/// <b>Content-Type：</b>固定为application/json，不支持多媒体表单
 		/// <b>序列化：</b>使用AsakiJsonWriter和StringBuilder池化
 		/// </remarks>
-		public async Task<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken cancellationToken = default) 
+		public async UniTask<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken token = default) 
 			where TRequest : IAsakiSavable 
 			where TResponse : IAsakiSavable, new()
 		{
@@ -186,15 +186,15 @@ namespace Asaki.Unity.Services.Network
 				ConfigureRequest(uwr);
 				foreach (IAsakiWebInterceptor i in _interceptors) i.OnRequest(uwr);
 
-				using (cancellationToken.Register(() => uwr.Abort()))
+				using (token.Register(() => uwr.Abort()))
 				{
 					try
 					{
 						await uwr.SendWebRequestAsTask();
 					}
-					catch (UnityWebRequestException ex) when (cancellationToken.IsCancellationRequested)
+					catch (UnityWebRequestException ex) when (token.IsCancellationRequested)
 					{
-						throw new OperationCanceledException("Request was cancelled", ex, cancellationToken);
+						throw new OperationCanceledException("Request was cancelled", ex, token);
 					}
 				}
 
@@ -215,7 +215,7 @@ namespace Asaki.Unity.Services.Network
 		/// <b>适用场景：</b>上传文件或multipart/form-data
 		/// <b>注意：</b>UnityWebRequest.Post会自动设置Content-Type为multipart/form-data
 		/// </remarks>
-		public async Task<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken cancellationToken = default) 
+		public async UniTask<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken token = default) 
 			where TResponse : IAsakiSavable, new()
 		{
 			CheckDisposed();
@@ -226,15 +226,15 @@ namespace Asaki.Unity.Services.Network
 				ConfigureRequest(uwr);
 				foreach (IAsakiWebInterceptor i in _interceptors) i.OnRequest(uwr);
 
-				using (cancellationToken.Register(() => uwr.Abort()))
+				using (token.Register(() => uwr.Abort()))
 				{
 					try
 					{
 						await uwr.SendWebRequestAsTask();
 					}
-					catch (UnityWebRequestException ex) when (cancellationToken.IsCancellationRequested)
+					catch (UnityWebRequestException ex) when (token.IsCancellationRequested)
 					{
-						throw new OperationCanceledException("Request was cancelled", ex, cancellationToken);
+						throw new OperationCanceledException("Request was cancelled", ex, token);
 					}
 				}
 

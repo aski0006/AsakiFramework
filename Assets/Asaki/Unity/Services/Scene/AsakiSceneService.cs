@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Services.Scene
 {
@@ -75,12 +76,12 @@ namespace Asaki.Unity.Services.Scene
 				}
 			}
 		}
-		public async Task<AsakiSceneResult> LoadSceneAsync(
+		public async UniTask<AsakiSceneResult> LoadSceneAsync(
 			string targetScene,
 			AsakiLoadSceneMode mode = AsakiLoadSceneMode.Single,
 			AsakiSceneActivation activation = AsakiSceneActivation.Immediate,
 			IAsakiSceneTransition transition = null,
-			CancellationToken ct = default(CancellationToken))
+			CancellationToken token = default)
 		{
 			if (_isLoading)
 				return AsakiSceneResult.Failed(targetScene, "Another scene load is in progress");
@@ -95,11 +96,11 @@ namespace Asaki.Unity.Services.Scene
 			if (transition != null) transitionProgress = transition.OnProgress;
 			try
 			{
-				if (transition != null) await transition.EnterAsync(ct);
+				if (transition != null) await transition.EnterAsync(token);
 				if (mode == AsakiLoadSceneMode.Single)
 				{
-					await _asakiAsyncService.WaitFrame(ct);
-					await _asakiResourceService.UnloadUnusedAssets(ct);
+					await _asakiAsyncService.WaitFrame(token);
+					await _asakiResourceService.UnloadUnusedAssets(token);
 					GC.Collect();
 				}
 
@@ -115,7 +116,7 @@ namespace Asaki.Unity.Services.Scene
 
 				while (Mathf.Approximately(op.progress, 0.899f))
 				{
-					if (ct.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return CancelSceneLoadOperation(targetScene);
 					float raw = op.progress;
 					float normalized = Mathf.Clamp01(raw / 0.9f);
@@ -129,7 +130,7 @@ namespace Asaki.Unity.Services.Scene
 						AsakiBroker.Publish(new AsakiSceneProgressEvent(targetScene, normalized));
 						transitionProgress?.Invoke(normalized);
 					}
-					await _asakiAsyncService.WaitFrame(ct);
+					await _asakiAsyncService.WaitFrame(token);
 				}
 
 				AsakiBroker.Publish(new AsakiSceneProgressEvent(targetScene, 1.0f));
@@ -138,10 +139,10 @@ namespace Asaki.Unity.Services.Scene
 				if (activation == AsakiSceneActivation.ManualConfirm)
 				{
 					_activationTaskSignal = new TaskCompletionSource<bool>();
-					var signalTask = _activationTaskSignal.Task;
-					Task waitTask = Task.Delay(-1, ct);
-					Task completed = await Task.WhenAny(signalTask, waitTask);
-					if (completed == waitTask)
+					var signalTask = _activationTaskSignal.Task.AsUniTask().AttachExternalCancellation(token);
+					var waitTask = UniTask.Delay(TimeSpan.MaxValue, false, PlayerLoopTiming.Update, token, false);
+					var result = await UniTask.WhenAny(signalTask, waitTask);
+					if (result.hasResultLeft) // signalTask 先完成
 						return CancelSceneLoadOperation(targetScene);
 				}
 
@@ -149,15 +150,15 @@ namespace Asaki.Unity.Services.Scene
 
 				while (!op.isDone)
 				{
-					if (ct.IsCancellationRequested)
+					if (token.IsCancellationRequested)
 						return CancelSceneLoadOperation(targetScene);
-					await _asakiAsyncService.WaitFrame(ct);
+					await _asakiAsyncService.WaitFrame(token);
 				}
 
 				LastLoadedSceneName = targetScene;
 
 				if (transition != null)
-					await transition.ExitAsync(ct);
+					await transition.ExitAsync(token);
 				_asakiEventService.Publish(new AsakiSceneStateEvent(
 					targetScene,
 					AsakiSceneStateEvent.State.Completed

@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Services.Network
 {
@@ -123,7 +124,7 @@ namespace Asaki.Unity.Services.Network
 		/// - 堆内存分配：~0KB（除进度回调外）
 		/// - CPU开销：每帧&lt;0.1ms（进度计算优化后）
 		/// </remarks>
-		public async Task DownloadAsync(string url, string localPath, IProgress<AsakiDownloadProgress> progress = null, CancellationToken token = default(CancellationToken))
+		public async UniTask DownloadAsync(string url, string localPath, IProgress<AsakiDownloadProgress> progress = null, CancellationToken token = default)
 		{
 			#region [W-006] 路径安全校验
 
@@ -135,10 +136,10 @@ namespace Asaki.Unity.Services.Network
 			string dir = Path.GetDirectoryName(localPath);
 			if (!string.IsNullOrEmpty(dir))
 			{
-				await Task.Run(() =>
+				await UniTask.RunOnThreadPool(() =>
 				{
 					if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-				});
+				}, false, token);
 			}
 
 			// 使用DownloadHandlerFile (Stream) 避免内存爆涨
@@ -160,7 +161,7 @@ namespace Asaki.Unity.Services.Network
 					{
 						uwr.Abort();
 						// [W-006] 异步删除残余文件
-						await DeleteFileAsync(localPath);
+						await DeleteFileAsync(localPath, token);
 						_asakiEventService.Publish(new AsakiDownloadCancelledEvent { Url = url });
 						throw new OperationCanceledException(token);
 					}
@@ -205,7 +206,7 @@ namespace Asaki.Unity.Services.Network
 				if (uwr.result == UnityWebRequest.Result.ConnectionError ||
 				    uwr.result == UnityWebRequest.Result.ProtocolError)
 				{
-					await DeleteFileAsync(localPath);
+					await DeleteFileAsync(localPath, token);
 					string errorMsg = $"[Downloader] Failed: {uwr.error}\nURL: {url}";
 					_asakiEventService.Publish(new AsakiDownloadErrorEvent { ErrorMsg = errorMsg, Url = url });
 					throw new Exception(errorMsg);
@@ -231,7 +232,7 @@ namespace Asaki.Unity.Services.Network
 		/// 
 		/// <b>注意：</b>当前实现未接入cancellationToken，长时间阻塞可能导致ANR
 		/// </remarks>
-		public async Task<long> GetFileSizeAsync(string url, CancellationToken token = default(CancellationToken))
+		public async UniTask<long> GetFileSizeAsync(string url, CancellationToken token = default)
 		{
 			using UnityWebRequest uwr = UnityWebRequest.Head(url);
 			if(token.IsCancellationRequested) return -1;
@@ -279,13 +280,14 @@ namespace Asaki.Unity.Services.Network
 		/// 异步删除文件（带双重校验）
 		/// </summary>
 		/// <param name="path">待删除文件路径</param>
+		/// <param name="token">取消令牌（可选）</param>
 		/// <remarks>
 		/// [W-006] 安全流程：
 		/// 1. 再次执行路径校验，防止调用链被篡改
-		/// 2. 在Task.Run中执行IO操作，避免阻塞主线程
+		/// 2. 在UniTask.Run中执行IO操作，避免阻塞主线程
 		/// 3. 捕获所有异常并记录Warn，保证原子性操作不破坏调用方状态
 		/// </remarks>
-		private async Task DeleteFileAsync(string path)
+		private async UniTask DeleteFileAsync(string path, CancellationToken token = default)
 		{
 			if (string.IsNullOrEmpty(path)) return;
 
@@ -296,7 +298,7 @@ namespace Asaki.Unity.Services.Network
 			}
 			catch { return; }
 
-			await Task.Run(() =>
+			await UniTask.RunOnThreadPool(() =>
 			{
 				try
 				{
@@ -306,7 +308,7 @@ namespace Asaki.Unity.Services.Network
 				{
 					ALog.Warn($"[Downloader] Delete file failed: {ex.Message}");
 				}
-			});
+			}, false, token);
 		}
 	}
 }

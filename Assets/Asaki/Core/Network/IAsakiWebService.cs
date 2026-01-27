@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Network
 {
@@ -45,7 +46,7 @@ namespace Asaki.Core.Network
 		/// <param name="cancellationToken">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		Task<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken cancellationToken = default)
+		UniTask<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken token = default)
 			where TResponse : IAsakiSavable, new();
 
 		/// <summary>
@@ -55,10 +56,10 @@ namespace Asaki.Core.Network
 		/// <typeparam name="TResponse">响应类型，必须实现 <see cref="IAsakiSavable"/> 并具有无参构造函数</typeparam>
 		/// <param name="apiPath">API路径（相对于配置中的基础地址）</param>
 		/// <param name="body">请求体对象，将被序列化为JSON</param>
-		/// <param name="cancellationToken">请求取消标记</param>
+		/// <param name="token">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		Task<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken cancellationToken = default)
+		UniTask<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken token = default)
 			where TRequest : IAsakiSavable
 			where TResponse : IAsakiSavable, new();
 
@@ -68,10 +69,10 @@ namespace Asaki.Core.Network
 		/// <typeparam name="TResponse">响应类型，必须实现 <see cref="IAsakiSavable"/> 并具有无参构造函数</typeparam>
 		/// <param name="apiPath">API路径（相对于配置中的基础地址）</param>
 		/// <param name="form">包含表单数据的 <see cref="WWWForm"/> 对象</param>
-		/// <param name="cancellationToken">请求取消标记</param>
+		/// <param name="token">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		Task<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken cancellationToken = default)
+		UniTask<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken token = default)
 			where TResponse : IAsakiSavable, new();
 	}
 

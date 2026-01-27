@@ -84,7 +84,7 @@ namespace Asaki.Unity.Services.UI
 			return UniTask.CompletedTask;
 		}
 
-		public async Task<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default(CancellationToken))
+		public async UniTask<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default)
 			where T : class, IAsakiWindow
 		{
 			// 基础检查
@@ -309,7 +309,7 @@ namespace Asaki.Unity.Services.UI
 			}
 		}
 
-		public async Task Back(object returnValue)
+		public async UniTask Back(object returnValue)
 		{
 			if (_normalStack.Count == 0) return;
 
@@ -355,17 +355,17 @@ namespace Asaki.Unity.Services.UI
 			}
 		}
 
-		public async Task<T> ReplaceAsync<T>(int uiId, object args = null) where T : class, IAsakiWindow
+		public async UniTask<T> ReplaceAsync<T>(int uiId, object args = null, CancellationToken token = default) where T : class, IAsakiWindow
 		{
 			// 关闭当前栈顶
 			if (_normalStack.Count > 0)
 			{
 				IAsakiWindow oldWindow = _normalStack.Peek();
-				await oldWindow.OnCloseAsync(CancellationToken.None);
+				await oldWindow.OnCloseAsync(token);
 			}
 
 			// 打开新窗口
-			return await OpenAsync<T>(uiId, args);
+			return await OpenAsync<T>(uiId, args, token);
 		}
 
 		#endregion
@@ -401,7 +401,7 @@ namespace Asaki.Unity.Services.UI
 			}
 
 			// 3. 执行关闭
-			HandleCloseAsync(window).FireAndForget();
+			HandleCloseAsync(window).Forget();
 
 			foreach (var pair in _windowInstanceMap)
 			{
@@ -426,7 +426,7 @@ namespace Asaki.Unity.Services.UI
 			while (temp.Count > 0) _normalStack.Push(temp.Pop());
 		}
 
-		private async Task HandleCloseAsync(IAsakiWindow window)
+		private async UniTask HandleCloseAsync(IAsakiWindow window)
 		{
 			// Window 内部处理回收/销毁
 			await window.OnCloseAsync(CancellationToken.None);
@@ -437,7 +437,7 @@ namespace Asaki.Unity.Services.UI
 			// 1. 关闭所有窗口
 			while (_normalStack.Count > 0)
 			{
-				HandleCloseAsync(_normalStack.Pop()).FireAndForget();
+				HandleCloseAsync(_normalStack.Pop()).Forget();
 			}
 			_normalStack.Clear();
 

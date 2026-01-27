@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Extensions
 {
@@ -26,7 +27,7 @@ namespace Asaki.Unity.Extensions
 		/// <param name="service">资源服务</param>
 		/// <param name="location">资源地址</param>
 		/// <param name="context">上下文 (通常是 this)</param>
-		public static Task<ResHandle<T>> LoadAsync<T>(this IAsakiResourceService service, string location, MonoBehaviour context)
+		public static UniTask<ResHandle<T>> LoadAsync<T>(this IAsakiResourceService service, string location, MonoBehaviour context)
 			where T : class
 		{
 			// 自动获取 AsakiFlow 提供的生命周期 Token
@@ -37,14 +38,14 @@ namespace Asaki.Unity.Extensions
 		/// <summary>
 		/// 批量加载资源，并自动绑定到 context 的生命周期。
 		/// </summary>
-		public static Task<List<ResHandle<T>>> LoadBatchAsync<T>(this IAsakiResourceService service, IEnumerable<string> locations, MonoBehaviour context)
+		public static UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(this IAsakiResourceService service, IEnumerable<string> locations, MonoBehaviour context)
 			where T : class
 		{
 			CancellationToken token = context.GetToken();
 			return service.LoadBatchAsync<T>(locations, token);
 		}
 
-		public static Task<ResHandle<T>> LoadAsync<T>(
+		public static UniTask<ResHandle<T>> LoadAsync<T>(
 			this IAsakiResourceService service,
 			string location,
 			Action<float> onProgress, // 新增参数
@@ -55,7 +56,7 @@ namespace Asaki.Unity.Extensions
 			return service.LoadAsync<T>(location, onProgress, token);
 		}
 
-		public static Task<List<ResHandle<T>>> LoadBatchAsync<T>(
+		public static UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(
 			this IAsakiResourceService service,
 			IEnumerable<string> locations,
 			Action<float> onProgress, // 新增参数

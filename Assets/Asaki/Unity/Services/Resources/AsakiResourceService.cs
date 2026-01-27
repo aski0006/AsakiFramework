@@ -61,7 +61,7 @@ namespace Asaki.Unity.Services.Resources
 			return combine.GetHashCode();
 		}
 
-		public async Task UnloadUnusedAssets(CancellationToken token = default(CancellationToken))
+		public async UniTask UnloadUnusedAssets(CancellationToken token = default)
 		{
 			await _strategy.UnloadUnusedAssets(token);
 		}
@@ -92,15 +92,15 @@ namespace Asaki.Unity.Services.Resources
 		// Load Interface
 		// =========================================================
 
-		public Task<ResHandle<T>> LoadAsync<T>(string location, CancellationToken token) where T : class
+		public UniTask<ResHandle<T>> LoadAsync<T>(string location, CancellationToken token) where T : class
 		{
 			return LoadAsync<T>(location, null, token);
 		}
 
-		public async Task<ResHandle<T>> LoadAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : class
+		public async UniTask<ResHandle<T>> LoadAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : class
 		{
 			// [修改] 传入 typeof(T) 进行 Key 计算
-			ResRecord record = GetOrCreateRecord(location, typeof(T));
+			ResRecord record = GetOrCreateRecord(location, typeof(T), token);
 
 			// 进度回调注册
 			if (onProgress != null)
@@ -146,7 +146,7 @@ namespace Asaki.Unity.Services.Resources
 		// Internal Logic
 		// =========================================================
 
-		private ResRecord GetOrCreateRecord(string location, Type type)
+		private ResRecord GetOrCreateRecord(string location, Type type, CancellationToken token = default)
 		{
 			ResRecord record;
 			bool isOwner = false;
@@ -170,17 +170,17 @@ namespace Asaki.Unity.Services.Resources
 
 			if (isOwner)
 			{
-				SafeStartLoadTask(record);
+				SafeStartLoadTask(record, token);
 			}
 
 			return record;
 		}
 
-		private async void SafeStartLoadTask(ResRecord record)
+		private async void SafeStartLoadTask(ResRecord record, CancellationToken token = default)
 		{
 			try
 			{
-				await LoadTaskInternal(record);
+				await LoadTaskInternal(record, token);
 			}
 			catch (Exception ex)
 			{
@@ -201,7 +201,7 @@ namespace Asaki.Unity.Services.Resources
 			}
 		}
 
-		private async Task LoadTaskInternal(ResRecord record)
+		private async UniTask LoadTaskInternal(ResRecord record, CancellationToken token = default)
 		{
 			try
 			{
@@ -212,7 +212,7 @@ namespace Asaki.Unity.Services.Resources
 					foreach (string depLoc in deps)
 					{
 						Type depType = typeof(Object);
-						ResRecord depRecord = GetOrCreateRecord(depLoc, depType);
+						ResRecord depRecord = GetOrCreateRecord(depLoc, depType, token);
 						int depKey = depRecord.CacheKey;
 
 						Interlocked.Increment(ref depRecord.RefCount);
@@ -238,16 +238,17 @@ namespace Asaki.Unity.Services.Resources
 							throw new OperationCanceledException($"[Resources] Loading aborted for {record.Location}");
 						}
 
-						var dependencyTask = depRecord.LoadingTcs.Task;
-						Task finishedTask = await Task.WhenAny(dependencyTask, Task.Delay(_timeoutSeconds));
+						var dependencyTask = depRecord.LoadingTcs.Task.AsUniTask().AttachExternalCancellation(token);
+						var timeoutTask = UniTask.Delay(_timeoutSeconds, false, PlayerLoopTiming.Update, token, false);
+						var finishedIndex = await UniTask.WhenAny(dependencyTask, timeoutTask);
 
-						if (finishedTask != dependencyTask)
+						if (finishedIndex.hasResultLeft)
 						{
 							throw new TimeoutException($"[Resources] Dependency Timeout: {depLoc}");
 						}
 
-						if (dependencyTask.IsFaulted && dependencyTask.Exception != null)
-							throw dependencyTask.Exception;
+						// 等待依赖任务完成，这样任何异常都会被正确传播
+						await dependencyTask;
 					}
 				}
 
@@ -259,8 +260,8 @@ namespace Asaki.Unity.Services.Resources
 					record.Location,
 					record.AssetType,
 					record.ReportProgress,
-					CancellationToken.None
-				));
+					token
+				), token);
 
 				if (asset == null) throw new Exception($"[Resources] Asset not found: {record.Location} (Type: {record.AssetType.Name})");
 
@@ -350,7 +351,7 @@ namespace Asaki.Unity.Services.Resources
 		// Batch Operations
 		// =========================================================
 
-		public async Task<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, Action<float> onProgress, CancellationToken token) where T : class
+		public async UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, Action<float> onProgress, CancellationToken token) where T : class
 		{
 			var locList = locations.ToList();
 			if (locList.Count == 0)
@@ -374,17 +375,17 @@ namespace Asaki.Unity.Services.Resources
 				};
 			}
 
-			var tasks = new Task<ResHandle<T>>[locList.Count];
+			var tasks = new UniTask<ResHandle<T>>[locList.Count];
 			for (int i = 0; i < locList.Count; i++)
 			{
 				tasks[i] = LoadAsync<T>(locList[i], onProgress == null ? null : GetProgressHandler(i), token);
 			}
 
-			var results = await Task.WhenAll(tasks);
+			var results = await UniTask.WhenAll(tasks);
 			return results.ToList();
 		}
 
-		public Task<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, CancellationToken token) where T : class
+		public UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, CancellationToken token) where T : class
 		{
 			return LoadBatchAsync<T>(locations, null, token);
 		}

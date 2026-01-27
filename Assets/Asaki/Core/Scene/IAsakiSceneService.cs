@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Scene
 {
@@ -9,12 +10,12 @@ namespace Asaki.Core.Scene
 	{
 		string LastLoadedSceneName { get; }
 		void PerBuildScene();
-		Task<AsakiSceneResult> LoadSceneAsync(
+		UniTask<AsakiSceneResult> LoadSceneAsync(
 			string sceneName,
 			AsakiLoadSceneMode mode = AsakiLoadSceneMode.Single,
 			AsakiSceneActivation activation = AsakiSceneActivation.Immediate,
 			IAsakiSceneTransition transition = null,
-			CancellationToken ct = default(CancellationToken)
+			CancellationToken token = default
 		);
 
 		void ActivateScene();

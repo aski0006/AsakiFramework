@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Extensions
 {
@@ -180,7 +181,7 @@ namespace Asaki.Unity.Extensions
 		}
 
 
-		public static Task<T> OpenAsync<T>(this IAsakiUIService service, WindowAssetId assetId, object args = null, CancellationToken token = default(CancellationToken))
+		public static UniTask<T> OpenAsync<T>(this IAsakiUIService service, WindowAssetId assetId, object args = null, CancellationToken token = default)
 			where T : class, IAsakiWindow
 		{
 			// 核心逻辑：在这里进行枚举到 int 的强转

@@ -2,6 +2,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Network
 {
@@ -65,10 +66,10 @@ namespace Asaki.Core.Network
    	/// <param name="localPath">本地保存路径（包含文件名）</param>
    	/// <param name="progress">下载进度回调（传递 AsakiDownloadProgress 结构体），可设为 null</param>
    	/// <param name="token">取消下载操作的 <see cref="CancellationToken"/></param>
-   	/// <returns>表示异步下载任务的 <see cref="Task"/></returns>
+   	/// <returns>表示异步下载任务的 <see cref="UniTask"/></returns>
    	/// <exception cref="AsakiWebException">网络请求失败时抛出</exception>
    	/// <exception cref="System.IO.IOException">文件写入失败时抛出</exception>
-   	Task DownloadAsync(string url, string localPath, IProgress<AsakiDownloadProgress> progress = null, CancellationToken token = default(CancellationToken));
+   	UniTask DownloadAsync(string url, string localPath, IProgress<AsakiDownloadProgress> progress = null, CancellationToken token = default);
 
     /// <summary>
     /// 异步获取远程文件的大小（通过HTTP HEAD请求）
@@ -80,6 +81,6 @@ namespace Asaki.Core.Network
     /// <remarks>
     /// 该方法通常发送HTTP HEAD请求以高效获取文件元信息，不会下载实际内容
     /// </remarks>
-    Task<long> GetFileSizeAsync(string url, CancellationToken token = default(CancellationToken));
+    UniTask<long> GetFileSizeAsync(string url, CancellationToken token = default);
    }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Serialization
 {
@@ -29,7 +30,7 @@ namespace Asaki.Core.Serialization
 		/// 此方法会自动处理存档目录的创建，并将元数据和游戏数据分别保存。
 		/// 保存过程中会发布相应的事件（如保存开始、保存成功、保存失败）。
 		/// </remarks>
-		Task SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken cancellationToken = default)
+		UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default)
 			where TMeta : IAsakiSlotMeta where TData : IAsakiSavable;
 
 		/// <summary>
@@ -38,14 +39,14 @@ namespace Asaki.Core.Serialization
 		/// <typeparam name="TMeta">存档元数据类型，必须实现IAsakiSlotMeta接口。</typeparam>
 		/// <typeparam name="TData">存档数据类型，必须实现IAsakiSavable接口。</typeparam>
 		/// <param name="slotId">存档槽位的ID。</param>
-		/// <param name="cancellationToken">用于取消加载操作的取消令牌。</param>
-		/// <returns>包含加载的元数据和游戏数据的Task对象。</returns>
+		/// <param name="token">用于取消加载操作的取消令牌。</param>
+		/// <returns>包含加载的元数据和游戏数据的UniTask对象。</returns>
 		/// <exception cref="FileNotFoundException">当指定的存档槽位不存在时抛出。</exception>
 		/// <remarks>
 		/// 此方法会异步读取存档文件，并将数据反序列化为指定的类型。
 		/// 加载过程中会并行读取元数据和游戏数据，以提高性能。
 		/// </remarks>
-		Task<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken cancellationToken = default)
+		UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default)
 			where TMeta : IAsakiSlotMeta, new() where TData : IAsakiSavable, new();
 
 		/// <summary>

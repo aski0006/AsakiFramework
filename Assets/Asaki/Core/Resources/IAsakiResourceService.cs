@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Resources
 {
@@ -36,15 +37,15 @@ namespace Asaki.Core.Resources
 	}
 	public interface IAsakiResourceService : IAsakiModule
 	{
-		Task<ResHandle<T>> LoadAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : class;
-		Task<ResHandle<T>> LoadAsync<T>(string location, CancellationToken token) where T : class;
+		UniTask<ResHandle<T>> LoadAsync<T>(string location, Action<float> onProgress, CancellationToken token) where T : class;
+		UniTask<ResHandle<T>> LoadAsync<T>(string location, CancellationToken token) where T : class;
 		void Release(string location, Type type);
 
-		Task<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, Action<float> onProgress, CancellationToken token) where T : class;
-		Task<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, CancellationToken token) where T : class;
+		UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, Action<float> onProgress, CancellationToken token) where T : class;
+		UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, CancellationToken token) where T : class;
 		public void ReleaseBatch(IEnumerable<string> locations);
 
-		Task UnloadUnusedAssets(CancellationToken token = default(CancellationToken));
+		UniTask UnloadUnusedAssets(CancellationToken token = default);
 		public void SetTimeoutSeconds(int timeoutSeconds);
 
 

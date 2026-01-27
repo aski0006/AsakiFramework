@@ -252,11 +252,11 @@ namespace Asaki.Unity.Services.Serialization
 		/// <returns>表示异步保存操作的Task</returns>
 		/// <exception cref="IOException">磁盘空间不足或路径非法时抛出</exception>
 		/// <exception cref="UnauthorizedAccessException">无写入权限时抛出</exception>
-		public async Task SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken cancellationToken = default)
+		public async UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default)
 			where TMeta : IAsakiSlotMeta where TData : IAsakiSavable
 		{
 			// 早期取消检查：避免不必要的目录创建
-			cancellationToken.ThrowIfCancellationRequested();
+			token.ThrowIfCancellationRequested();
 
 			string dir = GetSlotDir(slotId);
 			string dataPath = GetDataPath(slotId);
@@ -285,7 +285,7 @@ namespace Asaki.Unity.Services.Serialization
 				}
 
 				// 序列化后检查：避免不必要的IO切换
-				cancellationToken.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 
 				// ===== 步骤2：后台线程异步IO =====
 				#if ASAKI_USE_UNITASK
@@ -293,16 +293,16 @@ namespace Asaki.Unity.Services.Serialization
 				#endif
 
 				// 线程切换后检查：及时响应取消
-				cancellationToken.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 
 				// 异步写入二进制数据（支持取消）
-				await File.WriteAllBytesAsync(dataPath, dataBuffer, cancellationToken);
+				await File.WriteAllBytesAsync(dataPath, dataBuffer, token);
 
 				// 仅在调试模式下生成JSON元数据
 				if (_isDebug)
 				{
 					// 取消检查：避免不必要的字符串操作
-					cancellationToken.ThrowIfCancellationRequested();
+					token.ThrowIfCancellationRequested();
 
 					StringBuilder sb = AsakiStringBuilderPool.Rent();
 					try
@@ -310,7 +310,7 @@ namespace Asaki.Unity.Services.Serialization
 						AsakiJsonWriter jsonWriter = new AsakiJsonWriter(sb);
 						meta.Serialize(jsonWriter);
 						// 传递取消令牌给异步IO
-						await File.WriteAllTextAsync(metaPath, jsonWriter.GetResult(), cancellationToken);
+						await File.WriteAllTextAsync(metaPath, jsonWriter.GetResult(), token);
 					}
 					finally
 					{
@@ -324,7 +324,7 @@ namespace Asaki.Unity.Services.Serialization
 				#endif
 
 				// 最终取消检查：防止事件处理器在取消状态下执行
-				cancellationToken.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 
 				_eventService.Publish(new AsakiSaveSuccessEvent { Filename = filename });
 			}
@@ -395,11 +395,11 @@ namespace Asaki.Unity.Services.Serialization
 		/// <returns>包含元数据和游戏数据的元组</returns>
 		/// <exception cref="FileNotFoundException">槽位不存在时抛出，调用方应提前用SlotExists检查</exception>
 		/// <exception cref="SerializationException">数据格式不兼容或损坏时抛出</exception>
-		public async Task<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken cancellationToken = default)
+		public async UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default)
 			where TMeta : IAsakiSlotMeta, new() where TData : IAsakiSavable, new()
 		{
 			// 早期取消检查
-			cancellationToken.ThrowIfCancellationRequested();
+			token.ThrowIfCancellationRequested();
 
 			if (!SlotExists(slotId)) throw new FileNotFoundException($"Slot {slotId} not found.");
 
@@ -411,29 +411,25 @@ namespace Asaki.Unity.Services.Serialization
 				#endif
 
 				// 线程切换后检查
-				cancellationToken.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 
 				// 启动两个独立的读取任务（均支持取消）
-				var dataTask = File.ReadAllBytesAsync(GetDataPath(slotId), cancellationToken);
-				var metaTask = File.ReadAllTextAsync(GetMetaPath(slotId), cancellationToken);
+				var dataTask = File.ReadAllBytesAsync(GetDataPath(slotId), token).AsUniTask().AttachExternalCancellation(token);
+				var metaTask = File.ReadAllTextAsync(GetMetaPath(slotId), token).AsUniTask().AttachExternalCancellation(token);
 
-				// 等待两个任务都完成，支持取消
-				await Task.WhenAll(dataTask, metaTask);
+				// 等待两个任务都完成，支持取消并获取结果
+				var (dataBytes, metaText) = await UniTask.WhenAll(dataTask, metaTask);
 
 				// IO完成后检查：避免不必要的反序列化
-				cancellationToken.ThrowIfCancellationRequested();
-
-				// ===== 步骤2：主线程反序列化 =====
-				#if ASAKI_USE_UNITASK
+				token.ThrowIfCancellationRequested();
+			
 				await UniTask.SwitchToMainThread();
-				#endif
-
 				// 反序列化前检查
-				cancellationToken.ThrowIfCancellationRequested();
+				token.ThrowIfCancellationRequested();
 
 				// 反序列化二进制游戏数据
 				TData data = new TData();
-				using (MemoryStream ms = new MemoryStream(dataTask.Result))
+				using (MemoryStream ms = new MemoryStream(dataBytes))
 				{
 					AsakiBinaryReader reader = new AsakiBinaryReader(ms);
 					data.Deserialize(reader);
@@ -441,7 +437,7 @@ namespace Asaki.Unity.Services.Serialization
 
 				// 反序列化JSON元数据
 				TMeta meta = new TMeta();
-				AsakiJsonReader jsonReader = AsakiJsonReader.FromJson(metaTask.Result);
+				AsakiJsonReader jsonReader = AsakiJsonReader.FromJson(metaText);
 				meta.Deserialize(jsonReader);
 
 				return (meta, data);
