@@ -141,7 +141,7 @@ namespace Asaki.Core.Logging
 
 			// 异步触发一次历史清理
 			// 不要在写入过程中做 IO 删除操作，避免阻塞写入
-			CleanupHistoryAsync();
+			CleanupHistoryAsync().Forget();
 		}
 
 		/// <summary>
