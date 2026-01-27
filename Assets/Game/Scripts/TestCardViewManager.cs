@@ -11,7 +11,7 @@ using UnityEngine;
 
 namespace Game.Scripts
 {
-	public class TestCardViewManager : MonoBehaviour, IAsakiAutoInject, IAsakiSceneContextService,
+	public class TestCardViewManager : MonoBehaviour, IAsakiAutoInject, IAsakiSceneService,
 		IAsakiInit<IAsakiPoolService, IAsakiConfigService, IAsakiResourceService>
 	{
 		public string CardViewPrefabPath = "CardView";

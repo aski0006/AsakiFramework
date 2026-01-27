@@ -10,16 +10,16 @@ namespace Asaki.Core.Logging
 	/// <remarks>
 	/// <para>作为日志系统的唯一入口，聚合以下核心功能：</para>
 	/// <list type="bullet">
-	///   <item><see cref="AsakiLogAggregator"/>：双缓冲日志聚合，实现零 GC 分配的高频写入</item>
-	///   <item><see cref="AsakiLogFileWriter"/>：后台线程异步持久化，支持文件轮转与配置热更新</item>
-	///   <item><see cref="LogUpdateDriver"/>：Unity 组件驱动，在 <c>LateUpdate</c> 中同步主线程日志</item>
-	/// </list>
-	/// <para>线程模型与生命周期：</para>
-	/// <list type="number">
-	///   <item>主线程：所有 <c>LogTrace</c>/<c>LogException</c> 调用、<c>ApplyConfig</c>、<c>Dispose</c></item>
-	///   <item>Writer 后台线程：由 <see cref="AsakiLogFileWriter"/> 管理，独占文件 I/O</item>
-	///   <item>Unity 主循环：由 <see cref="LogUpdateDriver.LateUpdate"/> 每帧调用 <c>Aggregator.Sync()</c></item>
-	/// </list>
+		///   <item><see cref="AsakiLogAggregator"/>：双缓冲日志聚合，实现零 GC 分配的高频写入</item>
+		///   <item><see cref="AsakiLogFileWriter"/>：UniTask 异步持久化，支持文件轮转与配置热更新</item>
+		///   <item><see cref="LogUpdateDriver"/>：Unity 组件驱动，在 <c>LateUpdate</c> 中同步主线程日志</item>
+		/// </list>
+		/// <para>异步模型与生命周期：</para>
+		/// <list type="number">
+		///   <item>主线程：所有 <c>LogTrace</c>/<c>LogException</c> 调用、<c>ApplyConfig</c>、<c>Dispose</c></item>
+		///   <item>异步后台：由 <see cref="AsakiLogFileWriter"/> 管理的 UniTask，处理文件 I/O</item>
+		///   <item>Unity 主循环：由 <see cref="LogUpdateDriver.LateUpdate"/> 每帧调用 <c>Aggregator.Sync()</c></item>
+		/// </list>
 	/// <para>异常安全：所有公共方法捕获 <see cref="ObjectDisposedException"/>，服务被释放后调用静默返回</para>
 	/// <para>Unity 集成：自动创建 DontDestroyOnLoad 的隐藏 GameObject，确保场景切换时服务不中断</para>
 	/// </remarks>

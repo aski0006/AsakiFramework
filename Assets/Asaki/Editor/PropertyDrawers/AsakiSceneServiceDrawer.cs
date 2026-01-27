@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Asaki.Editor.PropertyDrawers
 {
     /// <summary>
-    /// 自定义 PropertyDrawer，限制只能拖入实现了 IAsakiSceneContextService 的 MonoBehaviour
+    /// 自定义 PropertyDrawer，限制只能拖入实现了 IAsakiSceneService 的 MonoBehaviour
     /// </summary>
     [CustomPropertyDrawer(typeof(MonoBehaviour), true)]
     public class AsakiSceneServiceDrawer : PropertyDrawer
@@ -48,7 +48,7 @@ namespace Asaki.Editor.PropertyDrawers
                     // 允许设置为 null
                     property. objectReferenceValue = null;
                 }
-                else if (newValue is IAsakiSceneContextService)
+                else if (newValue is IAsakiSceneService)
                 {
                     // 验证通过，允许设置
                     property.objectReferenceValue = newValue;
@@ -58,8 +58,8 @@ namespace Asaki.Editor.PropertyDrawers
                     // 验证失败，显示错误
                     EditorUtility.DisplayDialog(
                         "Invalid Service Type",
-                        $"{newValue.GetType().Name} does not implement IAsakiSceneContextService!\n\n" +
-                        "Only MonoBehaviour components that implement IAsakiSceneContextService can be added here.",
+                        $"{newValue.GetType().Name} does not implement IAsakiSceneService!\n\n" +
+                        "Only MonoBehaviour components that implement IAsakiSceneService can be added here.",
                         "OK");
                 }
             }

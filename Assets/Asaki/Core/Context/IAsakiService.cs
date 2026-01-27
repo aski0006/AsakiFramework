@@ -16,7 +16,7 @@ namespace Asaki.Core.Context
 	/// 实现此接口的服务是特定于场景的，通常由<see cref="Asaki.Core.Context.Resolvers.AsakiSceneContext"/>管理。
 	/// 场景上下文服务的生命周期通常与场景相同，场景加载时创建，场景卸载时销毁。
 	/// </remarks>
-	public interface IAsakiSceneContextService : IAsakiService { }
+	public interface IAsakiSceneService : IAsakiService { }
 
 	/// <summary>
 	/// Asaki全局MonoBehaviour服务接口。
@@ -25,7 +25,7 @@ namespace Asaki.Core.Context
 	/// 实现此接口的服务是全局的MonoBehaviour组件，通常由Asaki的引导程序初始化。
 	/// 这些服务可以访问Unity的生命周期方法，同时享受Asaki依赖注入系统的便利。
 	/// </remarks>
-	public interface IAsakiGlobalMonoBehaviourService : IAsakiService
+	public interface IAsakiGlobalService : IAsakiService
 	{
 		/// <summary>
 		/// 在引导程序初始化阶段调用的方法。

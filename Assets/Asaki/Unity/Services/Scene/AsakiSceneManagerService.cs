@@ -13,7 +13,7 @@ using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Services.Scene
 {
-	public class AsakiSceneService : IAsakiSceneService
+	public class AsakiSceneManagerService : IAsakiSceneManagerService
 	{
 		private readonly IAsakiEventService _asakiEventService;
 		private readonly IAsakiAsyncService _asakiAsyncService;
@@ -24,7 +24,7 @@ namespace Asaki.Unity.Services.Scene
 		public string LastLoadedSceneName { get; private set; }
 		private TaskCompletionSource<bool> _activationTaskSignal;
 
-		public AsakiSceneService(
+		public AsakiSceneManagerService(
 			IAsakiEventService asakiEventService,
 			IAsakiAsyncService asakiAsyncService,
 			IAsakiResourceService asakiResourceService)

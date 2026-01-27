@@ -30,21 +30,21 @@ namespace Asaki.Core.Context.Resolvers
 		/// </summary>
 		/// <remarks>
 		/// 通过SerializeReference序列化，在Awake时实例化并注册。
-		/// 必须实现<see cref="IAsakiSceneContextService"/>接口。
+		/// 必须实现<see cref="IAsakiSceneService"/>接口。
 		/// 使用<see cref="AsakiInterfaceAttribute"/>限制可分配的类型。
 		/// </remarks>
 		[Header("Pure C# Services")]
 		[Tooltip("纯 C# 场景服务（通过 SerializeReference 序列化）\n在 Awake 时实例化并注册")]
 		[SerializeReference]
-		[AsakiInterface(typeof(IAsakiSceneContextService))]
-		private List<IAsakiSceneContextService> _pureCSharpServices = new List<IAsakiSceneContextService>();
+		[AsakiInterface(typeof(IAsakiSceneService))]
+		private List<IAsakiSceneService> _pureCSharpServices = new List<IAsakiSceneService>();
 
 		/// <summary>
 		/// MonoBehaviour场景服务列表。
 		/// </summary>
 		/// <remarks>
 		/// 通过Unity原生引用，仅作为服务注册，不会被注入（由Bootstrapper负责）。
-		/// 必须实现<see cref="IAsakiSceneContextService"/>接口。
+		/// 必须实现<see cref="IAsakiSceneService"/>接口。
 		/// </remarks>
 		[Header("MonoBehaviour Services")]
 		[Tooltip("MonoBehaviour 场景服务（通过 Unity 原生引用）\n仅作为服务注册，不会被注入（由 Bootstrapper 负责）")]
@@ -156,9 +156,9 @@ namespace Asaki.Core.Context.Resolvers
 			foreach (var behaviour in _behaviourServices.Where(b => b != null))
 			{
 				// 验证接口实现
-				if (behaviour is not IAsakiSceneContextService service)
+				if (behaviour is not IAsakiSceneService service)
 				{
-					ALog.Error($"[SceneContext] {behaviour.GetType().Name} does not implement IAsakiSceneContextService! Skipped.");
+					ALog.Error($"[SceneContext] {behaviour.GetType().Name} does not implement IAsakiSceneService! Skipped.");
 					continue;
 				}
 
@@ -187,8 +187,8 @@ namespace Asaki.Core.Context.Resolvers
 			{
 				if (typeof(IAsakiService).IsAssignableFrom(interfaceType) &&
 					interfaceType != typeof(IAsakiService) &&
-					interfaceType != typeof(IAsakiSceneContextService) &&
-					interfaceType != typeof(IAsakiGlobalMonoBehaviourService))
+					interfaceType != typeof(IAsakiSceneService) &&
+					interfaceType != typeof(IAsakiGlobalService))
 				{
 					RegisterInternal(interfaceType, service);
 				}

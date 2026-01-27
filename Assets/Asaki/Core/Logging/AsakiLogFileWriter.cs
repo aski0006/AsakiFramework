@@ -1,9 +1,9 @@
 ﻿using Asaki.Core.Configs;
+using Cysharp.Threading.Tasks;
 using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using UnityEngine;
 
 namespace Asaki.Core.Logging
@@ -53,18 +53,15 @@ namespace Asaki.Core.Logging
 		/// <summary>复用的 <see cref="StringBuilder"/> 实例，容量 4096 字符，减少 GC 分配</summary>
 		private readonly StringBuilder _sb = new StringBuilder(4096);
 
-		// 线程控制
-		/// <summary>后台写入线程，专用于执行 <see cref="WriteLoop"/></summary>
-		private readonly Thread _workerThread;
+		// 异步控制
+		/// <summary>写入循环的 UniTask</summary>
+		private UniTask _writeTask;
 
-		/// <summary>线程同步事件，用于唤醒等待的 Writer 线程或通知其退出</summary>
-		private readonly AutoResetEvent _signal = new AutoResetEvent(false);
-
-		/// <summary>线程运行标志，<see langword="true"/> 表示 Writer 线程应继续循环</summary>
-		private volatile bool _isRunning;
+		/// <summary>取消令牌，用于停止异步操作</summary>
+		private readonly System.Threading.CancellationTokenSource _cts = new System.Threading.CancellationTokenSource();
 
 		/// <summary>退出标志，确保 <see cref="Dispose"/> 逻辑仅执行一次，防止重复释放</summary>
-		private volatile bool _stopRequested;
+		private bool _isDisposed;
 
 		// 文件状态
 		/// <summary>日志文件存储目录，通常位于 <c>Application.persistentDataPath/Logs</c></summary>
@@ -117,14 +114,8 @@ namespace Asaki.Core.Logging
 			// 2. 初始创建一个日志文件
 			OpenNewFile();
 
-			// 3. 启动线程
-			_isRunning = true;
-			_workerThread = new Thread(WriteLoop)
-			{
-				IsBackground = true,
-				Priority = System.Threading.ThreadPriority.BelowNormal,
-			};
-			_workerThread.Start();
+			// 3. 启动异步写入循环
+			_writeTask = WriteLoopAsync(_cts.Token);
 		}
 
 		/// <summary>
@@ -149,8 +140,17 @@ namespace Asaki.Core.Logging
 			_filePrefix = string.IsNullOrEmpty(config.FilePrefix) ? "Log" : config.FilePrefix;
 
 			// 异步触发一次历史清理
-			// 不要在 Writer 线程做 IO 删除操作，避免阻塞写入
-			ThreadPool.QueueUserWorkItem(_ => CleanupHistory());
+			// 不要在写入过程中做 IO 删除操作，避免阻塞写入
+			CleanupHistoryAsync();
+		}
+
+		/// <summary>
+		/// 异步清理旧日志
+		/// </summary>
+		private async UniTaskVoid CleanupHistoryAsync()
+		{
+			await UniTask.SwitchToThreadPool();
+			CleanupHistory();
 		}
 
 		/// <summary>
@@ -191,36 +191,38 @@ namespace Asaki.Core.Logging
 		}
 
 		/// <summary>
-		/// 后台写入线程主循环，负责消费双缓冲数据并持久化到磁盘
+		/// 异步写入循环，负责消费双缓冲数据并持久化到磁盘
 		/// </summary>
+		/// <param name="cancellationToken">取消令牌，用于停止循环</param>
+		/// <returns>表示异步操作的 UniTask</returns>
 		/// <remarks>
 		/// <para>循环逻辑：</para>
 		/// <list type="number">
-		///   <item>等待 <see cref="_signal"/> 或 500 ms 超时</item>
-		///   <item>若 <see cref="_isRunning"/> 为 <see langword="false"/> 则跳出循环</item>
-		///   <item>调用 <see cref="FlushBuffer"/> 处理并写入数据</item>
+		///   <item>等待 500 ms 或直到取消令牌触发</item>
+		///   <item>调用 <see cref="FlushBufferAsync"/> 处理并写入数据</item>
+		///   <item>重复上述步骤直到取消</item>
 		/// </list>
-		/// <para>异常处理：捕获所有异常并记录，线程优雅退出；<see cref="ThreadAbortException"/> 直接忽略</para>
-		/// <para>资源清理：确保在 <c>finally</c> 中释放文件句柄</para>
+		/// <para>异常处理：捕获所有异常并记录，循环自动恢复</para>
+		/// <para>资源清理：确保在取消时释放文件句柄</para>
 		/// </remarks>
-		private void WriteLoop()
+		private async UniTask WriteLoopAsync(System.Threading.CancellationToken cancellationToken)
 		{
 			try
 			{
 				// 看门狗机制：如果发生非致命异常，尝试恢复
-				while (_isRunning)
+				while (!cancellationToken.IsCancellationRequested)
 				{
-					_signal.WaitOne(500); // 0.5秒刷新，或者被 Dispose 唤醒
-					if (!_isRunning) break;
-					FlushBuffer();
+					await UniTask.Delay(500, cancellationToken: cancellationToken);
+					if (cancellationToken.IsCancellationRequested) break;
+					await FlushBufferAsync();
 				}
 
 				// 退出前最后一次 Flush
-				FlushBuffer();
+				await FlushBufferAsync();
 			}
-			catch (ThreadAbortException)
+			catch (System.OperationCanceledException)
 			{
-				// 线程被强杀
+				// 正常取消，忽略
 			}
 			catch (Exception e)
 			{
@@ -238,6 +240,7 @@ namespace Asaki.Core.Logging
 		/// <summary>
 		/// 将聚合器双缓冲中的日志命令批量写入当前日志文件，并在达到大小限制时触发轮转
 		/// </summary>
+		/// <returns>表示异步操作的 UniTask</returns>
 		/// <remarks>
 		/// <para>执行步骤：</para>
 		/// <list type="number">
@@ -250,7 +253,7 @@ namespace Asaki.Core.Logging
 		/// </list>
 		/// <para>异常处理：任何写入异常仅记录到控制台，不中断后续日志</para>
 		/// </remarks>
-		private void FlushBuffer()
+		private async UniTask FlushBufferAsync()
 		{
 			// 1. 获取数据 (双缓冲交换)
 			var buffer = _aggregator.SwapIOBuffer();
@@ -286,6 +289,7 @@ namespace Asaki.Core.Logging
 				if (_sb.Length > 0 && _streamWriter != null)
 				{
 					// 2. 写入文件
+					await UniTask.SwitchToThreadPool();
 					_streamWriter.Write(_sb.ToString());
 					_streamWriter.Flush(); // 确保刷入磁盘
 
@@ -359,30 +363,38 @@ namespace Asaki.Core.Logging
 		}
 
 		/// <summary>
-		/// 优雅关闭写入器：停止后台线程、刷新剩余数据并释放所有资源
+		/// 优雅关闭写入器：停止异步操作、刷新剩余数据并释放所有资源
 		/// </summary>
 		/// <remarks>
 		/// <para>幂等性：可安全多次调用，仅首次调用生效</para>
 		/// <para>执行流程：</para>
 		/// <list type="number">
-		///   <item>设置 <see cref="_stopRequested"/> 与 <see cref="_isRunning"/> 标志</item>
-		///   <item>通过 <see cref="_signal.Set()"/> 唤醒等待中的 Writer 线程</item>
-		///   <item>最多等待 1 秒让线程完成最后一次 Flush</item>
+		///   <item>触发取消令牌</item>
+		///   <item>等待异步操作结束</item>
+		///   <item>释放所有资源</item>
 		/// </list>
-		/// <para>超时处理：若线程未在 1 秒内退出，强制放弃（不抛出异常）</para>
+		/// <para>异常处理：忽略等待过程中的异常，确保资源释放</para>
 		/// </remarks>
 		public void Dispose()
 		{
-			if (_stopRequested) return;
-			_stopRequested = true;
+			if (_isDisposed) return;
+			_isDisposed = true;
 
-			_isRunning = false;
-			_signal.Set(); // 唤醒线程
-
-			// 安全等待线程结束 (最多等 1 秒)
-			if (_workerThread.IsAlive)
+			try
 			{
-				_workerThread.Join(1000);
+				// 触发取消
+				_cts.Cancel();
+
+				// 等待异步操作结束
+				_writeTask.GetAwaiter().GetResult();
+			}
+			catch
+			{
+				// 忽略等待过程中的异常
+			}
+			finally
+			{
+				_cts.Dispose();
 			}
 		}
 	}

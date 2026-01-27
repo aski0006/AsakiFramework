@@ -100,7 +100,7 @@ namespace Asaki.Editor.Context
                 {
                     EditorGUILayout.HelpBox(
                         "No pure C# services configured.\n" +
-                        "These must be [Serializable] classes implementing IAsakiSceneContextService.\n" +
+                        "These must be [Serializable] classes implementing IAsakiSceneService.\n" +
                         "MonoBehaviour types are NOT allowed here.", 
                         MessageType.Info);
                 }
@@ -141,8 +141,8 @@ namespace Asaki.Editor.Context
                 {
                     EditorGUILayout.HelpBox(
                         "No MonoBehaviour services configured.\n" +
-                        "Drag & drop scene objects that implement IAsakiSceneContextService.\n" +
-                        "Only components implementing IAsakiSceneContextService are allowed.", 
+                        "Drag & drop scene objects that implement IAsakiSceneService.\n" +
+                        "Only components implementing IAsakiSceneService are allowed.", 
                         MessageType.Info);
                 }
             }
@@ -210,7 +210,7 @@ namespace Asaki.Editor.Context
                 // 验证新值
                 if (newValue != element.objectReferenceValue)
                 {
-                    if (newValue == null || newValue is IAsakiSceneContextService)
+                    if (newValue == null || newValue is IAsakiSceneService)
                     {
                         element.objectReferenceValue = newValue;
                     }
@@ -218,8 +218,8 @@ namespace Asaki.Editor.Context
                     {
                         EditorUtility.DisplayDialog(
                             "Invalid Service Type",
-                            $"{newValue.GetType().Name} does not implement IAsakiSceneContextService!\n\n" +
-                            "Only MonoBehaviour components implementing IAsakiSceneContextService can be added.",
+                            $"{newValue.GetType().Name} does not implement IAsakiSceneService!\n\n" +
+                            "Only MonoBehaviour components implementing IAsakiSceneService can be added.",
                             "OK");
                     }
                 }
@@ -231,13 +231,13 @@ namespace Asaki.Editor.Context
                 {
                     var obj = element.objectReferenceValue as MonoBehaviour;
                     
-                    if (obj is IAsakiSceneContextService)
+                    if (obj is IAsakiSceneService)
                     {
                         // 显示实现的接口
                         var interfaces = obj.GetType().GetInterfaces()
                             .Where(t => typeof(IAsakiService).IsAssignableFrom(t) && 
                                        t != typeof(IAsakiService) &&
-                                       t != typeof(IAsakiSceneContextService))
+                                       t != typeof(IAsakiSceneService))
                             .Select(t => t.Name)
                             .ToArray();
 
@@ -254,7 +254,7 @@ namespace Asaki.Editor.Context
                         EditorGUI.indentLevel++;
                         if (obj)
                             EditorGUILayout.HelpBox(
-                                $"❌ {obj.GetType().Name} does not implement IAsakiSceneContextService!",
+                                $"❌ {obj.GetType().Name} does not implement IAsakiSceneService!",
                                 MessageType.Error);
                         else
                             EditorGUILayout.HelpBox(

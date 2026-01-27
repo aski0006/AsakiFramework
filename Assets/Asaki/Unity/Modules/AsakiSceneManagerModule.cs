@@ -7,7 +7,6 @@ using Asaki.Core.Resources;
 using Asaki.Core.Scene;
 using Asaki.Unity.Services.Scene;
 using Cysharp.Threading.Tasks;
-using System.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
@@ -15,9 +14,9 @@ namespace Asaki.Unity.Modules
 		typeof(AsakiEventBusModule),
 		typeof(AsakiAsyncModule),
 		typeof(AsakiResourcesModule))]
-	public class AsakiSceneModule : IAsakiModule
+	public class AsakiSceneManagerModule : IAsakiModule
 	{
-		private IAsakiSceneService _asakiSceneService;
+		private IAsakiSceneManagerService _asakiSceneManagerService;
 		private IAsakiEventService _eventService;
 		private IAsakiResourceService _resService;
 		private IAsakiAsyncService _asyncService;
@@ -32,12 +31,12 @@ namespace Asaki.Unity.Modules
 		public void OnInit()
 		{
 
-			_asakiSceneService = new AsakiSceneService(
+			_asakiSceneManagerService = new AsakiSceneManagerService(
 				_eventService,
 				_asyncService,
 				_resService);
-			_asakiSceneService.PerBuildScene();
-			AsakiContext.Register<IAsakiSceneService>(_asakiSceneService);
+			_asakiSceneManagerService.PerBuildScene();
+			AsakiContext.Register<IAsakiSceneManagerService>(_asakiSceneManagerService);
 		}
 		public UniTask OnInitAsync()
 		{
@@ -45,7 +44,7 @@ namespace Asaki.Unity.Modules
 		}
 		public void OnDispose()
 		{
-			_asakiSceneService.Dispose();
+			_asakiSceneManagerService.Dispose();
 		}
 	}
 }

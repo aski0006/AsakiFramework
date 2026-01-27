@@ -76,8 +76,8 @@ namespace Asaki.Editor.PropertyDrawers
             Type targetType = target.GetType();
 
             // 检查是否为服务
-            _isGlobalService = typeof(IAsakiGlobalMonoBehaviourService).IsAssignableFrom(targetType);
-            _isSceneService = typeof(IAsakiSceneContextService).IsAssignableFrom(targetType);
+            _isGlobalService = typeof(IAsakiGlobalService).IsAssignableFrom(targetType);
+            _isSceneService = typeof(IAsakiSceneService).IsAssignableFrom(targetType);
             _isService = _isGlobalService || _isSceneService;
 
             if (! _isService) return;

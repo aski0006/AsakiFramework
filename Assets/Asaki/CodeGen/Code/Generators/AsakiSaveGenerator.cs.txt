@@ -455,15 +455,28 @@ namespace Asaki.CodeGen.Generators
 		}
 
 		private static bool IsAsakiProperty(ITypeSymbol type, out ITypeSymbol innerType)
-		{
-			innerType = null;
-			if (type is INamedTypeSymbol nt && nt.IsGenericType && nt.Name == "AsakiProperty")
-			{
-				innerType = nt.TypeArguments[0];
-				return true;
-			}
-			return false;
-		}
+        {
+            innerType = null;
+        
+            // 1. 必须是泛型类（我们需要提取 T 才能生成具体的 WriteInt/WriteFloat 等代码）
+            if (!(type is INamedTypeSymbol nt && nt.IsGenericType)) 
+                return false;
+        
+            // 2. 检查是否实现了 IAsakiPropertyBase 接口
+            // 注意：建议使用完整的命名空间匹配以防重名，或者简单的 Name 匹配
+            bool implementsBase = type.AllInterfaces.Any(i => 
+                i.Name == "IAsakiPropertyBase" || 
+                i.ToDisplayString() == "Asaki.Core.MVVM.IAsakiPropertyBase");
+        
+            if (implementsBase)
+            {
+                // 3. 提取泛型参数 T (例如 AsakiProperty<int> -> int)
+                innerType = nt.TypeArguments[0];
+                return true;
+            }
+        
+            return false;
+        }
 
 		private static bool IsListType(ITypeSymbol t, out ITypeSymbol e)
 		{

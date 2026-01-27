@@ -1,6 +1,7 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Context;
+using Asaki.Core.MVVM;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Services.Async;
 using System;
@@ -14,6 +15,7 @@ namespace Game.Test
 	{
 		[AsakiSaveMember(Order = 1)] public int version;
 		[AsakiSaveMember(Order = 2)] public List<string> tests = new();
+		[AsakiSaveMember(Order = 3)] public AsakiProperty<string> testName = new AsakiProperty<string>();
 	}
 
 	[AsakiSave]

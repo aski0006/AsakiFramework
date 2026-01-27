@@ -168,7 +168,7 @@ namespace Asaki.Unity. Bootstrapper
 				}
 
 				// 验证接口实现
-				if (behaviour is not IAsakiGlobalMonoBehaviourService service)
+				if (behaviour is not IAsakiGlobalService service)
 				{
 					ALog.Error($"{behaviour.GetType().Name} does not implement IAsakiGlobalMonoBehaviourService!  Skipped.");
 					continue;
@@ -179,7 +179,7 @@ namespace Asaki.Unity. Bootstrapper
 				var serviceInterfaces = behaviourType.GetInterfaces()
 					.Where(i => typeof(IAsakiService).IsAssignableFrom(i) && 
 					           i != typeof(IAsakiService) &&
-					           i != typeof(IAsakiGlobalMonoBehaviourService));
+					           i != typeof(IAsakiGlobalService));
 
 				foreach (var interfaceType in serviceInterfaces)
 				{
@@ -205,7 +205,7 @@ namespace Asaki.Unity. Bootstrapper
 
 			foreach (var behaviour in _globalBehaviourServices)
 			{
-				if (behaviour is not IAsakiGlobalMonoBehaviourService service)
+				if (behaviour is not IAsakiGlobalService service)
 					continue;
 
 				try

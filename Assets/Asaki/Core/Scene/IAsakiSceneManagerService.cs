@@ -1,12 +1,11 @@
 ﻿using Asaki.Core.Context;
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Scene
 {
-	public interface IAsakiSceneService : IAsakiService, IDisposable
+	public interface IAsakiSceneManagerService : IAsakiService, IDisposable
 	{
 		string LastLoadedSceneName { get; }
 		void PerBuildScene();
