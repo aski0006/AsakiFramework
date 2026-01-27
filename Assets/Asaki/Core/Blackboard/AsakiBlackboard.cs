@@ -41,7 +41,7 @@ namespace Asaki.Core.Blackboard
 
 				if (_pendingNotifications != null && _pendingNotifications.Count > 0)
 				{
-					foreach (var key in _pendingNotifications)
+					foreach (AsakiBlackboardKey key in _pendingNotifications)
 					{
 						NotifyChange(key);
 					}
@@ -69,7 +69,7 @@ namespace Asaki.Core.Blackboard
 
 		public T GetValue<T>(AsakiBlackboardKey key)
 		{
-			if (_data.TryGetValue(key, out var value))
+			if (_data.TryGetValue(key, out object value))
 			{
 				return (T)value;
 			}
@@ -98,9 +98,9 @@ namespace Asaki.Core.Blackboard
 
 		private void NotifyChange(AsakiBlackboardKey key)
 		{
-			if (_properties.TryGetValue(key, out var propertyBase))
+			if (_properties.TryGetValue(key, out IAsakiPropertyBase propertyBase))
 			{
-				if (_data.TryGetValue(key, out var value))
+				if (_data.TryGetValue(key, out object value))
 				{
 					propertyBase.InvokeCallback(value);
 				}
@@ -109,11 +109,11 @@ namespace Asaki.Core.Blackboard
 
 		public AsakiProperty<T> GetProperty<T>(AsakiBlackboardKey key)
 		{
-			if (!_properties.TryGetValue(key, out var propertyBase))
+			if (!_properties.TryGetValue(key, out IAsakiPropertyBase propertyBase))
 			{
 				var typedProperty = new AsakiProperty<T>();
 
-				if (_data.TryGetValue(key, out var existingValue))
+				if (_data.TryGetValue(key, out object existingValue))
 				{
 					if (existingValue is T typedValue)
 					{
@@ -131,7 +131,7 @@ namespace Asaki.Core.Blackboard
 			}
 
 			var newProperty = new AsakiProperty<T>();
-			if (_data.TryGetValue(key, out var value) && value is T val)
+			if (_data.TryGetValue(key, out object value) && value is T val)
 			{
 				newProperty._value = val;
 			}
@@ -149,7 +149,7 @@ namespace Asaki.Core.Blackboard
 		{
 			_data.Remove(key);
 
-			if (_properties.TryGetValue(key, out var property))
+			if (_properties.TryGetValue(key, out IAsakiPropertyBase property))
 			{
 				property?.Dispose();
 				_properties.Remove(key);

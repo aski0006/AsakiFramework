@@ -169,7 +169,7 @@ namespace Asaki.Editor.GraphEditors
 			// 延迟到编辑器完全加载
 			await System.Threading.Tasks.Task.Yield();
 
-			Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
+			Stopwatch stopwatch = Stopwatch.StartNew();
 			TypeCache.TypeCollection nodeTypes = TypeCache.GetTypesDerivedFrom<AsakiNodeBase>();
 			int preheatedCount = 0;
 

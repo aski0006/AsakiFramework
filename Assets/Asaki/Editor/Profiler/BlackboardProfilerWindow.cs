@@ -17,7 +17,7 @@ namespace Asaki.Editor.Profiler
 			GetWindow<BlackboardProfilerWindow>("BB Profiler");
 		}
 
-		void OnGUI()
+		private void OnGUI()
 		{
 			EditorGUILayout.BeginHorizontal();
 
@@ -54,7 +54,7 @@ namespace Asaki.Editor.Profiler
 
 				foreach (var kvp in sorted)
 				{
-					var data = kvp.Value;
+					BlackboardProfiler.ProfileData data = kvp.Value;
 					float hitRate = data.AccessCount > 0
 						? (float)data.HashHitCount / data.AccessCount * 100f
 						: 0f;

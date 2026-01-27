@@ -3,16 +3,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Asaki.Core. Graphs
+namespace Asaki.Core.Graphs
 {
 	[Serializable]
 	public abstract class AsakiAsyncNodeBase : AsakiNodeBase
 	{
 		public abstract Task<NodeExecutionResult> ExecuteAsync(
-			AsakiGraphRuntimeContext context, 
-			CancellationToken cancellationToken = default
+			AsakiGraphRuntimeContext context,
+			CancellationToken cancellationToken = default(CancellationToken)
 		);
-        
+
 		public virtual void OnCancelled()
 		{
 			Debug.Log($"[{GetType().Name}] Execution cancelled");
@@ -30,7 +30,7 @@ namespace Asaki.Core. Graphs
 			return new NodeExecutionResult
 			{
 				Success = true,
-				OutputPortName = outputPort
+				OutputPortName = outputPort,
 			};
 		}
 
@@ -40,7 +40,7 @@ namespace Asaki.Core. Graphs
 			{
 				Success = false,
 				ErrorMessage = error,
-				OutputPortName = "Error"
+				OutputPortName = "Error",
 			};
 		}
 	}

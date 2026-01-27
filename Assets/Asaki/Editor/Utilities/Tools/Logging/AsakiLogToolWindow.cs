@@ -1,16 +1,16 @@
-﻿using System. IO;
+﻿using System.IO;
 using UnityEditor;
 using UnityEngine;
 
-namespace Asaki.Editor. Utilities.Tools.Logging
+namespace Asaki.Editor.Utilities.Tools.Logging
 {
-	public class AsakiLogToolWindow :  EditorWindow
+	public class AsakiLogToolWindow : EditorWindow
 	{
 		private string _selectedFilePath;
-		private AsakiLogOptimizer. OptimizationResult?  _lastResult;
+		private AsakiLogOptimizer.OptimizationResult? _lastResult;
 		private string _message;
 		private MessageType _messageType;
-		private AsakiLogOptimizer. OutputFormat _outputFormat = AsakiLogOptimizer. OutputFormat.PlainText;
+		private AsakiLogOptimizer.OutputFormat _outputFormat = AsakiLogOptimizer.OutputFormat.PlainText;
 
 		[MenuItem("Asaki/Tools/Log Optimizer", false, 101)]
 		public static void ShowWindow()
@@ -47,7 +47,7 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 				}
 			}
 
-			if (! string.IsNullOrEmpty(_selectedFilePath))
+			if (!string.IsNullOrEmpty(_selectedFilePath))
 			{
 				EditorGUILayout.LabelField("Path:", _selectedFilePath, EditorStyles.miniLabel);
 			}
@@ -60,22 +60,22 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 
 			// 格式说明
 			string formatDesc = _outputFormat switch
-			{
-				AsakiLogOptimizer.OutputFormat.Original => "📦 Optimized . asakilog (for programmatic reading)",
-				AsakiLogOptimizer.OutputFormat.PlainText => "📄 Human-readable . txt with emojis and formatting",
-				AsakiLogOptimizer.OutputFormat.Markdown => "📋 Markdown report (. md) with tables and statistics",
-				_ => ""
-			};
+			                    {
+				                    AsakiLogOptimizer.OutputFormat.Original => "📦 Optimized . asakilog (for programmatic reading)",
+				                    AsakiLogOptimizer.OutputFormat.PlainText => "📄 Human-readable . txt with emojis and formatting",
+				                    AsakiLogOptimizer.OutputFormat.Markdown => "📋 Markdown report (. md) with tables and statistics",
+				                    _ => "",
+			                    };
 			EditorGUILayout.HelpBox(formatDesc, MessageType.None);
 
 			GUILayout.Space(15);
 
 			// === 操作区域 ===
-			GUI.enabled = ! string.IsNullOrEmpty(_selectedFilePath) && File.Exists(_selectedFilePath);
-			
+			GUI.enabled = !string.IsNullOrEmpty(_selectedFilePath) && File.Exists(_selectedFilePath);
+
 			Color originalColor = GUI.backgroundColor;
 			GUI.backgroundColor = new Color(0.3f, 0.8f, 0.4f);
-			
+
 			if (GUILayout.Button("🚀 Start Optimization", GUILayout.Height(35)))
 			{
 				try
@@ -83,7 +83,7 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 					_lastResult = AsakiLogOptimizer.Process(_selectedFilePath, _outputFormat);
 					_message = $"✅ Optimization Complete!\nOutput: {Path.GetFileName(_lastResult.Value.OutputPath)}";
 					_messageType = MessageType.Info;
-					EditorUtility.RevealInFinder(_lastResult. Value.OutputPath);
+					EditorUtility.RevealInFinder(_lastResult.Value.OutputPath);
 				}
 				catch (System.Exception ex)
 				{
@@ -92,14 +92,14 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 					Debug.LogException(ex);
 				}
 			}
-			
+
 			GUI.backgroundColor = originalColor;
 			GUI.enabled = true;
 
 			GUILayout.Space(10);
 
 			// === 结果展示区域 ===
-			if (! string.IsNullOrEmpty(_message))
+			if (!string.IsNullOrEmpty(_message))
 			{
 				EditorGUILayout.HelpBox(_message, _messageType);
 			}
@@ -108,10 +108,10 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 			{
 				AsakiLogOptimizer.OptimizationResult r = _lastResult.Value;
 				GUILayout.Space(10);
-				
+
 				EditorGUILayout.LabelField("📊 Optimization Results", EditorStyles.boldLabel);
-				
-				using (new EditorGUILayout. VerticalScope(EditorStyles.helpBox))
+
+				using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
 				{
 					DrawStat("Lines", r.OriginalLines, r.OptimizedLines);
 					DrawStat("Size", FormatSize(r.OriginalSize), FormatSize(r.OptimizedSize));
@@ -122,13 +122,13 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 
 				float compressRatio = 1f - (float)r.OptimizedSize / r.OriginalSize;
 				Color boxColor = compressRatio > 0.5f ? new Color(0.3f, 0.8f, 0.4f, 0.2f) : new Color(0.8f, 0.8f, 0.3f, 0.2f);
-				
+
 				GUI.backgroundColor = boxColor;
 				EditorGUILayout.HelpBox($"💾 Compression Ratio: {compressRatio:P2}", MessageType.None);
 				GUI.backgroundColor = originalColor;
 
 				GUILayout.Space(5);
-				
+
 				if (GUILayout.Button("📂 Open Output Folder"))
 				{
 					EditorUtility.RevealInFinder(r.OutputPath);
@@ -138,12 +138,12 @@ namespace Asaki.Editor. Utilities.Tools.Logging
 
 		private void DrawStat(string label, object original, object optimized)
 		{
-			using (new EditorGUILayout. HorizontalScope())
+			using (new EditorGUILayout.HorizontalScope())
 			{
 				GUILayout.Label(label, GUILayout.Width(60));
 				GUILayout.Label($"{original}", EditorStyles.label, GUILayout.Width(80));
 				GUILayout.Label("→", GUILayout.Width(20));
-				GUILayout.Label($"{optimized}", EditorStyles. boldLabel);
+				GUILayout.Label($"{optimized}", EditorStyles.boldLabel);
 			}
 		}
 

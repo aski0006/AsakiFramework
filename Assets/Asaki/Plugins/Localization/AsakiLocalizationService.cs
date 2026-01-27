@@ -12,7 +12,7 @@ namespace Asaki.Plugins.Localization
 	{
 		public string LanguageCode { get; set; }
 	}
-	
+
 	public class AsakiLocalizationService : IAsakiService, IDisposable
 	{
 		private readonly IAsakiEventService _asakiEventService;
@@ -40,28 +40,27 @@ namespace Asaki.Plugins.Localization
 		public void SwitchLanguage(string langCode)
 		{
 			if (_currentLanguage == langCode && _runtimeDict != null) return;
-            
+
 			_currentLanguage = langCode;
 			LoadLanguage(langCode);
 			_asakiEventService.Publish(new OnAsakiLanguageChangedEvent { LanguageCode = langCode });
 		}
-		
+
 		private void LoadLanguage(string langCode)
 		{
-			var items = _asakiConfigService.Where<LocalizationTable>(
-				x => x.LanguageCode == langCode);
+			var items = _asakiConfigService.Where<LocalizationTable>(x => x.LanguageCode == langCode);
 			if (items.Count == 0)
 			{
 				ALog.Warn($"[Localization] No entries found for language '{langCode}'");
 			}
 			_runtimeDict = new Dictionary<string, string>(items.Count);
-			foreach (var item in items)
+			foreach (LocalizationTable item in items)
 			{
 				_runtimeDict.TryAdd(item.Key, item.Content);
 			}
 			ALog.Info($"[Localization] Loaded {items.Count} keys for '{langCode}'");
 		}
-		
+
 		public string GetText(string key)
 		{
 			if (_runtimeDict != null && _runtimeDict.TryGetValue(key, out string text))
@@ -70,7 +69,7 @@ namespace Asaki.Plugins.Localization
 			}
 			return null;
 		}
-		
+
 		public void Dispose()
 		{
 			_runtimeDict.Clear();

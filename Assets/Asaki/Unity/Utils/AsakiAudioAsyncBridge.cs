@@ -4,7 +4,6 @@ using System.Threading;
 using UnityEngine;
 
 #if ASAKI_USE_UNITASK
-
 #else
 using System.Threading.Tasks;
 using System.Collections;
@@ -68,23 +67,43 @@ namespace Asaki.Unity.Utils
 			}
 		}
 		#else
-        public struct Awaitable : System.Runtime.CompilerServices.ICriticalNotifyCompletion
-        {
-            private Task _task;
-            public Awaitable(Task task) => _task = task;
-            public Awaitable GetAwaiter() => this;
-            public bool IsCompleted => _task.GetAwaiter().IsCompleted;
-            public void GetResult() => _task.GetAwaiter().GetResult();
-            public void OnCompleted(Action continuation) => _task.GetAwaiter().OnCompleted(continuation);
-            public void UnsafeOnCompleted(Action continuation) => _task.GetAwaiter().UnsafeOnCompleted(continuation);
-        }
+		public struct Awaitable : System.Runtime.CompilerServices.ICriticalNotifyCompletion
+		{
+			private Task _task;
+			public Awaitable(Task task)
+			{
+				_task = task;
+			}
+			public Awaitable GetAwaiter()
+			{
+				return this;
+			}
+			public bool IsCompleted => _task.GetAwaiter().IsCompleted;
+			public void GetResult()
+			{
+				_task.GetAwaiter().GetResult();
+			}
+			public void OnCompleted(Action continuation)
+			{
+				_task.GetAwaiter().OnCompleted(continuation);
+			}
+			public void UnsafeOnCompleted(Action continuation)
+			{
+				_task.GetAwaiter().UnsafeOnCompleted(continuation);
+			}
+		}
 
-        public struct AwaitableVoid 
-        {
-            private Task _task;
-            public AwaitableVoid(Task task) => _task = task;
-            public void Forget() { /* Task 本身如果不 await 就是 Fire&Forget */ }
-        }
+		public struct AwaitableVoid
+		{
+			private Task _task;
+			public AwaitableVoid(Task task)
+			{
+				_task = task;
+			}
+			public void Forget()
+			{ /* Task 本身如果不 await 就是 Fire&Forget */
+			}
+		}
 		#endif
 
 		// ==========================================================
@@ -96,7 +115,7 @@ namespace Asaki.Unity.Utils
 			// Delay 返回的是 UniTask，可以直接构造
 			return new Awaitable(UniTask.Delay(millisecondsDelay, ignoreTimeScale, PlayerLoopTiming.Update, token));
 			#else
-            return new Awaitable(Task.Delay(millisecondsDelay, token));
+			return new Awaitable(Task.Delay(millisecondsDelay, token));
 			#endif
 		}
 
@@ -110,8 +129,8 @@ namespace Asaki.Unity.Utils
 			// 使用辅助方法将 Yield 包装为标准 UniTask
 			return new Awaitable(YieldToUniTask());
 			#else
-            // [修复] YieldAwaitable -> Task
-            return new Awaitable(YieldToTask());
+			// [修复] YieldAwaitable -> Task
+			return new Awaitable(YieldToTask());
 			#endif
 		}
 
@@ -122,11 +141,11 @@ namespace Asaki.Unity.Utils
 			await UniTask.Yield(PlayerLoopTiming.Update);
 		}
 		#else
-        // 辅助：将 YieldAwaitable 转换为 Task
-        private static async Task YieldToTask() 
-        { 
-            await Task.Yield(); 
-        }
+		// 辅助：将 YieldAwaitable 转换为 Task
+		private static async Task YieldToTask()
+		{
+			await Task.Yield();
+		}
 		#endif
 
 		// ==========================================================
@@ -137,8 +156,8 @@ namespace Asaki.Unity.Utils
 			#if ASAKI_USE_UNITASK
 			return new Awaitable(UniTask.WaitUntilCanceled(token));
 			#else
-            // 原生 Task 模拟 WaitUntilCanceled
-            return new Awaitable(Task.Delay(-1, token).ContinueWith(_ => { }, TaskContinuationOptions.OnlyOnCanceled));
+			// 原生 Task 模拟 WaitUntilCanceled
+			return new Awaitable(Task.Delay(-1, token).ContinueWith(_ => { }, TaskContinuationOptions.OnlyOnCanceled));
 			#endif
 		}
 
@@ -173,16 +192,16 @@ namespace Asaki.Unity.Utils
 			catch (Exception ex) { onException(ex); }
 		}
 		#else
-        // [修复点] 添加 Action<Exception> 参数
-        public static async void FireAndForget(this Task task, Action<Exception> onException = null)
-        {
-            try { await task; }
-            catch (Exception e) 
-            { 
-                if (onException != null) onException(e);
-                else UnityEngine.Debug.LogException(e); 
-            }
-        }
+		// [修复点] 添加 Action<Exception> 参数
+		public static async void FireAndForget(this Task task, Action<Exception> onException = null)
+		{
+			try { await task; }
+			catch (Exception e)
+			{
+				if (onException != null) onException(e);
+				else Debug.LogException(e);
+			}
+		}
 		#endif
 
 		/// <summary>
@@ -197,8 +216,8 @@ namespace Asaki.Unity.Utils
 			// 由于 Awaitable 是结构体，我们需要在 Awaitable 里暴露内部 Task，或者直接在这里操作
 			awaitable.ForgetInternal(onException);
 			#else
-            // 原生 Task 的 FireAndForget 实现
-            HandleTask(awaitable, onException);
+			// 原生 Task 的 FireAndForget 实现
+			HandleTask(awaitable, onException);
 			#endif
 		}
 
@@ -212,19 +231,19 @@ namespace Asaki.Unity.Utils
 		}
 		*/
 		#else
-        private static async void HandleTask(Awaitable awaitable, Action<Exception> onException)
-        {
-            try
-            {
-                // 等待 Task 完成，如果有异常会在此时抛出
-                await awaitable;
-            }
-            catch (Exception e)
-            {
-                if (onException != null) onException(e);
-                else Debug.LogException(e); // 默认兜底日志
-            }
-        }
+		private static async void HandleTask(Awaitable awaitable, Action<Exception> onException)
+		{
+			try
+			{
+				// 等待 Task 完成，如果有异常会在此时抛出
+				await awaitable;
+			}
+			catch (Exception e)
+			{
+				if (onException != null) onException(e);
+				else Debug.LogException(e); // 默认兜底日志
+			}
+		}
 		#endif
 
 	}

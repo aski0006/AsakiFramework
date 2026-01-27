@@ -24,10 +24,10 @@ namespace Asaki.Core.Graphs
 		private TGraph _runtimeGraph;
 		protected AsakiGraphRuntimeContext _context;
 
-		[System.NonSerialized]
+		[NonSerialized]
 		private Dictionary<string, AsakiBlackboardKey> _keyHashCache;
 
-		[System.NonSerialized]
+		[NonSerialized]
 		private Dictionary<Type, Action<AsakiBlackboardKey, object>> _setterCache;
 
 		protected virtual void Start()
@@ -154,7 +154,7 @@ namespace Asaki.Core.Graphs
 
 		private AsakiBlackboardKey GetOrCreateHashKey(string key)
 		{
-			if (_keyHashCache.TryGetValue(key, out var hashKey))
+			if (_keyHashCache.TryGetValue(key, out AsakiBlackboardKey hashKey))
 			{
 				return hashKey;
 			}
@@ -168,7 +168,7 @@ namespace Asaki.Core.Graphs
 		{
 			if (_context?.Blackboard == null) return default(T);
 
-			var hashKey = GetOrCreateHashKey(key);
+			AsakiBlackboardKey hashKey = GetOrCreateHashKey(key);
 			return _context.Blackboard.GetValue<T>(hashKey);
 		}
 
@@ -176,14 +176,14 @@ namespace Asaki.Core.Graphs
 		{
 			if (_context?.Blackboard == null) return;
 
-			var varDef = _runtimeGraph?.Variables.Find(v => v.Name == key);
+			AsakiVariableDef varDef = _runtimeGraph?.Variables.Find(v => v.Name == key);
 			if (varDef != null && !varDef.Validate(value))
 			{
 				ALog.Warn($"[AsakiRunner] Variable '{key}' validation failed: {varDef.Constraint?.GetErrorMessage(value)}");
 				return;
 			}
 
-			var hashKey = GetOrCreateHashKey(key);
+			AsakiBlackboardKey hashKey = GetOrCreateHashKey(key);
 			_context.Blackboard.SetValue<T>(hashKey, value);
 		}
 
@@ -193,7 +193,7 @@ namespace Asaki.Core.Graphs
 
 			using (_context.Blackboard.BeginBatch())
 			{
-				foreach (var varDef in _runtimeGraph.Variables)
+				foreach (AsakiVariableDef varDef in _runtimeGraph.Variables)
 				{
 					varDef.ResetToDefault();
 					if (varDef.ValueData != null)
@@ -208,7 +208,7 @@ namespace Asaki.Core.Graphs
 		{
 			if (_runtimeGraph == null) return;
 
-			var varDef = _runtimeGraph.Variables.Find(v => v.Name == key);
+			AsakiVariableDef varDef = _runtimeGraph.Variables.Find(v => v.Name == key);
 			if (varDef != null)
 			{
 				varDef.ResetToDefault();
@@ -236,7 +236,7 @@ namespace Asaki.Core.Graphs
 			{
 				if (_context.Blackboard == null) return default(T);
 
-				var hashKey = GetOrCreateHashKey(getVarNode.VariableName);
+				AsakiBlackboardKey hashKey = GetOrCreateHashKey(getVarNode.VariableName);
 				T value = _context.Blackboard.GetValue<T>(hashKey);
 
 				return value;
@@ -279,7 +279,7 @@ namespace Asaki.Core.Graphs
 				return;
 			}
 
-			var hashKey = GetOrCreateHashKey(key);
+			AsakiBlackboardKey hashKey = GetOrCreateHashKey(key);
 
 			switch (value)
 			{
@@ -353,17 +353,20 @@ namespace Asaki.Core.Graphs
 
 		protected virtual void OnExecuteCustomNode(AsakiNodeBase node) { }
 
-		public TGraph GetRuntimeGraph() => _runtimeGraph;
+		public TGraph GetRuntimeGraph()
+		{
+			return _runtimeGraph;
+		}
 
 		#region Async
 
 		private CancellationTokenSource _executionCts;
 
-		protected async Task ExecuteNodeAsync(AsakiNodeBase node, CancellationToken ct = default)
+		protected async Task ExecuteNodeAsync(AsakiNodeBase node, CancellationToken ct = default(CancellationToken))
 		{
 			if (node == null) return;
 
-			var execContext = AsakiNodeExecutionPool.Rent();
+			AsakiNodeExecutionContext execContext = AsakiNodeExecutionPool.Rent();
 			execContext.Node = node;
 			execContext.GraphContext = _context;
 			execContext.StartTime = UnityEngine.Time.time;
@@ -432,7 +435,7 @@ namespace Asaki.Core.Graphs
 		{
 			_executionCts = new CancellationTokenSource();
 
-			var entryNode = _runtimeGraph.GetEntryNode<AsakiNodeBase>();
+			AsakiNodeBase entryNode = _runtimeGraph.GetEntryNode<AsakiNodeBase>();
 			if (entryNode != null)
 			{
 				await ExecuteNodeAsync(entryNode, _executionCts.Token);

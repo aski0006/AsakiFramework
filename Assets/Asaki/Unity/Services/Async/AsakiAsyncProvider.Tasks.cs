@@ -9,7 +9,7 @@ namespace Asaki.Unity.Services.Async
 {
 	public partial class AsakiAsyncProvider
 	{
-		public UniTask RunTask(Func<UniTask> taskFunc, CancellationToken token = default)
+		public UniTask RunTask(Func<UniTask> taskFunc, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -18,7 +18,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask<T> RunTask<T>(Func<UniTask<T>> taskFunc, CancellationToken token = default)
+		public UniTask<T> RunTask<T>(Func<UniTask<T>> taskFunc, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -27,7 +27,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask DelayedCall(float delaySeconds, Action action, CancellationToken token = default, bool unscaledTime = false)
+		public UniTask DelayedCall(float delaySeconds, Action action, CancellationToken token = default(CancellationToken), bool unscaledTime = false)
 		{
 			return Track(async () =>
 			{
@@ -38,7 +38,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask NextFrameCall(Action action, CancellationToken token = default)
+		public UniTask NextFrameCall(Action action, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -48,7 +48,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask When(Func<bool> condition, Action action, CancellationToken token = default)
+		public UniTask When(Func<bool> condition, Action action, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -58,17 +58,17 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask WaitAll(IEnumerable<UniTask> tasks, CancellationToken token = default)
+		public UniTask WaitAll(IEnumerable<UniTask> tasks, CancellationToken token = default(CancellationToken))
 		{
 			return UniTask.WhenAll(tasks.ToArray()).AttachExternalCancellation(token);
 		}
 
-		public UniTask<int> WaitAny(IEnumerable<UniTask> tasks, CancellationToken token = default)
+		public UniTask<int> WaitAny(IEnumerable<UniTask> tasks, CancellationToken token = default(CancellationToken))
 		{
 			return UniTask.WhenAny(tasks.ToArray()).AttachExternalCancellation(token);
 		}
 
-		public UniTask Sequence(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+		public UniTask Sequence(IEnumerable<Func<UniTask>> actions, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -81,7 +81,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask Parallel(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+		public UniTask Parallel(IEnumerable<Func<UniTask>> actions, CancellationToken token = default(CancellationToken))
 		{
 			return Track(async () =>
 			{
@@ -91,7 +91,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask Retry(Func<UniTask> action, int maxRetries = 3, float retryDelay = 1f, CancellationToken token = default)
+		public UniTask Retry(Func<UniTask> action, int maxRetries = 3, float retryDelay = 1f, CancellationToken token = default(CancellationToken))
 		{
 			CancellationToken linkedToken = CreateLinkedToken(token);
 			return Track(async () =>
@@ -113,7 +113,7 @@ namespace Asaki.Unity.Services.Async
 			});
 		}
 
-		public UniTask WaitCustom(IAsakiWaitSource waitSource, CancellationToken token = default)
+		public UniTask WaitCustom(IAsakiWaitSource waitSource, CancellationToken token = default(CancellationToken))
 		{
 			CancellationToken linkedToken = CreateLinkedToken(token);
 			return Track(async () =>
@@ -171,7 +171,7 @@ namespace Asaki.Unity.Services.Async
 				return this;
 			}
 
-			public async UniTask Build(CancellationToken token = default)
+			public async UniTask Build(CancellationToken token = default(CancellationToken))
 			{
 				CancellationToken linkedToken = _service.CreateLinkedToken(token);
 				foreach (var step in _steps)

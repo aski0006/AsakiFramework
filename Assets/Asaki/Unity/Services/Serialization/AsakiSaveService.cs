@@ -252,7 +252,7 @@ namespace Asaki.Unity.Services.Serialization
 		/// <returns>表示异步保存操作的Task</returns>
 		/// <exception cref="IOException">磁盘空间不足或路径非法时抛出</exception>
 		/// <exception cref="UnauthorizedAccessException">无写入权限时抛出</exception>
-		public async UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default)
+		public async UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default(CancellationToken))
 			where TMeta : IAsakiSlotMeta where TData : IAsakiSavable
 		{
 			// 早期取消检查：避免不必要的目录创建
@@ -349,7 +349,7 @@ namespace Asaki.Unity.Services.Serialization
 				_eventService.Publish(new AsakiSaveFailedEvent
 				{
 					Filename = filename,
-					ErrorMessage = "Operation was cancelled by user"
+					ErrorMessage = "Operation was cancelled by user",
 				});
 
 				// 重新抛出取消异常，符合TPL规范
@@ -364,7 +364,7 @@ namespace Asaki.Unity.Services.Serialization
 				_eventService.Publish(new AsakiSaveFailedEvent
 				{
 					Filename = filename,
-					ErrorMessage = ex.Message
+					ErrorMessage = ex.Message,
 				});
 
 				throw;
@@ -395,7 +395,7 @@ namespace Asaki.Unity.Services.Serialization
 		/// <returns>包含元数据和游戏数据的元组</returns>
 		/// <exception cref="FileNotFoundException">槽位不存在时抛出，调用方应提前用SlotExists检查</exception>
 		/// <exception cref="SerializationException">数据格式不兼容或损坏时抛出</exception>
-		public async UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default)
+		public async UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default(CancellationToken))
 			where TMeta : IAsakiSlotMeta, new() where TData : IAsakiSavable, new()
 		{
 			// 早期取消检查
@@ -418,11 +418,11 @@ namespace Asaki.Unity.Services.Serialization
 				var metaTask = File.ReadAllTextAsync(GetMetaPath(slotId), token).AsUniTask().AttachExternalCancellation(token);
 
 				// 等待两个任务都完成，支持取消并获取结果
-				var (dataBytes, metaText) = await UniTask.WhenAll(dataTask, metaTask);
+				(byte[] dataBytes, string metaText) = await UniTask.WhenAll(dataTask, metaTask);
 
 				// IO完成后检查：避免不必要的反序列化
 				token.ThrowIfCancellationRequested();
-			
+
 				await UniTask.SwitchToMainThread();
 				// 反序列化前检查
 				token.ThrowIfCancellationRequested();

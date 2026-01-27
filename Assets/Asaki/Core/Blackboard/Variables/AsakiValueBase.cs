@@ -1,7 +1,7 @@
-﻿using Asaki.Core. Logging;
+﻿using Asaki.Core.Logging;
 using System;
 
-namespace Asaki.Core. Blackboard.Variables
+namespace Asaki.Core.Blackboard.Variables
 {
 	[Serializable]
 	public abstract class AsakiValueBase
@@ -14,7 +14,7 @@ namespace Asaki.Core. Blackboard.Variables
 
 		public virtual void ApplyTo(IAsakiBlackboard blackboard, AsakiBlackboardKey key)
 		{
-			ApplyTo(blackboard, key.Hash. ToString());
+			ApplyTo(blackboard, key.Hash.ToString());
 		}
 
 		public abstract AsakiValueBase Clone();
@@ -37,7 +37,7 @@ namespace Asaki.Core. Blackboard.Variables
 
 		public override void ApplyTo(IAsakiBlackboard blackboard, string key)
 		{
-			blackboard?. SetValue(key, Value);
+			blackboard?.SetValue(key, Value);
 		}
 
 		public override void ApplyTo(IAsakiBlackboard blackboard, AsakiBlackboardKey key)
@@ -61,7 +61,7 @@ namespace Asaki.Core. Blackboard.Variables
 				instance.Value = Value;
 				return instance;
 			}
-            
+
 			ALog.Warn("Failed to clone AsakiValue");
 			return null;
 		}

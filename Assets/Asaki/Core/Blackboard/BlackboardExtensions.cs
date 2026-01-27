@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Reflection;
 
 namespace Asaki.Core.Blackboard
 {
@@ -8,9 +9,9 @@ namespace Asaki.Core.Blackboard
 		{
 			using (blackboard.BeginBatch())
 			{
-				foreach (var (key, value) in updates)
+				foreach ((string key, object value) in updates)
 				{
-					var hashKey = new AsakiBlackboardKey(key);
+					AsakiBlackboardKey hashKey = new AsakiBlackboardKey(key);
 					SetValueDynamic(blackboard, hashKey, value);
 				}
 			}
@@ -22,7 +23,7 @@ namespace Asaki.Core.Blackboard
 			{
 				foreach (var kvp in updates)
 				{
-					var hashKey = new AsakiBlackboardKey(kvp.Key);
+					AsakiBlackboardKey hashKey = new AsakiBlackboardKey(kvp.Key);
 					SetValueDynamic(blackboard, hashKey, kvp.Value);
 				}
 			}
@@ -37,8 +38,8 @@ namespace Asaki.Core.Blackboard
 				case bool v:   blackboard.SetValue(key, v); break;
 				case string v: blackboard.SetValue(key, v); break;
 				default:
-					var method = typeof(IAsakiBlackboard).GetMethod("SetValue");
-					var generic = method?.MakeGenericMethod(value.GetType());
+					MethodInfo method = typeof(IAsakiBlackboard).GetMethod("SetValue");
+					MethodInfo generic = method?.MakeGenericMethod(value.GetType());
 					generic?.Invoke(blackboard, new object[] { key, value });
 					break;
 			}

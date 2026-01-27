@@ -23,14 +23,14 @@ namespace Asaki.Core.Configs
 		/// </summary>
 		[Header("File Rotation")]
 		[Tooltip("单个日志文件最大尺寸 (KB)")]
-		public int MaxFileSizeKB = 2048; 
+		public int MaxFileSizeKB = 2048;
 
 		/// <summary>
 		/// 获取或设置保留的历史日志文件数量，默认值为10。
 		/// 当历史文件数量超过此限制时，将自动删除最旧的文件。
 		/// </summary>
 		[Tooltip("保留的历史文件数量")]
-		public int MaxHistoryFiles = 10; 
+		public int MaxHistoryFiles = 10;
 
 		/// <summary>
 		/// 获取或设置日志文件名的前缀，默认值为"GameLog"。

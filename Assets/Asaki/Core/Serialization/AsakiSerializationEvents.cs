@@ -19,7 +19,7 @@ namespace Asaki.Core.Serialization
 
 	/// <summary>
 	/// 当保存操作成功完成时触发的事件。
-		/// </summary>
+	/// </summary>
 	/// <remarks>
 	/// 此事件在所有保存数据成功写入存储后通过 <see cref="IAsakiEventBroker"/> 系统发布。
 	/// 它可用于隐藏保存指示器或执行保存后的操作。
@@ -45,7 +45,7 @@ namespace Asaki.Core.Serialization
 		/// 保存操作尝试写入数据的文件名或路径。
 		/// </summary>
 		public string Filename;
-		
+
 		/// <summary>
 		/// 解释保存操作失败原因的描述性错误消息。
 		/// </summary>

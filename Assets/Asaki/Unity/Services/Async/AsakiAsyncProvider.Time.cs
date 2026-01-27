@@ -64,7 +64,7 @@ namespace Asaki.Unity.Services.Async
 			try
 			{
 				await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, linkedToken)
-						   .Timeout(TimeSpan.FromSeconds(timeoutSeconds));
+				             .Timeout(TimeSpan.FromSeconds(timeoutSeconds));
 				return true;
 			}
 			catch (TimeoutException)

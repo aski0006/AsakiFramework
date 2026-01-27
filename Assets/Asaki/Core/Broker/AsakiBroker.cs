@@ -16,10 +16,12 @@ namespace Asaki.Core.Broker
 		/// 使用双重检查锁定机制防止并发创建。
 		/// </summary>
 		/// <returns>获取到的 <see cref="IAsakiEventService"/> 实例。</returns>
-		private static IAsakiEventService GetOrRegisterBus() =>
-			AsakiContext.TryGet(out IAsakiEventService bus)
+		private static IAsakiEventService GetOrRegisterBus()
+		{
+			return AsakiContext.TryGet(out IAsakiEventService bus)
 				? bus
 				: AsakiContext.GetOrRegister<IAsakiEventService>(() => new AsakiEventService());
+		}
 
 		/// <summary>
 		/// 发布一个事件。

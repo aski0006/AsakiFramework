@@ -24,7 +24,7 @@ namespace Asaki.Core.Context.Resolvers
 		// ========================================================================
 		// 配置字段
 		// ========================================================================
-		
+
 		/// <summary>
 		/// 纯C#场景服务列表。
 		/// </summary>
@@ -54,7 +54,7 @@ namespace Asaki.Core.Context.Resolvers
 		// ========================================================================
 		// 运行时数据
 		// ========================================================================
-		
+
 		/// <summary>
 		/// 本地服务字典，用于存储场景级别的服务实例。
 		/// </summary>
@@ -65,7 +65,10 @@ namespace Asaki.Core.Context.Resolvers
 		/// 在编辑器模式下获取运行时服务字典，用于调试和测试。
 		/// </summary>
 		/// <returns>运行时服务字典。</returns>
-		public Dictionary<Type, IAsakiService> GetRuntimeServices() => _localServices;
+		public Dictionary<Type, IAsakiService> GetRuntimeServices()
+		{
+			return _localServices;
+		}
 		#endif
 
 		// ========================================================================
@@ -132,7 +135,7 @@ namespace Asaki.Core.Context.Resolvers
 
 			ALog.Info($"  Registering {_pureCSharpServices.Count} pure C# service(s)...");
 
-			foreach (var service in _pureCSharpServices.Where(s => s != null))
+			foreach (IAsakiSceneService service in _pureCSharpServices.Where(s => s != null))
 			{
 				RegisterServiceWithInterfaces(service.GetType(), service);
 			}
@@ -153,7 +156,7 @@ namespace Asaki.Core.Context.Resolvers
 
 			ALog.Info($"  Registering {_behaviourServices.Count} MonoBehaviour service(s)...");
 
-			foreach (var behaviour in _behaviourServices.Where(b => b != null))
+			foreach (MonoBehaviour behaviour in _behaviourServices.Where(b => b != null))
 			{
 				// 验证接口实现
 				if (behaviour is not IAsakiSceneService service)
@@ -183,12 +186,12 @@ namespace Asaki.Core.Context.Resolvers
 			RegisterInternal(concreteType, service);
 
 			// 2. 注册所有服务接口（排除基础标记接口）
-			foreach (var interfaceType in concreteType.GetInterfaces())
+			foreach (Type interfaceType in concreteType.GetInterfaces())
 			{
 				if (typeof(IAsakiService).IsAssignableFrom(interfaceType) &&
-					interfaceType != typeof(IAsakiService) &&
-					interfaceType != typeof(IAsakiSceneService) &&
-					interfaceType != typeof(IAsakiGlobalService))
+				    interfaceType != typeof(IAsakiService) &&
+				    interfaceType != typeof(IAsakiSceneService) &&
+				    interfaceType != typeof(IAsakiGlobalService))
 				{
 					RegisterInternal(interfaceType, service);
 				}

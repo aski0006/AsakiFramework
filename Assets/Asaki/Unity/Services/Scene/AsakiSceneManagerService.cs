@@ -81,7 +81,7 @@ namespace Asaki.Unity.Services.Scene
 			AsakiLoadSceneMode mode = AsakiLoadSceneMode.Single,
 			AsakiSceneActivation activation = AsakiSceneActivation.Immediate,
 			IAsakiSceneTransition transition = null,
-			CancellationToken token = default)
+			CancellationToken token = default(CancellationToken))
 		{
 			if (_isLoading)
 				return AsakiSceneResult.Failed(targetScene, "Another scene load is in progress");
@@ -140,8 +140,8 @@ namespace Asaki.Unity.Services.Scene
 				{
 					_activationTaskSignal = new TaskCompletionSource<bool>();
 					var signalTask = _activationTaskSignal.Task.AsUniTask().AttachExternalCancellation(token);
-					var waitTask = UniTask.Delay(TimeSpan.MaxValue, false, PlayerLoopTiming.Update, token, false);
-					var result = await UniTask.WhenAny(signalTask, waitTask);
+					UniTask waitTask = UniTask.Delay(TimeSpan.MaxValue, false, PlayerLoopTiming.Update, token, false);
+					(bool hasResultLeft, bool result) result = await UniTask.WhenAny(signalTask, waitTask);
 					if (result.hasResultLeft) // signalTask 先完成
 						return CancelSceneLoadOperation(targetScene);
 				}

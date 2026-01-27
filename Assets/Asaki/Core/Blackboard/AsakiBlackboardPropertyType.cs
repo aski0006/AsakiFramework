@@ -1,5 +1,5 @@
 ﻿using System;
-using Asaki.Core.Blackboard. Variables;
+using Asaki.Core.Blackboard.Variables;
 using UnityEngine;
 
 namespace Asaki.Core.Blackboard
@@ -24,13 +24,13 @@ namespace Asaki.Core.Blackboard
 		{
 			if (DefaultValue != null)
 			{
-				ValueData = DefaultValue. Clone();
+				ValueData = DefaultValue.Clone();
 			}
 		}
 
 		public bool Validate(object value)
 		{
-			return Constraint?. IsValid(value) ?? true;
+			return Constraint?.IsValid(value) ?? true;
 		}
 
 		public string TypeName

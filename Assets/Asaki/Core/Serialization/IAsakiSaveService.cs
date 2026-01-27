@@ -30,7 +30,7 @@ namespace Asaki.Core.Serialization
 		/// 此方法会自动处理存档目录的创建，并将元数据和游戏数据分别保存。
 		/// 保存过程中会发布相应的事件（如保存开始、保存成功、保存失败）。
 		/// </remarks>
-		UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default)
+		UniTask SaveSlotAsync<TMeta, TData>(int slotId, TMeta meta, TData data, CancellationToken token = default(CancellationToken))
 			where TMeta : IAsakiSlotMeta where TData : IAsakiSavable;
 
 		/// <summary>
@@ -46,7 +46,7 @@ namespace Asaki.Core.Serialization
 		/// 此方法会异步读取存档文件，并将数据反序列化为指定的类型。
 		/// 加载过程中会并行读取元数据和游戏数据，以提高性能。
 		/// </remarks>
-		UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default)
+		UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(int slotId, CancellationToken token = default(CancellationToken))
 			where TMeta : IAsakiSlotMeta, new() where TData : IAsakiSavable, new();
 
 		/// <summary>

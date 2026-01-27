@@ -84,7 +84,7 @@ namespace Asaki.Core.MVVM
 		{
 			_value = default(T);
 		}
-		
+
 		/// <summary>
 		/// 使用指定的初始值初始化AsakiProperty实例。
 		/// </summary>
@@ -247,7 +247,7 @@ namespace Asaki.Core.MVVM
 				_observers[i].OnValueChange(_value);
 			}
 		}
-		
+
 		public void InvokeCallback(object value)
 		{
 			if (value is not T typedValue) return;

@@ -45,7 +45,7 @@ namespace Asaki.Core.Resources
 		UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(IEnumerable<string> locations, CancellationToken token) where T : class;
 		public void ReleaseBatch(IEnumerable<string> locations);
 
-		UniTask UnloadUnusedAssets(CancellationToken token = default);
+		UniTask UnloadUnusedAssets(CancellationToken token = default(CancellationToken));
 		public void SetTimeoutSeconds(int timeoutSeconds);
 
 

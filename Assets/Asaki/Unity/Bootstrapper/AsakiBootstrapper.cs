@@ -2,19 +2,19 @@ using Asaki.Core.Broker;
 using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
-using Asaki. Core.Logging;
+using Asaki.Core.Logging;
 using System;
-using System. Linq;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using AsakiBroker = Asaki.Core.Broker.AsakiBroker;
 
-namespace Asaki.Unity. Bootstrapper
+namespace Asaki.Unity.Bootstrapper
 {
-	public struct FrameworkReadyEvent :  IAsakiEvent { }
+	public struct FrameworkReadyEvent : IAsakiEvent { }
 
 	[DefaultExecutionOrder(-9999)]
-	public class AsakiBootstrapper :  MonoBehaviour
+	public class AsakiBootstrapper : MonoBehaviour
 	{
 		[Header("Settings")]
 		[Tooltip("是否自动扫描场景中的 MonoBehaviour 进行依赖注入")]
@@ -51,7 +51,7 @@ namespace Asaki.Unity. Bootstrapper
 			// 第0阶段：极早期初始化 - 上下文清理
 			// ============================================
 			AsakiContext.ClearAll();
-			Application.targetFrameRate = _config ?  _config.TickRate : 60;
+			Application.targetFrameRate = _config ? _config.TickRate : 60;
 
 			// ============================================
 			// 第1阶段：日志服务 V2 启动 (直连模式)
@@ -61,7 +61,7 @@ namespace Asaki.Unity. Bootstrapper
 
 			if (_config != null)
 			{
-				_logService.ApplyConfig(_config. LogConfig);
+				_logService.ApplyConfig(_config.LogConfig);
 			}
 
 			// ============================================
@@ -80,7 +80,7 @@ namespace Asaki.Unity. Bootstrapper
 			}
 			else
 			{
-				ALog. Warn("No configuration assigned in inspector!");
+				ALog.Warn("No configuration assigned in inspector!");
 			}
 
 			// ============================================
@@ -103,10 +103,10 @@ namespace Asaki.Unity. Bootstrapper
 				AsakiStaticModuleDiscovery discovery = new AsakiStaticModuleDiscovery();
 
 				ALog.Info("Initializing modules (DAG)...");
-				await AsakiModuleLoader. Startup(discovery);
+				await AsakiModuleLoader.Startup(discovery);
 
 				ALog.Info("Freezing context...");
-				AsakiContext. Freeze();
+				AsakiContext.Freeze();
 
 				// ============================================
 				// 第5阶段：初始化全局 MonoBehaviour 服务
@@ -128,7 +128,7 @@ namespace Asaki.Unity. Bootstrapper
 				// 完成启动
 				// ============================================
 				ALog.Info("Broadcasting ready event...");
-				AsakiBroker. Publish(new FrameworkReadyEvent());
+				AsakiBroker.Publish(new FrameworkReadyEvent());
 
 				ALog.Info("=======================================");
 				ALog.Info("== ASAKI FRAMEWORK READY ==");
@@ -136,7 +136,7 @@ namespace Asaki.Unity. Bootstrapper
 			}
 			catch (Exception ex)
 			{
-				ALog. Fatal("Framework boot failed!", ex);
+				ALog.Fatal("Framework boot failed!", ex);
 				throw;
 			}
 		}
@@ -159,7 +159,7 @@ namespace Asaki.Unity. Bootstrapper
 
 			ALog.Info($"Registering {_globalBehaviourServices.Length} global MonoBehaviour services...");
 
-			foreach (var behaviour in _globalBehaviourServices)
+			foreach (MonoBehaviour behaviour in _globalBehaviourServices)
 			{
 				if (behaviour == null)
 				{
@@ -177,11 +177,11 @@ namespace Asaki.Unity. Bootstrapper
 				// 注册所有服务接口
 				Type behaviourType = behaviour.GetType();
 				var serviceInterfaces = behaviourType.GetInterfaces()
-					.Where(i => typeof(IAsakiService).IsAssignableFrom(i) && 
-					           i != typeof(IAsakiService) &&
-					           i != typeof(IAsakiGlobalService));
+				                                     .Where(i => typeof(IAsakiService).IsAssignableFrom(i) &&
+				                                                 i != typeof(IAsakiService) &&
+				                                                 i != typeof(IAsakiGlobalService));
 
-				foreach (var interfaceType in serviceInterfaces)
+				foreach (Type interfaceType in serviceInterfaces)
 				{
 					AsakiContext.Register(interfaceType, service);
 					ALog.Info($"  → Registered {behaviourType.Name} as {interfaceType.Name}");
@@ -203,7 +203,7 @@ namespace Asaki.Unity. Bootstrapper
 
 			ALog.Info("Initializing global MonoBehaviour services...");
 
-			foreach (var behaviour in _globalBehaviourServices)
+			foreach (MonoBehaviour behaviour in _globalBehaviourServices)
 			{
 				if (behaviour is not IAsakiGlobalService service)
 					continue;
@@ -211,7 +211,7 @@ namespace Asaki.Unity. Bootstrapper
 				try
 				{
 					// 先注入依赖
-					AsakiGlobalInjector. Inject(service);
+					AsakiGlobalInjector.Inject(service);
 
 					// 再调用初始化
 					service.OnBootstrapInit();
@@ -300,12 +300,12 @@ namespace Asaki.Unity. Bootstrapper
 		private IAsakiResolver FindSceneContext(Scene scene)
 		{
 			// 获取场景根对象
-			GameObject[] rootObjects = scene.GetRootGameObjects();
+			var rootObjects = scene.GetRootGameObjects();
 
-			foreach (var rootObj in rootObjects)
+			foreach (GameObject rootObj in rootObjects)
 			{
 				// 在根对象及其子对象中查找
-				var context = rootObj.GetComponentInChildren<AsakiSceneContext>(true);
+				AsakiSceneContext context = rootObj.GetComponentInChildren<AsakiSceneContext>(true);
 				if (context != null)
 				{
 					return context;
@@ -321,26 +321,26 @@ namespace Asaki.Unity. Bootstrapper
 		private void InjectSceneAutoScan(Scene scene, IAsakiResolver resolver)
 		{
 			// 获取场景根对象
-			GameObject[] rootObjects = scene.GetRootGameObjects();
+			var rootObjects = scene.GetRootGameObjects();
 			int injectedCount = 0;
 
-			foreach (var rootObj in rootObjects)
+			foreach (GameObject rootObj in rootObjects)
 			{
 				// 获取所有 MonoBehaviour（包括未激活的）
 				var behaviours = rootObj.GetComponentsInChildren<MonoBehaviour>(true);
 
-				foreach (var behaviour in behaviours)
+				foreach (MonoBehaviour behaviour in behaviours)
 				{
 					// 跳过特殊类型
 					if (behaviour == null) continue;
-					if (behaviour is IAsakiModule) continue; // Module 由 DAG 管理
+					if (behaviour is IAsakiModule) continue;      // Module 由 DAG 管理
 					if (behaviour is AsakiBootstrapper) continue; // 跳过自身
 					if (behaviour is AsakiSceneContext) continue; // 上下文由自身管理
 
 					// 只注入标记了 IAsakiAutoInject 的类型
 					if (behaviour is IAsakiAutoInject)
 					{
-						AsakiGlobalInjector. Inject(behaviour, resolver);
+						AsakiGlobalInjector.Inject(behaviour, resolver);
 						injectedCount++;
 					}
 				}
@@ -359,11 +359,11 @@ namespace Asaki.Unity. Bootstrapper
 
 			ALog.Info($"  → Manual injection mode:  {_manualTargets.Length} target(s)");
 
-			foreach (var target in _manualTargets)
+			foreach (MonoBehaviour target in _manualTargets)
 			{
 				if (target != null)
 				{
-					AsakiGlobalInjector. Inject(target, resolver);
+					AsakiGlobalInjector.Inject(target, resolver);
 				}
 			}
 		}
@@ -375,14 +375,14 @@ namespace Asaki.Unity. Bootstrapper
 		private void OnDestroy()
 		{
 			if (_instance != this) return;
-			ALog. Info("Asaki Framework shutting down...");
+			ALog.Info("Asaki Framework shutting down...");
 
 			// 取消场景事件监听
 			SceneManager.sceneLoaded -= OnSceneLoaded;
 
 			// 清理上下文
 			AsakiContext.ClearAll();
-			
+
 			ALog.Reset(); // 重置日志
 
 			_instance = null;

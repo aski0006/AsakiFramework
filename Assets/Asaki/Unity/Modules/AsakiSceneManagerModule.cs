@@ -24,9 +24,9 @@ namespace Asaki.Unity.Modules
 		[AsakiInject]
 		public void Init(IAsakiEventService eventService, IAsakiResourceService resService, IAsakiAsyncService asyncService)
 		{
-			this._eventService = eventService;
-			this._resService = resService;
-			this._asyncService = asyncService;
+			_eventService = eventService;
+			_resService = resService;
+			_asyncService = asyncService;
 		}
 		public void OnInit()
 		{

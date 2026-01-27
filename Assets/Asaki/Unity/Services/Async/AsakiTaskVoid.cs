@@ -8,9 +8,7 @@ namespace Asaki.Unity.Services.Async
 	[AsyncMethodBuilder(typeof(AsakiTaskVoidMethodBuilder))]
 	public readonly struct AsakiTaskVoid
 	{
-		public void Forget()
-		{
-		}
+		public void Forget() { }
 	}
 
 	public struct AsakiTaskVoidMethodBuilder
@@ -31,9 +29,7 @@ namespace Asaki.Unity.Services.Async
 
 		public void SetStateMachine(IAsyncStateMachine stateMachine) { }
 
-		public void SetResult()
-		{
-		}
+		public void SetResult() { }
 
 		public void SetException(Exception exception)
 		{

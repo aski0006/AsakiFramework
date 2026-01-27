@@ -16,7 +16,7 @@ namespace Asaki.Core.Context
 		/// </summary>
 		void Init(); // 默认无参构造
 	}
-	
+
 	/// <summary>
 	/// 单参数初始化接口。
 	/// </summary>
@@ -33,7 +33,7 @@ namespace Asaki.Core.Context
 		/// <param name="args">初始化参数。</param>
 		void Init(T1 args);
 	}
-	
+
 	/// <summary>
 	/// 双参数初始化接口。
 	/// </summary>
@@ -52,7 +52,7 @@ namespace Asaki.Core.Context
 		/// <param name="args2">第二个初始化参数。</param>
 		void Init(T1 args1, T2 args2);
 	}
-	
+
 	/// <summary>
 	/// 三参数初始化接口。
 	/// </summary>
@@ -73,7 +73,7 @@ namespace Asaki.Core.Context
 		/// <param name="args3">第三个初始化参数。</param>
 		void Init(T1 args1, T2 args2, T3 args3);
 	}
-	
+
 	/// <summary>
 	/// 四参数初始化接口。
 	/// </summary>
@@ -96,7 +96,7 @@ namespace Asaki.Core.Context
 		/// <param name="args4">第四个初始化参数。</param>
 		void Init(T1 args1, T2 args2, T3 args3, T4 args4);
 	}
-	
+
 	/// <summary>
 	/// 五参数初始化接口。
 	/// </summary>
@@ -145,7 +145,7 @@ namespace Asaki.Core.Context
 			instance.Init();
 			return instance;
 		}
-		
+
 		/// <summary>
 		/// 实例化实现了<see cref="IAsakiInit{TArg1}"/>接口的MonoBehaviour预制体，并执行单参数初始化。
 		/// </summary>
@@ -313,7 +313,7 @@ namespace Asaki.Core.Context
 			instance.Init(arg1, arg2, arg3, arg4);
 			return instance;
 		}
-		
+
 		/// <summary>
 		/// 实例化实现了<see cref="IAsakiInit{TArg1, TArg2, TArg3, TArg4, TArg5}"/>接口的MonoBehaviour预制体，并执行五参数初始化。
 		/// </summary>
@@ -338,7 +338,7 @@ namespace Asaki.Core.Context
 			instance.Init(arg1, arg2, arg3, arg4, arg5);
 			return instance;
 		}
-		
+
 		/// <summary>
 		/// 实例化实现了<see cref="IAsakiInit{TArg1, TArg2, TArg3, TArg4, TArg5}"/>接口的MonoBehaviour预制体，指定位置和旋转，并执行五参数初始化。
 		/// </summary>

@@ -61,7 +61,7 @@ namespace Asaki.Unity.Services.Resources
 			return combine.GetHashCode();
 		}
 
-		public async UniTask UnloadUnusedAssets(CancellationToken token = default)
+		public async UniTask UnloadUnusedAssets(CancellationToken token = default(CancellationToken))
 		{
 			await _strategy.UnloadUnusedAssets(token);
 		}
@@ -146,7 +146,7 @@ namespace Asaki.Unity.Services.Resources
 		// Internal Logic
 		// =========================================================
 
-		private ResRecord GetOrCreateRecord(string location, Type type, CancellationToken token = default)
+		private ResRecord GetOrCreateRecord(string location, Type type, CancellationToken token = default(CancellationToken))
 		{
 			ResRecord record;
 			bool isOwner = false;
@@ -176,7 +176,7 @@ namespace Asaki.Unity.Services.Resources
 			return record;
 		}
 
-		private async void SafeStartLoadTask(ResRecord record, CancellationToken token = default)
+		private async void SafeStartLoadTask(ResRecord record, CancellationToken token = default(CancellationToken))
 		{
 			try
 			{
@@ -201,7 +201,7 @@ namespace Asaki.Unity.Services.Resources
 			}
 		}
 
-		private async UniTask LoadTaskInternal(ResRecord record, CancellationToken token = default)
+		private async UniTask LoadTaskInternal(ResRecord record, CancellationToken token = default(CancellationToken))
 		{
 			try
 			{
@@ -239,8 +239,8 @@ namespace Asaki.Unity.Services.Resources
 						}
 
 						var dependencyTask = depRecord.LoadingTcs.Task.AsUniTask().AttachExternalCancellation(token);
-						var timeoutTask = UniTask.Delay(_timeoutSeconds, false, PlayerLoopTiming.Update, token, false);
-						var finishedIndex = await UniTask.WhenAny(dependencyTask, timeoutTask);
+						UniTask timeoutTask = UniTask.Delay(_timeoutSeconds, false, PlayerLoopTiming.Update, token, false);
+						(bool hasResultLeft, Object result) finishedIndex = await UniTask.WhenAny(dependencyTask, timeoutTask);
 
 						if (finishedIndex.hasResultLeft)
 						{

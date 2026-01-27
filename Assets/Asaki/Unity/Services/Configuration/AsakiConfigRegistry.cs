@@ -21,7 +21,7 @@ namespace Asaki.Unity.Services.Configuration
 		{
 			foreach (var loader in _loaders)
 			{
-				UniTask? task = loader(service, configName, path);
+				var task = loader(service, configName, path);
 				if (task.HasValue)
 				{
 					return task.Value;

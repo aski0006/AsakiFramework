@@ -37,9 +37,7 @@ namespace Asaki.Unity.Services.Async
 			{
 				await taskFunc();
 			}
-			catch (OperationCanceledException)
-			{
-			}
+			catch (OperationCanceledException) { }
 			catch (Exception e)
 			{
 				ALog.Error($"[AsakiAsync] Task error: {e.Message}", e);

@@ -14,7 +14,7 @@ namespace Asaki.Core.Scene
 			AsakiLoadSceneMode mode = AsakiLoadSceneMode.Single,
 			AsakiSceneActivation activation = AsakiSceneActivation.Immediate,
 			IAsakiSceneTransition transition = null,
-			CancellationToken token = default
+			CancellationToken token = default(CancellationToken)
 		);
 
 		void ActivateScene();

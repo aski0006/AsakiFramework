@@ -25,8 +25,8 @@ namespace Asaki.Unity.Modules
 		[AsakiInject]
 		public void Init(IAsakiResourceService resource, IAsakiPoolService poolService)
 		{
-			this._resource = resource;
-			this._poolService = poolService;
+			_resource = resource;
+			_poolService = poolService;
 		}
 
 		public void OnInit()

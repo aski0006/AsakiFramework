@@ -22,45 +22,45 @@ namespace Asaki.Unity.Utils
 			// UniTask 能够直接 await ResourceRequest，并且支持 Token 取消
 			return request.ToUniTask(cancellationToken: token).AsTask();
 			#else
-            // === 方案 B: 原生兼容 (使用 TCS 包装) ===
-            var tcs = new TaskCompletionSource<Object>();
+			// === 方案 B: 原生兼容 (使用 TCS 包装) ===
+			var tcs = new TaskCompletionSource<Object>();
 
-            // 1. 注册取消回调
-            if (token.IsCancellationRequested)
-            {
-                tcs.SetCanceled();
-                return tcs.Task;
-            }
-            
-            // 注册 Token 取消时的行为
-            var registration = token.Register(() => 
-            {
-                tcs.TrySetCanceled();
-                // 注意：ResourceRequest 很难真正从底层取消，这里只是断开 Task 连接
-            });
+			// 1. 注册取消回调
+			if (token.IsCancellationRequested)
+			{
+				tcs.SetCanceled();
+				return tcs.Task;
+			}
 
-            // 2. 监听 Unity 完成事件
-            request.completed += _ => 
-            {
-                registration.Dispose();
-                if (token.IsCancellationRequested)
-                {
-                    tcs.TrySetCanceled();
-                    return;
-                }
+			// 注册 Token 取消时的行为
+			CancellationTokenRegistration registration = token.Register(() =>
+			{
+				tcs.TrySetCanceled();
+				// 注意：ResourceRequest 很难真正从底层取消，这里只是断开 Task 连接
+			});
 
-                if (request.asset == null)
-                {
-                    // 可以在这里决定是返回 null 还是抛出异常
-                    tcs.TrySetResult(null); 
-                }
-                else
-                {
-                    tcs.TrySetResult(request.asset);
-                }
-            };
+			// 2. 监听 Unity 完成事件
+			request.completed += _ =>
+			{
+				registration.Dispose();
+				if (token.IsCancellationRequested)
+				{
+					tcs.TrySetCanceled();
+					return;
+				}
 
-            return tcs.Task;
+				if (request.asset == null)
+				{
+					// 可以在这里决定是返回 null 还是抛出异常
+					tcs.TrySetResult(null);
+				}
+				else
+				{
+					tcs.TrySetResult(request.asset);
+				}
+			};
+
+			return tcs.Task;
 			#endif
 		}
 

@@ -35,7 +35,7 @@ namespace Asaki.Core.Attributes
 		/// 组件生成顺序
 		/// </summary>
 		public int Order { get; set; } = 0;
-		
+
 		/// <summary>
 		/// 声明一个 UI 组件
 		/// </summary>

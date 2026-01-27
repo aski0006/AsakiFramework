@@ -18,7 +18,7 @@ namespace Asaki.Unity.Modules
 		[AsakiInject]
 		public void Init(IAsakiSimulationService simulation)
 		{
-			this._simulation = simulation;
+			_simulation = simulation;
 		}
 		public void OnInit()
 		{

@@ -32,9 +32,9 @@ namespace Asaki.Unity.Services.Configuration
 		private bool _isEditor;
 		private readonly IAsakiEventService _asakiEventService;
 
-		private readonly Dictionary<Type, ConfigMetadata> _metadataCache = new();
-		private readonly Dictionary<Type, UniTask> _loadingTasks = new();
-		private readonly Dictionary<Type, ConfigStats> _statsCache = new();
+		private readonly Dictionary<Type, ConfigMetadata> _metadataCache = new Dictionary<Type, ConfigMetadata>();
+		private readonly Dictionary<Type, UniTask> _loadingTasks = new Dictionary<Type, UniTask>();
+		private readonly Dictionary<Type, ConfigStats> _statsCache = new Dictionary<Type, ConfigStats>();
 
 		private class ConfigMetadata
 		{
@@ -77,10 +77,10 @@ namespace Asaki.Unity.Services.Configuration
 		public async UniTask OnInitAsync()
 		{
 			var preloadTypes = _metadataCache
-							   .Where(kvp => kvp.Value.Strategy == AsakiConfigLoadStrategy.Preload)
-							   .OrderByDescending(kvp => kvp.Value.Priority)
-							   .Select(kvp => kvp.Key)
-							   .ToList();
+			                   .Where(kvp => kvp.Value.Strategy == AsakiConfigLoadStrategy.Preload)
+			                   .OrderByDescending(kvp => kvp.Value.Priority)
+			                   .Select(kvp => kvp.Key)
+			                   .ToList();
 			if (preloadTypes.Count > 0)
 			{
 				ALog.Info($"[AsakiConfig] Preloading {preloadTypes.Count} core configs...");
@@ -90,12 +90,12 @@ namespace Asaki.Unity.Services.Configuration
 				await UniTask.WhenAll(tasks);
 			}
 			ALog.Info($"[AsakiConfig] Service Ready.  Preloaded {_configStore.Count} tables.");
-#if UNITY_EDITOR
+			#if UNITY_EDITOR
 			if (_isEditor)
 			{
 				await ValidateAllConfigsAsync();
 			}
-#endif
+			#endif
 		}
 
 		public void OnDispose()
@@ -119,7 +119,7 @@ namespace Asaki.Unity.Services.Configuration
 		{
 			if (!IsLoaded<T>())
 			{
-				var metadata = GetMetadata<T>();
+				ConfigMetadata metadata = GetMetadata<T>();
 
 				if (metadata.Strategy == AsakiConfigLoadStrategy.Manual)
 				{
@@ -348,8 +348,8 @@ namespace Asaki.Unity.Services.Configuration
 
 		public void Unload<T>() where T : class, IAsakiConfig, new()
 		{
-			var type = typeof(T);
-			var metadata = GetMetadata<T>();
+			Type type = typeof(T);
+			ConfigMetadata metadata = GetMetadata<T>();
 
 			if (!metadata.Unloadable)
 			{
@@ -366,7 +366,7 @@ namespace Asaki.Unity.Services.Configuration
 
 		public void Unload(Type configType)
 		{
-			var metadata = GetMetadata(configType);
+			ConfigMetadata metadata = GetMetadata(configType);
 
 			if (!metadata.Unloadable)
 			{
@@ -383,8 +383,8 @@ namespace Asaki.Unity.Services.Configuration
 
 		public AsakiConfigLoadInfo GetLoadInfo<T>() where T : class, IAsakiConfig, new()
 		{
-			var type = typeof(T);
-			var metadata = GetMetadata<T>();
+			Type type = typeof(T);
+			ConfigMetadata metadata = GetMetadata<T>();
 
 			return new AsakiConfigLoadInfo
 			{
@@ -394,8 +394,8 @@ namespace Asaki.Unity.Services.Configuration
 				Priority = metadata.Priority,
 				Unloadable = metadata.Unloadable,
 				EstimatedSize = metadata.EstimatedSize,
-				AccessCount = _statsCache.TryGetValue(type, out var stats) ? stats.AccessCount : 0,
-				LastAccessTime = stats?.LastAccessTime ?? DateTime.MinValue
+				AccessCount = _statsCache.TryGetValue(type, out ConfigStats stats) ? stats.AccessCount : 0,
+				LastAccessTime = stats?.LastAccessTime ?? DateTime.MinValue,
 			};
 		}
 
@@ -408,7 +408,7 @@ namespace Asaki.Unity.Services.Configuration
 			foreach (string file in files)
 			{
 				string fileName = Path.GetFileNameWithoutExtension(file);
-				UniTask? loadTask = AsakiConfigRegistry.GetLoader(this, fileName, file);
+				var loadTask = AsakiConfigRegistry.GetLoader(this, fileName, file);
 
 				if (loadTask.HasValue)
 				{
@@ -543,7 +543,7 @@ namespace Asaki.Unity.Services.Configuration
 		{
 			if (IsLoaded<T>()) return;
 
-			var metadata = GetMetadata<T>();
+			ConfigMetadata metadata = GetMetadata<T>();
 
 			if (metadata.Strategy == AsakiConfigLoadStrategy.Manual)
 			{
@@ -583,7 +583,7 @@ namespace Asaki.Unity.Services.Configuration
 		{
 			try
 			{
-				if (!_metadataCache.TryGetValue(configType, out var metadata))
+				if (!_metadataCache.TryGetValue(configType, out ConfigMetadata metadata))
 				{
 					throw new InvalidOperationException($"Config type {configType.Name} not registered.");
 				}
@@ -593,8 +593,8 @@ namespace Asaki.Unity.Services.Configuration
 					ALog.Info($"[AsakiConfig] Loading dependencies for {configType.Name}.. .");
 
 					var depTasks = metadata.Dependencies
-										   .Select(LoadConfigInternalAsync)
-										   .ToArray();
+					                       .Select(LoadConfigInternalAsync)
+					                       .ToArray();
 
 					await UniTask.WhenAll(depTasks);
 				}
@@ -605,7 +605,7 @@ namespace Asaki.Unity.Services.Configuration
 					throw new FileNotFoundException($"Config file not found: {csvPath}");
 				}
 
-				UniTask? loadTask = AsakiConfigRegistry.GetLoader(this, configType.Name, csvPath);
+				var loadTask = AsakiConfigRegistry.GetLoader(this, configType.Name, csvPath);
 				if (!loadTask.HasValue)
 				{
 					throw new InvalidOperationException($"No loader registered for {configType.Name}");
@@ -684,9 +684,9 @@ namespace Asaki.Unity.Services.Configuration
 		private void ScanConfigTypes()
 		{
 			var allTypes = TypeCache.GetTypesDerivedFrom<IAsakiConfig>()
-									.Where(t => !t.IsAbstract && !t.IsInterface);
+			                        .Where(t => !t.IsAbstract && !t.IsInterface);
 
-			foreach (var type in allTypes)
+			foreach (Type type in allTypes)
 			{
 				AsakiConfigAttribute attr = type.GetCustomAttribute<AsakiConfigAttribute>();
 
@@ -697,7 +697,7 @@ namespace Asaki.Unity.Services.Configuration
 					Priority = attr?.Priority ?? 0,
 					Unloadable = attr?.Unloadable ?? true,
 					Dependencies = attr?.Dependencies ?? Array.Empty<Type>(),
-					EstimatedSize = EstimateConfigSize(type)
+					EstimatedSize = EstimateConfigSize(type),
 				};
 
 				if (metadata.Strategy == AsakiConfigLoadStrategy.Auto)
@@ -726,7 +726,7 @@ namespace Asaki.Unity.Services.Configuration
 
 		private ConfigMetadata GetMetadata<T>() where T : IAsakiConfig
 		{
-			if (_metadataCache.TryGetValue(typeof(T), out var metadata))
+			if (_metadataCache.TryGetValue(typeof(T), out ConfigMetadata metadata))
 				return metadata;
 
 			return new ConfigMetadata
@@ -735,13 +735,13 @@ namespace Asaki.Unity.Services.Configuration
 				Strategy = AsakiConfigLoadStrategy.OnDemand,
 				Priority = 0,
 				Unloadable = true,
-				Dependencies = Array.Empty<Type>()
+				Dependencies = Array.Empty<Type>(),
 			};
 		}
 
 		private void RecordAccess<T>()
 		{
-			var type = typeof(T);
+			Type type = typeof(T);
 			if (!_statsCache.ContainsKey(type))
 			{
 				_statsCache[type] = new ConfigStats();
@@ -753,7 +753,7 @@ namespace Asaki.Unity.Services.Configuration
 
 		private async UniTask ValidateAllConfigsAsync()
 		{
-			var sw = Stopwatch.StartNew();
+			Stopwatch sw = Stopwatch.StartNew();
 			ALog.Info("[AsakiConfig] 🔍 Validating all configs in editor mode...");
 
 			var allTypes = _metadataCache.Keys.ToList();
@@ -765,7 +765,7 @@ namespace Asaki.Unity.Services.Configuration
 			{
 				Parallel.ForEach(allTypes, new ParallelOptions
 				{
-					MaxDegreeOfParallelism = Environment.ProcessorCount
+					MaxDegreeOfParallelism = Environment.ProcessorCount,
 				}, type =>
 				{
 					try
@@ -777,17 +777,17 @@ namespace Asaki.Unity.Services.Configuration
 							return;
 						}
 
-						var fileInfo = new FileInfo(csvPath);
+						FileInfo fileInfo = new FileInfo(csvPath);
 						if (fileInfo.Length < 10)
 						{
 							warnings.Add($"{type.Name}. csv is too small ({fileInfo.Length} bytes), might be empty.");
 						}
 
-						if (_metadataCache.TryGetValue(type, out var metadata))
+						if (_metadataCache.TryGetValue(type, out ConfigMetadata metadata))
 						{
 							if (metadata.Dependencies != null && metadata.Dependencies.Length > 0)
 							{
-								foreach (var depType in metadata.Dependencies)
+								foreach (Type depType in metadata.Dependencies)
 								{
 									string depCsvPath = Path.Combine(_csvRootPath, depType.Name + ". csv");
 									if (!File.Exists(depCsvPath))
@@ -807,12 +807,12 @@ namespace Asaki.Unity.Services.Configuration
 
 			sw.Stop();
 
-			foreach (var error in errors)
+			foreach (string error in errors)
 			{
 				ALog.Error($"[AsakiConfig] ❌ {error}");
 			}
 
-			foreach (var warning in warnings)
+			foreach (string warning in warnings)
 			{
 				ALog.Warn($"[AsakiConfig] ⚠️ {warning}");
 			}
@@ -833,7 +833,7 @@ namespace Asaki.Unity.Services.Configuration
 
 		private ConfigMetadata GetMetadata(Type configType)
 		{
-			return _metadataCache.TryGetValue(configType, out var metadata)
+			return _metadataCache.TryGetValue(configType, out ConfigMetadata metadata)
 				? metadata
 				: new ConfigMetadata
 				{
@@ -841,7 +841,7 @@ namespace Asaki.Unity.Services.Configuration
 					Strategy = AsakiConfigLoadStrategy.OnDemand,
 					Priority = 0,
 					Unloadable = true,
-					Dependencies = Array.Empty<Type>()
+					Dependencies = Array.Empty<Type>(),
 				};
 		}
 	}

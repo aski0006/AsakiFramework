@@ -84,7 +84,7 @@ namespace Asaki.Unity.Services.UI
 			return UniTask.CompletedTask;
 		}
 
-		public async UniTask<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default)
+		public async UniTask<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default(CancellationToken))
 			where T : class, IAsakiWindow
 		{
 			// 基础检查
@@ -355,7 +355,7 @@ namespace Asaki.Unity.Services.UI
 			}
 		}
 
-		public async UniTask<T> ReplaceAsync<T>(int uiId, object args = null, CancellationToken token = default) where T : class, IAsakiWindow
+		public async UniTask<T> ReplaceAsync<T>(int uiId, object args = null, CancellationToken token = default(CancellationToken)) where T : class, IAsakiWindow
 		{
 			// 关闭当前栈顶
 			if (_normalStack.Count > 0)

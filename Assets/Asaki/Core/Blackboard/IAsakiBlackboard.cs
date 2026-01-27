@@ -2,7 +2,7 @@
 using Asaki.Core.MVVM;
 using System;
 
-namespace Asaki.Core. Blackboard
+namespace Asaki.Core.Blackboard
 {
 	public interface IAsakiBlackboard : IAsakiService, IDisposable
 	{

@@ -31,56 +31,56 @@ namespace Asaki.Core.Serialization
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的字节值。</returns>
 		byte ReadByte(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的整数值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的整数值。</returns>
 		int ReadInt(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的长整数值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的长整数值。</returns>
 		long ReadLong(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的单精度浮点值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的浮点值。</returns>
 		float ReadFloat(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的双精度浮点值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的双精度浮点值。</returns>
 		double ReadDouble(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的字符串值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的字符串值。</returns>
 		string ReadString(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的布尔值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的布尔值。</returns>
 		bool ReadBool(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的无符号整数值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的无符号整数值。</returns>
 		uint ReadUInt(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的无符号长整数值。
 		/// </summary>
@@ -95,42 +95,42 @@ namespace Asaki.Core.Serialization
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Vector2Int值。</returns>
 		Vector2Int ReadVector2Int(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的3D整数向量值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Vector3Int值。</returns>
 		Vector3Int ReadVector3Int(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的2D向量值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Vector2值。</returns>
 		Vector2 ReadVector2(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的3D向量值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Vector3值。</returns>
 		Vector3 ReadVector3(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的4D向量值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Vector4值。</returns>
 		Vector4 ReadVector4(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的边界值。
 		/// </summary>
 		/// <param name="key">值的唯一标识符。</param>
 		/// <returns>从存档数据中读取的Bounds值。</returns>
 		Bounds ReadBounds(string key);
-		
+
 		/// <summary>
 		/// 读取与指定键关联的四元数值。
 		/// </summary>
@@ -159,7 +159,7 @@ namespace Asaki.Core.Serialization
 		/// <param name="type">要读取的对象类型。</param>
 		/// <returns>从存档文件中读取数据的指定类型的对象。</returns>
 		object ReadObject(string key, Type type);
-		
+
 		// --- 集合控制 ---
 		/// <summary>
 		/// 开始读取与指定键关联的项目列表。
@@ -171,7 +171,7 @@ namespace Asaki.Core.Serialization
 		/// 读取所有项目后，必须调用 <see cref="EndList"/> 以正确重置读取器状态。
 		/// </remarks>
 		int BeginList(string key);
-		
+
 		/// <summary>
 		/// 结束读取项目列表。
 		/// </summary>

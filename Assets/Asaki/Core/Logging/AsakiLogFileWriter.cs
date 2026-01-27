@@ -220,7 +220,7 @@ namespace Asaki.Core.Logging
 				// 退出前最后一次 Flush
 				await FlushBufferAsync();
 			}
-			catch (System.OperationCanceledException)
+			catch (OperationCanceledException)
 			{
 				// 正常取消，忽略
 			}

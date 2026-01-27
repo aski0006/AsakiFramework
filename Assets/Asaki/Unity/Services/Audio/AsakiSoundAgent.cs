@@ -76,8 +76,8 @@ namespace Asaki.Unity.Services.Audio
 		// 根据宏定义切换返回类型，保持强类型检查
 		#if ASAKI_USE_UNITASK
 		public async UniTask PlayAsync(
-			#else
-        public async UniTask PlayAsync(
+		#else
+		public async UniTask PlayAsync(
 			#endif
 			string resourcePath,
 			AsakiAudioParams p,

@@ -24,11 +24,11 @@ namespace Asaki.Core.Configs
 		// 2. Module Configurations (Embedded POCOs)
 		// =========================================================
 
-			
+
 		[Header("Modules: Logging")]
 		[SerializeField] private AsakiLogConfig logConfig = new AsakiLogConfig();
 		public AsakiLogConfig LogConfig => logConfig;
-		
+
 		[Header("Modules: Resources")]
 		[SerializeField] private AsakiResConfig resConfig = new AsakiResConfig(); // 可以在字段上直接初始化默认值
 		public AsakiResConfig ResConfig => resConfig;
@@ -44,11 +44,11 @@ namespace Asaki.Core.Configs
 		[Header("Modules: Web")]
 		[SerializeField] private AsakiWebConfig webConfig = new AsakiWebConfig();
 		public AsakiWebConfig WebConfig => webConfig;
-	
+
 		[Header("Modules: Localization")]
 		[SerializeField] private AsakiLocalizationConfig localizationConfig = new AsakiLocalizationConfig();
 		public AsakiLocalizationConfig LocalizationConfig => localizationConfig;
-		
+
 		// =========================================================
 		// 3. Runtime Initialization
 		// =========================================================

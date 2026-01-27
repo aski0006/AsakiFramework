@@ -17,7 +17,7 @@ namespace Asaki.Core.Context.Resolvers
 		/// 由于结构体的特性，此单例实例是线程安全且高效的。
 		/// </remarks>
 		public static readonly AsakiGlobalResolver Instance = new AsakiGlobalResolver();
-		
+
 		/// <summary>
 		/// 从全局服务容器获取指定类型的服务实例。
 		/// </summary>
@@ -31,7 +31,7 @@ namespace Asaki.Core.Context.Resolvers
 		{
 			return AsakiContext.Get<T>();
 		}
-		
+
 		/// <summary>
 		/// 尝试从全局服务容器获取指定类型的服务实例。
 		/// </summary>

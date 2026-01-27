@@ -1,11 +1,11 @@
 ﻿using System;
-using System. Collections.Generic;
-using System. IO;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
 
-namespace Asaki.Editor. Utilities. Tools. Logging
+namespace Asaki.Editor.Utilities.Tools.Logging
 {
 	/// <summary>
 	/// 日志瘦身核心算法
@@ -20,7 +20,7 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 			/// <summary>纯文本格式（人类可读）</summary>
 			PlainText,
 			/// <summary>Markdown 格式（文档友好）</summary>
-			Markdown
+			Markdown,
 		}
 
 		public struct OptimizationResult
@@ -56,12 +56,12 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 					// 根据 AsakiLogLevel 枚举映射
 					switch (Level)
 					{
-						case 0: return "Debug";
-						case 1: return "Trace";
-						case 2: return "Info";
-						case 3: return "Warning";
-						case 4: return "Error";
-						case 5: return "Fatal";
+						case 0:  return "Debug";
+						case 1:  return "Trace";
+						case 2:  return "Info";
+						case 3:  return "Warning";
+						case 4:  return "Error";
+						case 5:  return "Fatal";
 						default: return "Unknown";
 					}
 				}
@@ -104,16 +104,16 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 			using (StreamReader reader = new StreamReader(srcPath, Encoding.UTF8))
 			{
 				string line;
-				while ((line = reader. ReadLine()) != null)
+				while ((line = reader.ReadLine()) != null)
 				{
 					result.OriginalLines++;
 
 					if (string.IsNullOrWhiteSpace(line)) continue;
 
 					// 保留头部元数据
-					if (line. StartsWith("#"))
+					if (line.StartsWith("#"))
 					{
-						headers. AppendLine(line);
+						headers.AppendLine(line);
 						continue;
 					}
 
@@ -121,16 +121,16 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 					if (line.StartsWith("$DEF|"))
 					{
 						LogEntry entry = ParseDefLine(line);
-						if (entry != null && ! logEntries.ContainsKey(entry.ID))
+						if (entry != null && !logEntries.ContainsKey(entry.ID))
 						{
 							idOrder.Add(entry.ID);
-							logEntries[entry. ID] = entry;
+							logEntries[entry.ID] = entry;
 						}
 					}
 					// 处理增量行
 					else if (line.StartsWith("$INC|"))
 					{
-						var (id, inc) = ParseIncLine(line);
+						(int id, int inc) = ParseIncLine(line);
 						if (logEntries.ContainsKey(id))
 						{
 							logEntries[id].TotalCount += inc;
@@ -149,12 +149,12 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 			switch (format)
 			{
 				case OutputFormat.Original:
-					WriteOriginalFormat(destPath, headers. ToString(), idOrder, logEntries, ref result);
+					WriteOriginalFormat(destPath, headers.ToString(), idOrder, logEntries, ref result);
 					break;
 				case OutputFormat.PlainText:
 					WritePlainTextFormat(destPath, headers.ToString(), idOrder, logEntries, ref result);
 					break;
-				case OutputFormat. Markdown:
+				case OutputFormat.Markdown:
 					WriteMarkdownFormat(destPath, headers.ToString(), srcPath, idOrder, logEntries, ref result);
 					break;
 			}
@@ -179,21 +179,21 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 					ID = int.Parse(parts[1]),
 					Level = int.Parse(parts[2]),
 					Timestamp = long.Parse(parts[3]),
-					Message = parts[4]. Replace("¦", "|"), // 还原转义
-					Payload = parts. Length > 5 ? parts[5]. Replace("¦", "|") : "",
-					TotalCount = 1
+					Message = parts[4].Replace("¦", "|"), // 还原转义
+					Payload = parts.Length > 5 ? parts[5].Replace("¦", "|") : "",
+					TotalCount = 1,
 				};
 
 				// 解析 Path:Line
 				if (parts.Length > 6)
 				{
 					string[] caller = parts[6].Split(':');
-					entry.FilePath = caller. Length > 0 ? caller[0] : "";
+					entry.FilePath = caller.Length > 0 ? caller[0] : "";
 					entry.Line = caller.Length > 1 && int.TryParse(caller[1], out int lineNum) ? lineNum : 0;
 				}
 
 				// 堆栈信息
-				entry.StackJson = parts.Length > 7 ? parts[7]. Replace("¦", "|") : "";
+				entry.StackJson = parts.Length > 7 ? parts[7].Replace("¦", "|") : "";
 
 				return entry;
 			}
@@ -212,7 +212,7 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 				if (parts.Length >= 3)
 				{
 					int id = int.Parse(parts[1]);
-					int inc = int. Parse(parts[2]);
+					int inc = int.Parse(parts[2]);
 					return (id, inc);
 				}
 			}
@@ -228,32 +228,32 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 		{
 			string dir = Path.GetDirectoryName(srcPath);
 			string fileName = Path.GetFileNameWithoutExtension(srcPath);
-			
+
 			string suffix = format switch
-			{
-				OutputFormat.Original => "_Optimized. asakilog",
-				OutputFormat.PlainText => "_Readable.txt",
-				OutputFormat. Markdown => "_Report.md",
-				_ => "_Output.txt"
-			};
+			                {
+				                OutputFormat.Original => "_Optimized. asakilog",
+				                OutputFormat.PlainText => "_Readable.txt",
+				                OutputFormat.Markdown => "_Report.md",
+				                _ => "_Output.txt",
+			                };
 
 			return Path.Combine(dir, $"{fileName}{suffix}");
 		}
 
 		private static void WriteOriginalFormat(string destPath, string headers, List<int> idOrder, Dictionary<int, LogEntry> entries, ref OptimizationResult result)
 		{
-			using (StreamWriter writer = new StreamWriter(destPath, false, Encoding. UTF8))
+			using (StreamWriter writer = new StreamWriter(destPath, false, Encoding.UTF8))
 			{
 				writer.Write(headers);
 
 				foreach (int id in idOrder)
 				{
-					if (! entries.TryGetValue(id, out LogEntry entry)) continue;
+					if (!entries.TryGetValue(id, out LogEntry entry)) continue;
 
 					// 重建 $DEF 行
 					string defLine = $"$DEF|{entry.ID}|{entry.Level}|{entry.Timestamp}|" +
-					                 $"{entry.Message. Replace("|", "¦")}|{entry.Payload. Replace("|", "¦")}|" +
-					                 $"{entry.FilePath}:{entry.Line}|{entry. StackJson. Replace("|", "¦")}";
+					                 $"{entry.Message.Replace("|", "¦")}|{entry.Payload.Replace("|", "¦")}|" +
+					                 $"{entry.FilePath}:{entry.Line}|{entry.StackJson.Replace("|", "¦")}";
 					writer.WriteLine(defLine);
 					result.OptimizedLines++;
 
@@ -276,7 +276,7 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 				writer.WriteLine("║          ASAKI LOG REPORT (Plain Text Format)                  ║");
 				writer.WriteLine("╚════════════════════════════════════════════════════════════════╝");
 				writer.WriteLine();
-				writer.WriteLine(headers. ToString().TrimEnd());
+				writer.WriteLine(headers.ToString().TrimEnd());
 				writer.WriteLine($"# Total Entries: {entries.Count}");
 				writer.WriteLine($"# Total Occurrences:  {entries.Values.Sum(e => e.TotalCount)}");
 				writer.WriteLine();
@@ -290,41 +290,41 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 
 					// 根据日志级别选择符号
 					string levelSymbol = GetLevelSymbol(entry.Level);
-					
-					writer.WriteLine($"[{index++}] {levelSymbol} [{entry.LevelName. ToUpper()}] {entry.TimeString}");
+
+					writer.WriteLine($"[{index++}] {levelSymbol} [{entry.LevelName.ToUpper()}] {entry.TimeString}");
 					writer.WriteLine($"    Message: {entry.Message}");
-					
-					if (! string.IsNullOrEmpty(entry.Payload))
+
+					if (!string.IsNullOrEmpty(entry.Payload))
 					{
 						writer.WriteLine($"    Payload: {entry.Payload}");
 					}
 
 					writer.WriteLine($"    Location: {entry.LocationString}");
-					
+
 					if (entry.TotalCount > 1)
 					{
-						writer.WriteLine($"    ⚠ Occurrences: {entry. TotalCount} times");
+						writer.WriteLine($"    ⚠ Occurrences: {entry.TotalCount} times");
 					}
 
 					// 解析并显示堆栈（如果有）
 					if (!string.IsNullOrEmpty(entry.StackJson) && entry.StackJson != "{}")
 					{
-						writer. WriteLine($"    Stack Trace:");
-						WriteStackTrace(writer, entry. StackJson);
+						writer.WriteLine($"    Stack Trace:");
+						WriteStackTrace(writer, entry.StackJson);
 					}
 
 					writer.WriteLine();
 					result.OptimizedLines += 5;
 				}
 
-				writer. WriteLine(new string('═', 80));
+				writer.WriteLine(new string('═', 80));
 				writer.WriteLine($"End of Report - {entries.Count} unique log entries");
 			}
 		}
 
 		private static void WriteMarkdownFormat(string destPath, string headers, string srcPath, List<int> idOrder, Dictionary<int, LogEntry> entries, ref OptimizationResult result)
 		{
-			using (StreamWriter writer = new StreamWriter(destPath, false, Encoding. UTF8))
+			using (StreamWriter writer = new StreamWriter(destPath, false, Encoding.UTF8))
 			{
 				// Markdown 头部
 				writer.WriteLine("# 📋 Asaki Log Analysis Report");
@@ -338,7 +338,7 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 				// 统计汇总
 				writer.WriteLine("## 📊 Summary Statistics");
 				writer.WriteLine();
-				var levelGroups = entries.Values.GroupBy(e => e. LevelName).OrderBy(g => g.Key);
+				var levelGroups = entries.Values.GroupBy(e => e.LevelName).OrderBy(g => g.Key);
 				writer.WriteLine("| Level | Count | Total Occurrences |");
 				writer.WriteLine("|-------|-------|-------------------|");
 				foreach (var group in levelGroups)
@@ -360,12 +360,12 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 
 					string emoji = GetLevelEmoji(entry.Level);
 					string badge = entry.TotalCount > 1 ? $" `×{entry.TotalCount}`" : "";
-					
+
 					writer.WriteLine($"### {emoji} [{entry.LevelName}] {entry.Message}{badge}");
 					writer.WriteLine();
 					writer.WriteLine($"- **Time:** {entry.TimeString}");
 					writer.WriteLine($"- **Location:** `{entry.LocationString}`");
-					
+
 					if (!string.IsNullOrEmpty(entry.Payload))
 					{
 						writer.WriteLine($"- **Payload:**");
@@ -374,10 +374,10 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 						writer.WriteLine($"  ```");
 					}
 
-					if (! string.IsNullOrEmpty(entry.StackJson) && entry.StackJson != "{}")
+					if (!string.IsNullOrEmpty(entry.StackJson) && entry.StackJson != "{}")
 					{
 						writer.WriteLine($"- **Stack Trace:**");
-						WriteStackTraceMarkdown(writer, entry. StackJson);
+						WriteStackTraceMarkdown(writer, entry.StackJson);
 					}
 
 					writer.WriteLine();
@@ -397,29 +397,29 @@ namespace Asaki.Editor. Utilities. Tools. Logging
 		private static string GetLevelSymbol(int level)
 		{
 			return level switch
-			{
-				0 => "🔍", // Debug
-				1 => "📍", // Trace
-				2 => "ℹ️", // Info
-				3 => "⚠️", // Warning
-				4 => "❌", // Error
-				5 => "💀", // Fatal
-				_ => "❓"
-			};
+			       {
+				       0 => "🔍", // Debug
+				       1 => "📍", // Trace
+				       2 => "ℹ️", // Info
+				       3 => "⚠️", // Warning
+				       4 => "❌",  // Error
+				       5 => "💀", // Fatal
+				       _ => "❓",
+			       };
 		}
 
 		private static string GetLevelEmoji(int level)
 		{
 			return level switch
-			{
-				0 => "🔍",
-				1 => "📍",
-				2 => "ℹ️",
-				3 => "⚠️",
-				4 => "❌",
-				5 => "💀",
-				_ => "❓"
-			};
+			       {
+				       0 => "🔍",
+				       1 => "📍",
+				       2 => "ℹ️",
+				       3 => "⚠️",
+				       4 => "❌",
+				       5 => "💀",
+				       _ => "❓",
+			       };
 		}
 
 		private static void WriteStackTrace(StreamWriter writer, string stackJson)

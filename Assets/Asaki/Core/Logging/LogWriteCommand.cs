@@ -11,7 +11,7 @@ namespace Asaki.Core.Logging
 	///   <item>由结构体改为类，支持引用传递，避免大结构体拷贝开销</item>
 	///   <item>复用单个实例处理 Def（定义）和 Inc（递增）两种命令类型</item>
 	///   <item>所有字段公开，消除属性访问器开销</item>
-		///   <item>轻量级 <see cref="Reset"/> 方法，快速清理引用便于池化</item>
+	///   <item>轻量级 <see cref="Reset"/> 方法，快速清理引用便于池化</item>
 	/// </list>
 	/// <para>线程模型：实例本身非线程安全，由 <see cref="LogCommandPool"/> 保证线程安全的获取与归还</para>
 	/// <para>生命周期：必须从 <see cref="LogCommandPool.Get"/> 获取，使用完毕后必须调用 <see cref="LogCommandPool.Return"/> 归还</para>
@@ -48,7 +48,7 @@ namespace Asaki.Core.Logging
 			Def,
 
 			/// <summary>递增命令：对指定日志 ID 的计数进行累加</summary>
-			Inc
+			Inc,
 		}
 
 		/// <summary>命令类型，决定后续字段的解析方式</summary>
@@ -119,9 +119,9 @@ namespace Asaki.Core.Logging
 	/// </list>
 	/// <para>性能特征：</para>
 	/// <list type="bullet">
-		///   <item>获取操作平均时间复杂度 O(1)，无锁竞争时接近零开销</item>
+	///   <item>获取操作平均时间复杂度 O(1)，无锁竞争时接近零开销</item>
 	///   <item>归还操作平均时间复杂度 O(1)，仅原子操作</item>
-		///   <item>自动扩容：池为空时直接创建新实例，无等待</item>
+	///   <item>自动扩容：池为空时直接创建新实例，无等待</item>
 	/// </list>
 	/// <para>内存管理：必须与 <see cref="AsakiLogAggregator"/> 配合使用，确保命令最终归还</para>
 	/// </remarks>

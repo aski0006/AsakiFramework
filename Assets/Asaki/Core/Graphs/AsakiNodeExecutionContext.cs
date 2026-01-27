@@ -14,7 +14,7 @@ namespace Asaki.Core.Graphs
 		{
 			Node = null;
 			GraphContext = null;
-			InputCache?. Clear();
+			InputCache?.Clear();
 			StartTime = 0f;
 		}
 	}
@@ -36,7 +36,7 @@ namespace Asaki.Core.Graphs
 
 			return new AsakiNodeExecutionContext
 			{
-				InputCache = new Dictionary<string, object>(4)
+				InputCache = new Dictionary<string, object>(4),
 			};
 		}
 

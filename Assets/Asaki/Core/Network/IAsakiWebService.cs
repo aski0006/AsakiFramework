@@ -46,7 +46,7 @@ namespace Asaki.Core.Network
 		/// <param name="cancellationToken">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		UniTask<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken token = default)
+		UniTask<TResponse> GetAsync<TResponse>(string apiPath, CancellationToken token = default(CancellationToken))
 			where TResponse : IAsakiSavable, new();
 
 		/// <summary>
@@ -59,7 +59,7 @@ namespace Asaki.Core.Network
 		/// <param name="token">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		UniTask<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken token = default)
+		UniTask<TResponse> PostAsync<TRequest, TResponse>(string apiPath, TRequest body, CancellationToken token = default(CancellationToken))
 			where TRequest : IAsakiSavable
 			where TResponse : IAsakiSavable, new();
 
@@ -72,7 +72,7 @@ namespace Asaki.Core.Network
 		/// <param name="token">请求取消标记</param>
 		/// <returns>反序列化后的响应对象</returns>
 		/// <exception cref="AsakiWebException">请求失败或反序列化失败时抛出</exception>
-		UniTask<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken token = default)
+		UniTask<TResponse> PostFormAsync<TResponse>(string apiPath, WWWForm form, CancellationToken token = default(CancellationToken))
 			where TResponse : IAsakiSavable, new();
 	}
 

@@ -16,7 +16,7 @@ namespace Asaki.Editor.UI
 		private const string CODE_GEN_PATH = "Assets/Asaki/Generated/UIAsset_2_Id/WindowAssetId.cs";
 		private const string CONFIG_ASSET_PATH = "Assets/Resources/Asaki/Configuration/AsakiConfig.asset";
 
-		[System.Serializable]
+		[Serializable]
 		private class UIItem
 		{
 			public GameObject Prefab;
@@ -241,7 +241,7 @@ namespace Asaki.Editor.UI
 				AssetDatabase.Refresh();
 				EditorUtility.DisplayDialog("Success", $"Synced {_items.Count} items to AsakiConfig & UIID.cs", "OK");
 			}
-			catch (System.Exception e)
+			catch (Exception e)
 			{
 				Debug.LogError($"[AsakiUI] Failed: {e.Message}");
 			}

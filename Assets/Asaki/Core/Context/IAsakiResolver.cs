@@ -16,7 +16,7 @@
 		/// <returns>请求的服务实例。</returns>
 		/// <exception cref="KeyNotFoundException">当指定类型的服务未找到时抛出。</exception>
 		T Get<T>() where T : class, IAsakiService;
-		
+
 		/// <summary>
 		/// 尝试获取指定类型的服务实例，如果找到则返回true，否则返回false。
 		/// </summary>

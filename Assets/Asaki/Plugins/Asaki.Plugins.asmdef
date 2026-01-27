@@ -1,22 +1,22 @@
 {
-    "name": "Asaki.Plungins",
-    "rootNamespace": "",
-    "references": [
-        "GUID:d528c8c98d269ca44a06cd9624a03945",
-        "GUID:958d2909255c6af48a8af0b99ce21502",
-        "GUID:176bb787c79e6b34f94fabd7443913f7",
-        "GUID:b5684d55e453ef04d8b5c74234a5a069",
-        "GUID:38a80d2f0df49a5459c085908b4eb3ad",
-        "GUID:6055be8ebefd69e48b49212b09b47b2f",
-        "GUID:f51ebe6a0ceec4240a699833d6309b23"
-    ],
-    "includePlatforms": [],
-    "excludePlatforms": [],
-    "allowUnsafeCode": false,
-    "overrideReferences": false,
-    "precompiledReferences": [],
-    "autoReferenced": true,
-    "defineConstraints": [],
-    "versionDefines": [],
-    "noEngineReferences": false
+  "name": "Asaki.Plungins",
+  "rootNamespace": "",
+  "references": [
+    "GUID:d528c8c98d269ca44a06cd9624a03945",
+    "GUID:958d2909255c6af48a8af0b99ce21502",
+    "GUID:176bb787c79e6b34f94fabd7443913f7",
+    "GUID:b5684d55e453ef04d8b5c74234a5a069",
+    "GUID:38a80d2f0df49a5459c085908b4eb3ad",
+    "GUID:6055be8ebefd69e48b49212b09b47b2f",
+    "GUID:f51ebe6a0ceec4240a699833d6309b23"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
 }

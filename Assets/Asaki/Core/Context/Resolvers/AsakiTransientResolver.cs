@@ -12,7 +12,7 @@ namespace Asaki.Core.Context.Resolvers
 	{
 		private readonly IAsakiResolver _parent; // 通常是 SceneContext 或 Global
 		private readonly object _param;          // 临时参数
-		
+
 		/// <summary>
 		/// 初始化<see cref="AsakiTransientResolver"/>结构体的新实例。
 		/// </summary>
@@ -27,7 +27,7 @@ namespace Asaki.Core.Context.Resolvers
 			_parent = parent;
 			_param = param;
 		}
-		
+
 		/// <summary>
 		/// 解析指定类型的服务实例。
 		/// </summary>

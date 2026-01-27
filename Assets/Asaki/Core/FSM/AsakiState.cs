@@ -56,7 +56,7 @@
 		/// 子类应重写此方法来实现特定状态的进入逻辑。
 		/// </remarks>
 		public virtual void OnEnter() { }
-		
+
 		/// <summary>
 		/// 当状态处于激活状态时，每帧调用的更新方法。
 		/// </summary>
@@ -67,7 +67,7 @@
 		/// 子类应重写此方法来实现特定状态的每帧更新逻辑。
 		/// </remarks>
 		public virtual void OnUpdate(float deltaTime) { }
-		
+
 		/// <summary>
 		/// 当状态处于激活状态时，每固定时间步调用的物理更新方法。
 		/// </summary>
@@ -78,7 +78,7 @@
 		/// 子类应重写此方法来实现特定状态的物理更新逻辑。
 		/// </remarks>
 		public virtual void OnFixedUpdate(float fixedDeltaTime) { }
-		
+
 		/// <summary>
 		/// 当状态被停用并切换到其他状态时调用的方法。
 		/// </summary>
