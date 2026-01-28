@@ -1,4 +1,4 @@
 ﻿namespace Asaki.Editor.Diagnostics
 {
-	public class BlackboardProfilerWindow { }
+    public class BlackboardProfilerWindow { }
 }

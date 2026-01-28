@@ -5,25 +5,28 @@ using UnityEngine.UIElements;
 
 namespace Asaki.Editor.ModuleSystem.Graph
 {
-	[AsakiCustomGraphEditor(typeof(AsakiModuleGraph))]
-	public class AsakiModuleGraphController : IAsakiGraphViewController
-	{
-		private AsakiModuleGraph _graph;
-		public AsakiModuleGraphController(AsakiModuleGraph graph)
-		{
-			_graph = graph;
-		}
+    [AsakiCustomGraphEditor(typeof(AsakiModuleGraph))]
+    public class AsakiModuleGraphController : IAsakiGraphViewController
+    {
+        private AsakiModuleGraph _graph;
 
-		public VisualElement CreateGraphView()
-		{
-			AsakiGraphView view = new AsakiGraphView(_graph);
-			// 禁用创建新节点，因为这是生成的图
-			view.nodeCreationRequest = null;
-			return view;
-		}
+        public AsakiModuleGraphController(AsakiModuleGraph graph)
+        {
+            _graph = graph;
+        }
 
-		public void Update() { }
-		public void Save() { }
-		public void Dispose() { }
-	}
+        public VisualElement CreateGraphView()
+        {
+            AsakiGraphView view = new AsakiGraphView(_graph);
+            // 禁用创建新节点，因为这是生成的图
+            view.nodeCreationRequest = null;
+            return view;
+        }
+
+        public void Update() { }
+
+        public void Save() { }
+
+        public void Dispose() { }
+    }
 }

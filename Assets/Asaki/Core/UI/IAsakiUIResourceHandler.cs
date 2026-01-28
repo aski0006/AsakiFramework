@@ -2,8 +2,8 @@
 
 namespace Asaki.Core.UI
 {
-	public interface IUIResourceHandle : IDisposable
-	{
-		bool IsValid { get; }
-	}
+    public interface IUIResourceHandle : IDisposable
+    {
+        bool IsValid { get; }
+    }
 }

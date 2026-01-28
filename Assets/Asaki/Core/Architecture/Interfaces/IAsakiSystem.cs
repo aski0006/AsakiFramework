@@ -2,8 +2,8 @@
 
 namespace Asaki.Core.Architecture.Interfaces
 {
-	public interface IAsakiSystem : IDisposable
-	{
-		void Setup();
-	}
+    public interface IAsakiSystem : IDisposable
+    {
+        void Setup();
+    }
 }

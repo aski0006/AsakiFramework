@@ -18,8 +18,10 @@ namespace Asaki.Unity.Bridge
         {
             get
             {
-                if (_isDisposed) return CancellationToken.None;
-                if (_cts == null) _cts = new CancellationTokenSource();
+                if (_isDisposed)
+                    return CancellationToken.None;
+                if (_cts == null)
+                    _cts = new CancellationTokenSource();
                 return _cts.Token;
             }
         }

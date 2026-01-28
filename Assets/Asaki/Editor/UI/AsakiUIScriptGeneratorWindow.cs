@@ -1,8 +1,8 @@
-﻿using Asaki.Core.UI;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Asaki.Core.UI;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
@@ -10,311 +10,338 @@ using UnityEngine.UI;
 
 namespace Asaki.Editor.UI
 {
-	public static class AsakiUIScriptGeneratorWindow
-	{
-		private const string DEFAULT_NAMESPACE = "Asaki.UI";
-		private const string DEFAULT_OUTPUT_PATH = "Assets/Asaki/Generated/UI/Windows";
+    public static class AsakiUIScriptGeneratorWindow
+    {
+        private const string DEFAULT_NAMESPACE = "Asaki.UI";
+        private const string DEFAULT_OUTPUT_PATH = "Assets/Asaki/Generated/UI/Windows";
 
-		// ========================= 主入口 =========================
+        // ========================= 主入口 =========================
 
-		[MenuItem("Asaki/UI/Generate Script from Scene Object &#g")] // Alt+Shift+G
-		public static void GenerateScript()
-		{
-			GameObject selected = Selection.activeGameObject;
-			if (!ValidateSelection(selected)) return;
+        [MenuItem("Asaki/UI/Generate Script from Scene Object &#g")] // Alt+Shift+G
+        public static void GenerateScript()
+        {
+            GameObject selected = Selection.activeGameObject;
+            if (!ValidateSelection(selected))
+                return;
 
-			// 生成默认文件名（去掉空格和非法字符）
-			string defaultName = SanitizeClassName(selected.name) + "Window";
+            // 生成默认文件名（去掉空格和非法字符）
+            string defaultName = SanitizeClassName(selected.name) + "Window";
 
-			string filePath = EditorUtility.SaveFilePanelInProject(
-				"Save UI Script",
-				defaultName,
-				"cs",
-				"Choose location to save the generated script",
-				DEFAULT_OUTPUT_PATH
-			);
+            string filePath = EditorUtility.SaveFilePanelInProject(
+                "Save UI Script",
+                defaultName,
+                "cs",
+                "Choose location to save the generated script",
+                DEFAULT_OUTPUT_PATH
+            );
 
-			if (string.IsNullOrEmpty(filePath)) return;
+            if (string.IsNullOrEmpty(filePath))
+                return;
 
-			try
-			{
-				string scriptContent = GenerateScriptContent(selected, filePath);
-				File.WriteAllText(filePath, scriptContent, Encoding.UTF8);
-				AssetDatabase.Refresh();
+            try
+            {
+                string scriptContent = GenerateScriptContent(selected, filePath);
+                File.WriteAllText(filePath, scriptContent, Encoding.UTF8);
+                AssetDatabase.Refresh();
 
-				if (EditorUtility.DisplayDialog("Success",
-					$"Script generated:\n{filePath}\n\nAdd to scene object?", "Yes", "No"))
-				{
-					AddScriptToObject(selected, Path.GetFileNameWithoutExtension(filePath));
-				}
-			}
-			catch (System.Exception e)
-			{
-				Debug.LogError($"[AsakiUI] Script generation failed: {e}");
-				EditorUtility.DisplayDialog("Error", e.Message, "OK");
-			}
-		}
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Success",
+                        $"Script generated:\n{filePath}\n\nAdd to scene object?",
+                        "Yes",
+                        "No"
+                    )
+                )
+                {
+                    AddScriptToObject(selected, Path.GetFileNameWithoutExtension(filePath));
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[AsakiUI] Script generation failed: {e}");
+                EditorUtility.DisplayDialog("Error", e.Message, "OK");
+            }
+        }
 
-		// ========================= 验证 =========================
+        // ========================= 验证 =========================
 
-		private static bool ValidateSelection(GameObject selected)
-		{
-			if (selected == null)
-			{
-				EditorUtility.DisplayDialog("Error", "Please select a UI GameObject in Hierarchy.", "OK");
-				return false;
-			}
+        private static bool ValidateSelection(GameObject selected)
+        {
+            if (selected == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "Error",
+                    "Please select a UI GameObject in Hierarchy.",
+                    "OK"
+                );
+                return false;
+            }
 
-			if (selected.GetComponent<RectTransform>() == null)
-			{
-				EditorUtility.DisplayDialog("Error", "Selected object must have RectTransform.", "OK");
-				return false;
-			}
+            if (selected.GetComponent<RectTransform>() == null)
+            {
+                EditorUtility.DisplayDialog(
+                    "Error",
+                    "Selected object must have RectTransform.",
+                    "OK"
+                );
+                return false;
+            }
 
-			return true;
-		}
+            return true;
+        }
 
-		// ========================= 代码生成 =========================
+        // ========================= 代码生成 =========================
 
-		private static string GenerateScriptContent(GameObject root, string filePath)
-		{
-			string className = Path.GetFileNameWithoutExtension(filePath);
-			string namespaceName = ExtractNamespace(filePath);
-			var componentData = CollectComponents(root.transform);
+        private static string GenerateScriptContent(GameObject root, string filePath)
+        {
+            string className = Path.GetFileNameWithoutExtension(filePath);
+            string namespaceName = ExtractNamespace(filePath);
+            var componentData = CollectComponents(root.transform);
 
-			StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
 
-			// === Using 语句 ===
-			sb.AppendLine("// <auto-generated/>");
-			sb.AppendLine("// Generated by AsakiUIScriptGenerator");
-			sb.AppendLine();
-			sb.AppendLine("using Asaki.Core.UI;");
-			sb.AppendLine("using UnityEngine;");
-			sb.AppendLine("using UnityEngine.UI;");
+            // === Using 语句 ===
+            sb.AppendLine("// <auto-generated/>");
+            sb.AppendLine("// Generated by AsakiUIScriptGenerator");
+            sb.AppendLine();
+            sb.AppendLine("using Asaki.Core.UI;");
+            sb.AppendLine("using UnityEngine;");
+            sb.AppendLine("using UnityEngine.UI;");
 
-			if (componentData.Any(d => d.RequiresTMPro))
-				sb.AppendLine("using TMPro;");
+            if (componentData.Any(d => d.RequiresTMPro))
+                sb.AppendLine("using TMPro;");
 
-			sb.AppendLine();
+            sb.AppendLine();
 
-			// === 命名空间与类 ===
-			sb.AppendLine($"namespace {namespaceName}");
-			sb.AppendLine("{");
-			sb.AppendLine($"    public class {className} : AsakiUIWindow");
-			sb.AppendLine("    {");
+            // === 命名空间与类 ===
+            sb.AppendLine($"namespace {namespaceName}");
+            sb.AppendLine("{");
+            sb.AppendLine($"    public class {className} : AsakiUIWindow");
+            sb.AppendLine("    {");
 
-			// === 字段生成 ===
-			foreach (ComponentInfo data in componentData)
-			{
-				string parentAttr = string.IsNullOrEmpty(data.ParentPath)
-					? ""
-					: $", Parent = \"{data.ParentPath}\"";
+            // === 字段生成 ===
+            foreach (ComponentInfo data in componentData)
+            {
+                string parentAttr = string.IsNullOrEmpty(data.ParentPath)
+                    ? ""
+                    : $", Parent = \"{data.ParentPath}\"";
 
-				sb.AppendLine($"        [AsakiUIBuilder(AsakiUIWidgetType.{data.WidgetType}, Name = \"{data.OriginalName}\"{parentAttr})]");
-				sb.AppendLine($"        private {data.TypeName} {data.FieldName};");
-				sb.AppendLine();
-			}
+                sb.AppendLine(
+                    $"        [AsakiUIBuilder(AsakiUIWidgetType.{data.WidgetType}, Name = \"{data.OriginalName}\"{parentAttr})]"
+                );
+                sb.AppendLine($"        private {data.TypeName} {data.FieldName};");
+                sb.AppendLine();
+            }
 
-			sb.AppendLine("    }");
-			sb.AppendLine("}");
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
 
-			return sb.ToString();
-		}
+            return sb.ToString();
+        }
 
-		// ========================= 组件收集 =========================
+        // ========================= 组件收集 =========================
 
-		private static List<ComponentInfo> CollectComponents(Transform root)
-		{
-			var components = new List<ComponentInfo>();
-			var usedNames = new HashSet<string>();
+        private static List<ComponentInfo> CollectComponents(Transform root)
+        {
+            var components = new List<ComponentInfo>();
+            var usedNames = new HashSet<string>();
 
-			// 深度优先遍历（跳过根节点）
-			foreach (Transform child in root)
-			{
-				Traverse(child, root, "", components, usedNames);
-			}
+            // 深度优先遍历（跳过根节点）
+            foreach (Transform child in root)
+            {
+                Traverse(child, root, "", components, usedNames);
+            }
 
-			return components;
-		}
+            return components;
+        }
 
-		private static void Traverse(Transform current, Transform root, string parentPath,
-		                             List<ComponentInfo> components, HashSet<string> usedNames)
-		{
-			// 尝试识别组件
-			if (TryIdentifyComponent(current, out ComponentInfo info))
-			{
-				info.ParentPath = parentPath;
-				info.OriginalName = current.name;
+        private static void Traverse(
+            Transform current,
+            Transform root,
+            string parentPath,
+            List<ComponentInfo> components,
+            HashSet<string> usedNames
+        )
+        {
+            // 尝试识别组件
+            if (TryIdentifyComponent(current, out ComponentInfo info))
+            {
+                info.ParentPath = parentPath;
+                info.OriginalName = current.name;
 
-				// 生成唯一字段名
-				string baseName = GenerateFieldName(current.name);
-				info.FieldName = MakeUniqueFieldName(baseName, usedNames);
+                // 生成唯一字段名
+                string baseName = GenerateFieldName(current.name);
+                info.FieldName = MakeUniqueFieldName(baseName, usedNames);
 
-				components.Add(info);
-			}
+                components.Add(info);
+            }
 
-			// 递归子节点
-			string currentPath = string.IsNullOrEmpty(parentPath)
-				? current.name
-				: $"{parentPath}/{current.name}";
+            // 递归子节点
+            string currentPath = string.IsNullOrEmpty(parentPath)
+                ? current.name
+                : $"{parentPath}/{current.name}";
 
-			foreach (Transform child in current)
-			{
-				Traverse(child, root, currentPath, components, usedNames);
-			}
-		}
+            foreach (Transform child in current)
+            {
+                Traverse(child, root, currentPath, components, usedNames);
+            }
+        }
 
-		private static bool TryIdentifyComponent(Transform transform, out ComponentInfo info)
-		{
-			info = new ComponentInfo();
+        private static bool TryIdentifyComponent(Transform transform, out ComponentInfo info)
+        {
+            info = new ComponentInfo();
 
-			// 优先级：Button > TMP > Legacy > 其他
-			if (transform.TryGetComponent<Button>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.Button;
-				info.TypeName = "Button";
-				return true;
-			}
-			if (transform.TryGetComponent<TMP_Text>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.TextMeshPro;
-				info.TypeName = "TMP_Text";
-				info.RequiresTMPro = true;
-				return true;
-			}
-			if (transform.TryGetComponent<Text>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.Text;
-				info.TypeName = "Text";
-				return true;
-			}
-			if (transform.TryGetComponent<Image>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.Image;
-				info.TypeName = "Image";
-				return true;
-			}
-			if (transform.TryGetComponent<Slider>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.Slider;
-				info.TypeName = "Slider";
-				return true;
-			}
-			if (transform.TryGetComponent<Toggle>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.Toggle;
-				info.TypeName = "Toggle";
-				return true;
-			}
-			if (transform.TryGetComponent<ScrollRect>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.ScrollView;
-				info.TypeName = "ScrollRect";
-				return true;
-			}
-			if (transform.TryGetComponent<TMP_InputField>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.InputField;
-				info.TypeName = "TMP_InputField";
-				info.RequiresTMPro = true;
-				return true;
-			}
-			if (transform.TryGetComponent<InputField>(out _))
-			{
-				info.WidgetType = AsakiUIWidgetType.InputField;
-				info.TypeName = "InputField";
-				return true;
-			}
+            // 优先级：Button > TMP > Legacy > 其他
+            if (transform.TryGetComponent<Button>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Button;
+                info.TypeName = "Button";
+                return true;
+            }
+            if (transform.TryGetComponent<TMP_Text>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.TextMeshPro;
+                info.TypeName = "TMP_Text";
+                info.RequiresTMPro = true;
+                return true;
+            }
+            if (transform.TryGetComponent<Text>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Text;
+                info.TypeName = "Text";
+                return true;
+            }
+            if (transform.TryGetComponent<Image>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Image;
+                info.TypeName = "Image";
+                return true;
+            }
+            if (transform.TryGetComponent<Slider>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Slider;
+                info.TypeName = "Slider";
+                return true;
+            }
+            if (transform.TryGetComponent<Toggle>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Toggle;
+                info.TypeName = "Toggle";
+                return true;
+            }
+            if (transform.TryGetComponent<ScrollRect>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.ScrollView;
+                info.TypeName = "ScrollRect";
+                return true;
+            }
+            if (transform.TryGetComponent<TMP_InputField>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.InputField;
+                info.TypeName = "TMP_InputField";
+                info.RequiresTMPro = true;
+                return true;
+            }
+            if (transform.TryGetComponent<InputField>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.InputField;
+                info.TypeName = "InputField";
+                return true;
+            }
 
-			return false;
-		}
+            return false;
+        }
 
-		// ========================= 工具方法 =========================
+        // ========================= 工具方法 =========================
 
-		private static string SanitizeClassName(string name)
-		{
-			return name.Replace(" ", "").Replace("-", "_").Replace("(", "").Replace(")", "");
-		}
+        private static string SanitizeClassName(string name)
+        {
+            return name.Replace(" ", "").Replace("-", "_").Replace("(", "").Replace(")", "");
+        }
 
-		private static string GenerateFieldName(string objectName)
-		{
-			// "btn_ok" -> "_btnOk" ; "TitleText" -> "_titleText"
-			string[] parts = objectName.Split('_', ' ');
-			if (parts.Length == 0) return "_" + objectName;
+        private static string GenerateFieldName(string objectName)
+        {
+            // "btn_ok" -> "_btnOk" ; "TitleText" -> "_titleText"
+            string[] parts = objectName.Split('_', ' ');
+            if (parts.Length == 0)
+                return "_" + objectName;
 
-			StringBuilder sb = new StringBuilder("_");
-			for (int i = 0; i < parts.Length; i++)
-			{
-				if (string.IsNullOrEmpty(parts[i])) continue;
+            StringBuilder sb = new StringBuilder("_");
+            for (int i = 0; i < parts.Length; i++)
+            {
+                if (string.IsNullOrEmpty(parts[i]))
+                    continue;
 
-				string part = parts[i];
-				if (i == 0 && part.Length > 1)
-				{
-					// 首词保持小写（约定）
-					sb.Append(char.ToLower(part[0]) + part.Substring(1));
-				}
-				else
-				{
-					sb.Append(char.ToUpper(part[0]) + part.Substring(1));
-				}
-			}
+                string part = parts[i];
+                if (i == 0 && part.Length > 1)
+                {
+                    // 首词保持小写（约定）
+                    sb.Append(char.ToLower(part[0]) + part.Substring(1));
+                }
+                else
+                {
+                    sb.Append(char.ToUpper(part[0]) + part.Substring(1));
+                }
+            }
 
-			string result = sb.ToString();
-			return char.IsDigit(result[1]) ? "_" + result : result;
-		}
+            string result = sb.ToString();
+            return char.IsDigit(result[1]) ? "_" + result : result;
+        }
 
-		private static string MakeUniqueFieldName(string baseName, HashSet<string> usedNames)
-		{
-			string name = baseName;
-			int counter = 1;
-			while (usedNames.Contains(name))
-			{
-				name = $"{baseName}_{counter++}";
-			}
-			usedNames.Add(name);
-			return name;
-		}
+        private static string MakeUniqueFieldName(string baseName, HashSet<string> usedNames)
+        {
+            string name = baseName;
+            int counter = 1;
+            while (usedNames.Contains(name))
+            {
+                name = $"{baseName}_{counter++}";
+            }
+            usedNames.Add(name);
+            return name;
+        }
 
-		private static string ExtractNamespace(string filePath)
-		{
-			if (filePath.StartsWith("Assets/"))
-			{
-				string path = Path.GetDirectoryName(filePath.Substring("Assets/".Length));
-				if (!string.IsNullOrEmpty(path))
-				{
-					return path.Replace('/', '.');
-				}
-			}
-			return DEFAULT_NAMESPACE;
-		}
+        private static string ExtractNamespace(string filePath)
+        {
+            if (filePath.StartsWith("Assets/"))
+            {
+                string path = Path.GetDirectoryName(filePath.Substring("Assets/".Length));
+                if (!string.IsNullOrEmpty(path))
+                {
+                    return path.Replace('/', '.');
+                }
+            }
+            return DEFAULT_NAMESPACE;
+        }
 
-		private static void AddScriptToObject(GameObject target, string className)
-		{
-			// 动态挂载生成的脚本（需要等编译完成后）
-			EditorApplication.delayCall += () =>
-			{
-				System.Type type = System.Type.GetType($"{className}, Assembly-CSharp");
-				if (type != null)
-				{
-					target.AddComponent(type);
-					EditorUtility.SetDirty(target);
-					Debug.Log($"[AsakiUI] Added {className} to {target.name}");
-				}
-				else
-				{
-					Debug.LogWarning($"[AsakiUI] Could not find type {className}. Please add manually after compilation.");
-				}
-			};
-		}
+        private static void AddScriptToObject(GameObject target, string className)
+        {
+            // 动态挂载生成的脚本（需要等编译完成后）
+            EditorApplication.delayCall += () =>
+            {
+                System.Type type = System.Type.GetType($"{className}, Assembly-CSharp");
+                if (type != null)
+                {
+                    target.AddComponent(type);
+                    EditorUtility.SetDirty(target);
+                    Debug.Log($"[AsakiUI] Added {className} to {target.name}");
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[AsakiUI] Could not find type {className}. Please add manually after compilation."
+                    );
+                }
+            };
+        }
 
-		private class ComponentInfo
-		{
-			public string FieldName;
-			public string OriginalName;
-			public string ParentPath;
-			public string TypeName;
-			public AsakiUIWidgetType WidgetType;
-			public bool RequiresTMPro;
-		}
-	}
+        private class ComponentInfo
+        {
+            public string FieldName;
+            public string OriginalName;
+            public string ParentPath;
+            public string TypeName;
+            public AsakiUIWidgetType WidgetType;
+            public bool RequiresTMPro;
+        }
+    }
 }

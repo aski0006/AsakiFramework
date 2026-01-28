@@ -2,8 +2,8 @@
 
 namespace Asaki.Core.Architecture.Interfaces
 {
-	public interface IAsakiModel : IDisposable
-	{
-		void Create();
-	}
+    public interface IAsakiModel : IDisposable
+    {
+        void Create();
+    }
 }

@@ -1,8 +1,8 @@
 ﻿namespace Asaki.Core.Pooling
 {
-	public interface IAsakiPoolable
-	{
-		void OnSpawn();
-		void OnDespawn();
-	}
+    public interface IAsakiPoolable
+    {
+        void OnSpawn();
+        void OnDespawn();
+    }
 }

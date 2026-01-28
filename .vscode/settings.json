@@ -1,3 +1,9 @@
 {
-    "editorjumper.selectedIDE": "Rider"
+    "editorjumper.selectedIDE": "Rider",
+    "[csharp]": {
+        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+    },
+    "[xml]": {
+        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+    }
 }
