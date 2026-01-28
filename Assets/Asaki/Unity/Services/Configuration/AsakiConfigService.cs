@@ -467,7 +467,7 @@ namespace Asaki.Unity.Services.Configuration
 			if (results == null)
 			{
 				await UniTask.SwitchToThreadPool();
-				string csvContent = await File.ReadAllTextAsync(csvPath).AsUniTask();
+				string csvContent = await File.ReadAllTextAsync(csvPath).AsUniTask(useCurrentSynchronizationContext: false);
 				await UniTask.SwitchToMainThread();
 				results = await ParseCsvAsync<T>(csvContent);
 				await SaveToBinaryAsync(binaryPath, results);
@@ -504,7 +504,7 @@ namespace Asaki.Unity.Services.Configuration
 		private async UniTask<List<T>> LoadFromBinaryAsync<T>(string path) where T : class, IAsakiConfig, new()
 		{
 			await UniTask.SwitchToThreadPool();
-			byte[] bytes = await File.ReadAllBytesAsync(path).AsUniTask();
+			byte[] bytes = await File.ReadAllBytesAsync(path).AsUniTask(useCurrentSynchronizationContext: false);
 			await UniTask.SwitchToMainThread();
 			return DeserializeBytes<T>(bytes);
 		}
@@ -513,7 +513,7 @@ namespace Asaki.Unity.Services.Configuration
 		{
 			byte[] bytes = SerializeBytes(data);
 			await UniTask.SwitchToThreadPool();
-			await File.WriteAllBytesAsync(path, bytes).AsUniTask();
+			await File.WriteAllBytesAsync(path, bytes).AsUniTask(useCurrentSynchronizationContext: false);
 			await UniTask.SwitchToMainThread();
 		}
 
@@ -525,7 +525,7 @@ namespace Asaki.Unity.Services.Configuration
 				ALog.Info($"[AsakiConfig] Hot Reloading: {typeof(T).Name}...");
 
 				await UniTask.SwitchToThreadPool();
-				string content = await File.ReadAllTextAsync(csvPath).AsUniTask();
+				string content = await File.ReadAllTextAsync(csvPath).AsUniTask(useCurrentSynchronizationContext: false);
 				await UniTask.SwitchToMainThread();
 
 				var list = await ParseCsvAsync<T>(content);
@@ -628,7 +628,7 @@ namespace Asaki.Unity.Services.Configuration
 			}
 			finally
 			{
-				await _loadSemaphore.WaitAsync().AsUniTask();
+				await _loadSemaphore.WaitAsync().AsUniTask(useCurrentSynchronizationContext: false);
 				try
 				{
 					_loadingTasks.Remove(configType);

@@ -25,7 +25,7 @@ namespace Asaki.Unity.Services.Async
 
 		public CancellationToken CreateLinkedToken(CancellationToken externalToken = default(CancellationToken))
 		{
-			if (_serviceCts.IsCancellationRequested) return CancellationToken.None;
+			if (_serviceCts == null || _serviceCts.IsCancellationRequested) return CancellationToken.None;
 			if (externalToken == CancellationToken.None) return _serviceCts.Token;
 			return CancellationTokenSource.CreateLinkedTokenSource(_serviceCts.Token, externalToken).Token;
 		}
@@ -64,7 +64,12 @@ namespace Asaki.Unity.Services.Async
 
 		public void Dispose()
 		{
-			CancelAllTasks();
+			if (_serviceCts != null)
+			{
+				_serviceCts.Cancel();
+				_serviceCts.Dispose();
+				_serviceCts = null;
+			}
 		}
 	}
 }

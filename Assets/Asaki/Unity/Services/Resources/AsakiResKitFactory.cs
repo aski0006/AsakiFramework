@@ -51,12 +51,16 @@ namespace Asaki.Unity.Services.Resources
 					break;
 
 				case AsakiResKitMode.Addressables:
+					#if ASAKI_USE_ADDRESSABLES
 					// 策略：Addressables
 					strategy = new AsakiAddressablesStrategy(asyncService);
 					// 依赖：Addressables 内部 Catalog 自动管理
 					lookup = AsakiNullResDependencyLookup.Instance;
+					#else
 					throw new NotSupportedException(
-						"[ResKitFactory] Addressables mode requires 'ASAKI_USE_ADDRESSABLE' macro and Addressables package installed.");
+						"[ResKitFactory] Addressables mode requires 'ASAKI_USE_ADDRESSABLES' macro and Addressables package installed.");
+					#endif
+					break;
 
 				case AsakiResKitMode.Custom:
 					if (_customStrategyBuilder == null)

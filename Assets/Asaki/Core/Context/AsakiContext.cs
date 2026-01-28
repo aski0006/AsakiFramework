@@ -1,3 +1,4 @@
+using Asaki.Core.Logging;
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -236,7 +237,7 @@ namespace Asaki.Core.Context
 				{
 					// 记录异常但不中断清理流程
 					#if UNITY_EDITOR || DEVELOPMENT_BUILD
-					Debug.LogError($"[AsakiContext] Error disposing service {kvp.Key.Name}: {ex}");
+					ALog.Error($"[AsakiContext] Error disposing service {kvp.Key.Name}: {ex}");
 					#endif
 				}
 			}

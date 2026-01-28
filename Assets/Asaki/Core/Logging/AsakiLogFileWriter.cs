@@ -385,16 +385,19 @@ namespace Asaki.Core.Logging
 				// 触发取消
 				_cts.Cancel();
 
-				// 等待异步操作结束
-				_writeTask.GetAwaiter().GetResult();
+				// 不等待异步操作结束，直接清理资源
+				// 因为在退出 PlayMode 时，PlayerLoop 已经停止，等待可能会导致问题
 			}
 			catch
 			{
-				// 忽略等待过程中的异常
+				// 忽略异常
 			}
 			finally
 			{
 				_cts.Dispose();
+				// 直接清理文件资源
+				_streamWriter?.Dispose();
+				_fileStream?.Dispose();
 			}
 		}
 	}

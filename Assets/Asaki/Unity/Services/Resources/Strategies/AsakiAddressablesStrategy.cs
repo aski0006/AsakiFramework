@@ -1,4 +1,5 @@
-﻿using Asaki.Core.Async;
+﻿#if ASAKI_USE_ADDRESSABLES
+using Asaki.Core.Async;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
@@ -149,3 +150,4 @@ namespace Asaki.Unity.Services.Resources.Strategies
 		}
 	}
 }
+#endif

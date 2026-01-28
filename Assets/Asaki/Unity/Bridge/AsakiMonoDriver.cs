@@ -1,6 +1,5 @@
 ﻿using Asaki.Core.Logging;
 using Asaki.Core.Simulation;
-using System;
 using UnityEngine;
 
 namespace Asaki.Unity.Bridge

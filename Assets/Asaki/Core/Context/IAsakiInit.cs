@@ -14,7 +14,7 @@ namespace Asaki.Core.Context
 		/// <summary>
 		/// 执行无参数初始化操作。
 		/// </summary>
-		void Init(); // 默认无参构造
+		void Init(IAsakiResolver resolver = null); // 默认无参构造
 	}
 
 	/// <summary>

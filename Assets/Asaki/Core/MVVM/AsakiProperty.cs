@@ -75,6 +75,40 @@ namespace Asaki.Core.MVVM
 		private readonly List<IAsakiObserver<T>> _observers = new List<IAsakiObserver<T>>();
 
 		/// <summary>
+		/// 订阅凭证，实现IDisposable接口，用于自动取消订阅或解绑。
+		/// </summary>
+		private class Subscription : IDisposable
+		{
+			private readonly AsakiProperty<T> _property;
+			private readonly Action _unsubscribeAction;
+			private bool _disposed;
+
+			/// <summary>
+			/// 初始化订阅凭证。
+			/// </summary>
+			/// <param name="property">AsakiProperty实例</param>
+			/// <param name="unsubscribeAction">取消订阅的委托</param>
+			public Subscription(AsakiProperty<T> property, Action unsubscribeAction)
+			{
+				_property = property;
+				_unsubscribeAction = unsubscribeAction;
+				_disposed = false;
+			}
+
+			/// <summary>
+			/// 执行取消订阅操作。
+			/// </summary>
+			public void Dispose()
+			{
+				if (!_disposed)
+				{
+					_unsubscribeAction();
+					_disposed = true;
+				}
+			}
+		}
+
+		/// <summary>
 		/// 使用默认值初始化AsakiProperty实例。
 		/// </summary>
 		/// <remarks>
@@ -130,19 +164,22 @@ namespace Asaki.Core.MVVM
 		/// <example>
 		/// <code>
 		/// var property = new AsakiProperty&lt;string&gt;("initial");
-		/// Action&lt;string&gt; onChanged = value => Debug.Log($"Value: {value}");
 		/// 
 		/// // 订阅值变化（会立即输出 "Value: initial"）
-		/// property.Subscribe(onChanged);
-		/// 
-		/// // 更新值（会输出 "Value: updated"）
-		/// property.Value = "updated";
+		/// using (var subscription = property.Subscribe(value => Debug.Log($"Value: {value}")))
+		/// {
+		///     // 更新值（会输出 "Value: updated"）
+		///     property.Value = "updated";
+		/// }
+		/// // 超出using块后自动取消订阅
+		/// property.Value = "changed";
 		/// </code>
 		/// </example>
-		public void Subscribe(Action<T> action)
+		public IDisposable Subscribe(Action<T> action)
 		{
 			_onValueChangedAction += action;
 			action?.Invoke(_value);
+			return new Subscription(this, () => _onValueChangedAction -= action);
 		}
 
 		/// <summary>
@@ -194,15 +231,20 @@ namespace Asaki.Core.MVVM
 		/// var observer = new MyObserver();
 		/// 
 		/// // 绑定观察者（会立即输出 "Value changed to: 5"）
-		/// property.Bind(observer);
-		/// property.Value = 10; // 输出 "Value changed to: 10"
+		/// using (var binding = property.Bind(observer))
+		/// {
+		///     property.Value = 10; // 输出 "Value changed to: 10"
+		/// }
+		/// // 超出using块后自动解除绑定
+		/// property.Value = 15; // 不会输出任何内容
 		/// </code>
 		/// </example>
-		public void Bind(IAsakiObserver<T> observer)
+		public IDisposable Bind(IAsakiObserver<T> observer)
 		{
-			if (_observers.Contains(observer)) return;
+			if (_observers.Contains(observer)) return new Subscription(this, () => { });
 			_observers.Add(observer);
 			observer.OnValueChange(_value);
+			return new Subscription(this, () => _observers.Remove(observer));
 		}
 
 		/// <summary>
