@@ -2,8 +2,10 @@
 using System.Threading.Tasks;
 using Asaki.Core.Context; // [新增] 用于获取服务
 using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.UI;
 using Asaki.Unity.Extensions;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -65,7 +67,7 @@ namespace Asaki.Unity.Services.UI
         // 核心流程控制 (Template Method)
         // ====================================================
 
-        public async Task OnOpenAsync(object args, CancellationToken token)
+        public async UniTask OnOpenAsync(object args, CancellationToken token)
         {
             if (EventSystem.current != null)
             {
@@ -98,7 +100,7 @@ namespace Asaki.Unity.Services.UI
             }
         }
 
-        public async Task OnCloseAsync(CancellationToken token)
+        public async UniTask OnCloseAsync(CancellationToken token)
         {
             // 禁止交互
             if (CanvasGroup != null)
@@ -127,14 +129,14 @@ namespace Asaki.Unity.Services.UI
 
         protected virtual void OnRefresh(object args) { }
 
-        protected virtual Task PlayEntryAnimation(CancellationToken token)
+        protected virtual UniTask PlayEntryAnimation(CancellationToken token)
         {
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
-        protected virtual Task PlayExitAnimation(CancellationToken token)
+        protected virtual UniTask PlayExitAnimation(CancellationToken token)
         {
-            return Task.CompletedTask;
+            return UniTask.CompletedTask;
         }
 
         // ====================================================
@@ -144,10 +146,10 @@ namespace Asaki.Unity.Services.UI
         // 提供给 Button Click Event 的同步入口
         public void Close()
         {
-            HandleCloseAsync().FireAndForget();
+            HandleCloseAsync().Forget();
         }
 
-        private async Task HandleCloseAsync()
+        private async UniTask HandleCloseAsync()
         {
             // 确保 Close 也走完整的动画流程
             await OnCloseAsync(CancellationToken.None);
@@ -162,7 +164,11 @@ namespace Asaki.Unity.Services.UI
                 // V5.1 最佳实践：通过 Context 获取服务实例
                 if (AsakiContext.TryGet<IAsakiPoolService>(out IAsakiPoolService poolService))
                 {
-                    poolService.Despawn(gameObject, PoolKey);
+                    var pool = poolService.GetPool<GameObject>(PoolKey);
+                    if (pool != null)
+                        pool.Return(gameObject);
+                    else
+                        Destroy(gameObject);
                 }
                 else
                 {

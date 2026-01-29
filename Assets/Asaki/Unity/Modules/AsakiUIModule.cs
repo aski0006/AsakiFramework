@@ -5,6 +5,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Asaki.Core.UI;
 using Asaki.Unity.Services.UI;
@@ -20,7 +21,7 @@ namespace Asaki.Unity.Modules
         typeof(AsakiEventBusModule),
         typeof(AsakiSimulationModule)
     )]
-    public class AsakiUIModule : IAsakiModule
+    public class AsakiUIModule : IAsakiModule, IAsakiInit<IAsakiEventService, IAsakiResourceService, IAsakiPoolService>
     {
         private AsakiUIManageService _uiManageService;
         private IAsakiEventService _eventService;

@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Asaki.Core.Context;
-using Asaki.Core.Pooling; // 引用 V5.1 的对象池命名空间
-using Asaki.Editor.Utilities.Extensions;
+using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 using UnityEditor;
 using UnityEngine;
 
@@ -128,8 +128,11 @@ namespace Asaki.Editor.Debugging
             {
                 if (!string.IsNullOrEmpty(_selectedKey))
                 {
-                    AsakiSmartPool.ReleasePool(_selectedKey);
-                    FetchData();
+                    if (AsakiContext.TryGet<IAsakiPoolService>(out IAsakiPoolService service))
+                    {
+                        service.DestroyPool(_selectedKey);
+                        FetchData();
+                    }
                 }
             }
 
@@ -259,14 +262,50 @@ namespace Asaki.Editor.Debugging
 
             if (GUILayout.Button("Spawn (+1)", GUILayout.Height(30)))
             {
-                AsakiSmartPool.Spawn(data.Key, Vector3.zero);
-                FetchData();
+                if (AsakiContext.TryGet<IAsakiPoolService>(out IAsakiPoolService service))
+                {
+                    // 尝试获取GameObject池
+                    var pool = service.GetPool<GameObject>(data.Key);
+                    if (pool != null)
+                    {
+                        _ = pool.GetAsync();
+                        FetchData();
+                    }
+                    else
+                    {
+                        // 尝试获取其他类型的池
+                        var poolBase = service.GetPool<object>(data.Key);
+                        if (poolBase != null)
+                        {
+                            _ = poolBase.GetAsync();
+                            FetchData();
+                        }
+                    }
+                }
             }
 
             if (GUILayout.Button("Prewarm (+5)", GUILayout.Height(30)))
             {
-                _ = AsakiSmartPool.PrewarmAsync(data.Key, 5, 5);
-                FetchData();
+                if (AsakiContext.TryGet<IAsakiPoolService>(out IAsakiPoolService service))
+                {
+                    // 尝试获取GameObject池
+                    var pool = service.GetPool<GameObject>(data.Key);
+                    if (pool != null)
+                    {
+                        _ = pool.PrewarmAsync(5);
+                        FetchData();
+                    }
+                    else
+                    {
+                        // 尝试获取其他类型的池
+                        var poolBase = service.GetPool<object>(data.Key);
+                        if (poolBase != null)
+                        {
+                            _ = poolBase.PrewarmAsync(5);
+                            FetchData();
+                        }
+                    }
+                }
             }
 
             EditorGUILayout.EndHorizontal();
@@ -285,7 +324,6 @@ namespace Asaki.Editor.Debugging
                 return;
 
             // 2. 反射获取 _pools 字典
-            // 注意：这里必须反射 AsakiPoolService 类型，而不是接口
             Type serviceType = service.GetType();
             FieldInfo poolsField = serviceType.GetField(
                 "_pools",
@@ -299,44 +337,92 @@ namespace Asaki.Editor.Debugging
             if (poolsDict == null)
                 return;
 
-            // 3. 遍历 PoolData
+            // 3. 遍历对象池
             foreach (DictionaryEntry kvp in poolsDict)
             {
                 string key = (string)kvp.Key;
-                object poolDataObj = kvp.Value;
+                object poolObj = kvp.Value;
 
-                if (poolDataObj == null)
+                if (poolObj == null)
                     continue;
 
-                // 反射 PoolData (internal class)
-                Type dataType = poolDataObj.GetType();
+                // 获取对象池接口
+                IAsakiPoolBase poolBase = poolObj as IAsakiPoolBase;
+                if (poolBase == null)
+                    continue;
 
-                // 获取 Stack
-                FieldInfo stackField = dataType.GetField("Stack");
-                ICollection stackObj = stackField?.GetValue(poolDataObj) as ICollection;
-                int count = stackObj != null ? stackObj.Count : 0;
+                // 获取统计信息
+                int inactiveCount = 0;
+                if (poolBase.Statistics != null)
+                {
+                    // 反射获取统计信息
+                    Type statsType = poolBase.Statistics.GetType();
+                    FieldInfo inactiveField = statsType.GetField("InactiveCount", BindingFlags.Public | BindingFlags.Instance);
+                    if (inactiveField != null)
+                    {
+                        inactiveCount = (int)inactiveField.GetValue(poolBase.Statistics);
+                    }
+                }
 
-                // 获取 Handle
-                FieldInfo handleField = dataType.GetField("PrefabHandle");
-                object handleObj = handleField?.GetValue(poolDataObj);
-
+                // 获取预制体信息（通过工厂）
                 GameObject prefab = null;
                 bool hasHandle = false;
 
-                if (handleObj != null)
+                // 反射获取工厂信息
+                Type poolType = poolObj.GetType();
+                FieldInfo factoryField = poolType.GetField("_factory", BindingFlags.NonPublic | BindingFlags.Instance);
+                if (factoryField != null)
                 {
-                    // 反射 ResHandle<T>
-                    Type handleType = handleObj.GetType();
-                    FieldInfo assetField = handleType.GetField("Asset");
-                    prefab = assetField?.GetValue(handleObj) as GameObject;
-                    hasHandle = prefab != null;
+                    object factoryObj = factoryField.GetValue(poolObj);
+                    if (factoryObj != null)
+                    {
+                        // 尝试从工厂中获取预制体
+                        Type factoryType = factoryObj.GetType();
+                        
+                        // 尝试多种可能的字段名
+                        FieldInfo prefabField = factoryType.GetField("_prefab", BindingFlags.NonPublic | BindingFlags.Instance);
+                        if (prefabField == null)
+                        {
+                            prefabField = factoryType.GetField("prefab", BindingFlags.Public | BindingFlags.Instance);
+                        }
+                        if (prefabField == null)
+                        {
+                            prefabField = factoryType.GetField("Prefab", BindingFlags.Public | BindingFlags.Instance);
+                        }
+                        
+                        if (prefabField != null)
+                        {
+                            prefab = prefabField.GetValue(factoryObj) as GameObject;
+                            hasHandle = prefab != null;
+                        }
+                        
+                        // 尝试从ResourceHandle获取
+                        if (!hasHandle)
+                        {
+                            FieldInfo handleField = factoryType.GetField("_handle", BindingFlags.NonPublic | BindingFlags.Instance);
+                            if (handleField != null)
+                            {
+                                object handleObj = handleField.GetValue(factoryObj);
+                                if (handleObj != null)
+                                {
+                                    Type handleType = handleObj.GetType();
+                                    FieldInfo assetField = handleType.GetField("Asset", BindingFlags.Public | BindingFlags.Instance);
+                                    if (assetField != null)
+                                    {
+                                        prefab = assetField.GetValue(handleObj) as GameObject;
+                                        hasHandle = prefab != null;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
 
                 _viewData.Add(
                     new PoolViewData
                     {
                         Key = key,
-                        InactiveCount = count,
+                        InactiveCount = inactiveCount,
                         Prefab = prefab,
                         HasValidHandle = hasHandle,
                     }

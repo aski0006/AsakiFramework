@@ -9,6 +9,8 @@ using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Factories;
+using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Asaki.Core.Simulation;
 using Asaki.Core.UI;
@@ -121,18 +123,31 @@ namespace Asaki.Unity.Services.UI
                 // === V5.1 池化分支 ===
                 if (info.UsePool)
                 {
-                    // [Step 1] 异步预热
-                    await _poolService.PrewarmAsync(info.AssetPath, 1);
+                    // [Step 1] 确保对象池存在
+                    if (!_poolService.HasPool(info.AssetPath))
+                    {
+                        // 加载预制体
+                        var prefabHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
+                        if (!prefabHandle.IsValid)
+                            return null;
+
+                        // 创建对象工厂
+                        var factory = new GameObjectFactory(prefabHandle.Asset, parent);
+
+                        // 创建对象池
+                        await _poolService.CreatePoolAsync(info.AssetPath, factory, token: token);
+                    }
+
+                    // [Step 2] 获取对象池
+                    var pool = _poolService.GetPool<GameObject>(info.AssetPath);
+                    if (pool == null)
+                        return null;
+
+                    // [Step 3] 获取对象
+                    instance = await pool.GetAsync(token);
                     if (token.IsCancellationRequested)
                         return null;
 
-                    // [Step 2] 同步生成
-                    instance = _poolService.Spawn(
-                        info.AssetPath,
-                        Vector3.zero,
-                        Quaternion.identity,
-                        parent
-                    );
                     _pooledAssets.Add(info.AssetPath);
 
                     window = instance.GetComponent<T>();
@@ -202,7 +217,13 @@ namespace Asaki.Unity.Services.UI
                 if (instance != null)
                 {
                     if (info.UsePool)
-                        _poolService.Despawn(instance, info.AssetPath);
+                    {
+                        var pool = _poolService.GetPool<GameObject>(info.AssetPath);
+                        if (pool != null)
+                            pool.Return(instance);
+                        else
+                            Object.Destroy(instance);
+                    }
                     else
                         Object.Destroy(instance);
                 }
@@ -485,7 +506,7 @@ namespace Asaki.Unity.Services.UI
             {
                 foreach (string assetPath in _pooledAssets)
                 {
-                    _poolService.ReleasePool(assetPath);
+                    _poolService?.DestroyPool(assetPath);
                 }
             }
             _pooledAssets.Clear();

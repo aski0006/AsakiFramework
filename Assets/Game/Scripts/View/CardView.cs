@@ -5,8 +5,10 @@ using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Unity.Services.Async;
 using Asaki.Unity.Services.UI.Observers;
+using Cysharp.Threading.Tasks;
 using Game.Scripts.Data;
 using System;
+using System.Threading;
 using TMPro;
 using UnityEngine;
 
@@ -45,12 +47,12 @@ namespace Game.Scripts.View
 			_asakiResourceService = args;
 		}
 
-		public async AsakiTaskVoid LoadCardData(CardData cardData)
+		public async UniTask LoadCardData(CardData cardData)
 		{
 			ViewModel.CardCost.Value = cardData.Cost;
 			ViewModel.CardAtk.Value = cardData.Atk;
 			ViewModel.CardDef.Value = cardData.Def;
-			CardSprite.sprite = await _asakiResourceService.LoadAsync<Sprite>(cardData.CardSpriteAssetKey, destroyCancellationToken);
+			CardSprite.sprite = await _asakiResourceService.LoadAsync<Sprite>(cardData.CardSpriteAssetKey, CancellationToken.None);
 			CardDescription.text = cardData.CardDescription;
 		}
 

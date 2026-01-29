@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 
 namespace Asaki.Core.Architecture.Command
 {
