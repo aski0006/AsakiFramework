@@ -1,4 +1,5 @@
-﻿using Cysharp.Threading.Tasks;
+﻿using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
 {
@@ -8,7 +9,7 @@ namespace Asaki.Core.Architecture.Command
         void Execute();
     }
 
-    public interface IAsakiCommand<TResult>
+    public interface IAsakiCommand<out TResult>
     {
         void Create(IAsakiArchitecture architecture);
         TResult Execute();
@@ -23,7 +24,7 @@ namespace Asaki.Core.Architecture.Command
     public interface IAsakiCommandAsync<TResult>
     {
         void Create(IAsakiArchitecture architecture);
-        UniTask<TResult> ExecuteAsync();
+        UniTask<TResult> ExecuteAsync(CancellationToken token = default);
     }
 
     public interface IAsakiUndoCommand : IAsakiCommand

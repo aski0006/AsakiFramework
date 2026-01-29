@@ -66,7 +66,7 @@ namespace Game.Test
 
 	public class ConfigExample : MonoBehaviour
 	{
-		[ContextMenu("Query")]
+		[ContextMenu("Queries")]
 		public void Query()
 		{
 			var weapon = AsakiContext.Get<IAsakiConfigService>().Get<AsakiWeaponConfigExample>(0);

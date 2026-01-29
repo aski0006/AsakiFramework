@@ -1,4 +1,5 @@
-﻿using Asaki.Core.Logging;
+﻿using System.Threading;
+using Asaki.Core.Logging;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
@@ -96,7 +97,7 @@ namespace Asaki.Core.Architecture.Command
 
         protected virtual void OnCreate() { }
 
-        public abstract UniTask<TResult> ExecuteAsync();
+        public abstract UniTask<TResult> ExecuteAsync(CancellationToken token = default);
 
         protected T GetModel<T>()
             where T : class, IAsakiModel => Architecture.GetModel<T>();

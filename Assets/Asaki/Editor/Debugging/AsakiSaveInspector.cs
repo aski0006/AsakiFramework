@@ -11,7 +11,7 @@ namespace Asaki.Editor.Debugging
 {
     public class AsakiSaveInspector : EditorWindow
     {
-        // === UI 成员变量 (直接持有引用，拒绝 Query) ===
+        // === UI 成员变量 (直接持有引用，拒绝 Queries) ===
         private ListView _slotListView;
         private Label _contentLabel;
         private Label _statusLabel;
