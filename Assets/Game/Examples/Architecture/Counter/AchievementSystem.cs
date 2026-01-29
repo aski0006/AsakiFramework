@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Architecture.Interfaces;
+﻿using Asaki.Core.Architecture;
 using Asaki.Core.Audio;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
@@ -21,7 +21,7 @@ namespace Game.Examples.Architecture.Counter
 
 		public void Setup()
 		{
-			_subscription = _model.Count.Subscribe(OnCountChanged);
+			_subscription = _model.count.Subscribe(OnCountChanged);
 		}
 		private void OnCountChanged(int count)
 		{

@@ -1,7 +1,7 @@
-﻿using System;
-using Asaki.Core.Context;
+﻿using Asaki.Core.Context;
+using System;
 
-namespace Asaki.Core.Architecture.Interfaces
+namespace Asaki.Core.Architecture
 {
     public interface IAsakiArchitecture : IAsakiSceneService, IDisposable
     {

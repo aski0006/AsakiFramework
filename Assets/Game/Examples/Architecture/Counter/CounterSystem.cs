@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Architecture.Interfaces;
+﻿using Asaki.Core.Architecture;
 using Asaki.Core.Logging;
 using Asaki.Core.Simulation;
 
@@ -17,15 +17,15 @@ namespace Game.Examples.Architecture.Counter
 		}
 		public void Increment()
 		{
-			_model.Count.Value++;
-			ALog.Info($"Count incremented to: {_model.Count.Value}");
+			_model.count.Value++;
+			ALog.Info($"Count incremented to: {_model.count.Value}");
 		}
 		public void Tick(float deltaTime)
 		{
 			// 简单的测试：每 100 帧打印一次，证明 Tick 在运行
 			if (UnityEngine.Time.frameCount % 100 == 0)
 			{
-				UnityEngine.Debug.Log($"[System Heartbeat] Count is {_model.Count.Value}");
+				UnityEngine.Debug.Log($"[System Heartbeat] Count is {_model.count.Value}");
 			}
 		}
 		public void Dispose()

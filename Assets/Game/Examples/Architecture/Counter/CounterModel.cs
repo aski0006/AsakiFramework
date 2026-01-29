@@ -1,12 +1,14 @@
-﻿using Asaki.Core.Architecture.Interfaces;
+﻿using Asaki.Core.Architecture;
+using Asaki.Core.Attributes;
 using Asaki.Core.MVVM;
 
 namespace Game.Examples.Architecture.Counter
 {
-	public class CounterModel : IAsakiModel
+	[AsakiBind]
+	public partial class CounterModel : IAsakiModel
 	{
-		public AsakiProperty<int> Count = new AsakiProperty<int>(0);
-		public void Dispose() { Count = null; }
+		public AsakiProperty<int> count = new AsakiProperty<int>(0);
+		public void Dispose() { count = null; }
 		public void Create() { }
 	}
 }

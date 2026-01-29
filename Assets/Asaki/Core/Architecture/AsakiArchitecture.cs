@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Asaki.Core.Architecture.Interfaces;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Core.Logging;
@@ -8,7 +7,7 @@ using Asaki.Core.Simulation;
 
 namespace Asaki.Core.Architecture
 {
-    public abstract class AsakiArchitecture : IAsakiArchitecture, IAsakiInit
+    public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInit
     {
         private readonly Dictionary<Type, IAsakiModel> _models = new();
         private readonly Dictionary<Type, IAsakiSystem> _systems = new();
@@ -27,6 +26,7 @@ namespace Asaki.Core.Architecture
             {
                 model.Create();
             }
+            
             foreach (var system in _systems.Values)
             {
                 system.Setup();

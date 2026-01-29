@@ -178,7 +178,7 @@ namespace Asaki.Core.Pooling
             // 而我们无法在这里进行异步加载(因为 Spawn 是同步的)，所以只能报错。
             if (!_pools.TryGetValue(key, out PoolData poolData))
             {
-                Debug.LogError(
+                ALog.Error(
                     $"[AsakiPool] Key not prewarmed: '{key}'. \n"
                         + "Solution: Call 'await PrewarmAsync(\"{key}\", ...)' during game initialization."
                 );

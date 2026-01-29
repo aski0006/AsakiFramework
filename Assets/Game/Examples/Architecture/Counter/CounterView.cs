@@ -25,7 +25,7 @@ namespace Game.Examples.Architecture.Counter
 			_system = _arch.GetSystem<CounterSystem>();
 
 			BindEvents();
-			UpdateView(_model.Count.Value);
+			UpdateView(_model.count.Value);
 			ALog.Info($"CounterView Initialized via Asaki Injection!");
 		}
 
@@ -49,7 +49,7 @@ namespace Game.Examples.Architecture.Counter
 
 			// Model -> View (输出/响应式)
 			// 假设 AsakiProperty 有 Subscribe 方法
-			_model.Count.Subscribe(UpdateView);
+			_model.count.Subscribe(UpdateView);
 		}
 
 		private void UpdateView(int count)
