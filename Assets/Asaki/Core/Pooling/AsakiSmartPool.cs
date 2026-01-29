@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Asaki.Core.Context;
 using UnityEngine;
 
@@ -20,9 +21,9 @@ namespace Asaki.Core.Pooling
         // 核心转发
         // =========================================================
 
-        public static Task PrewarmAsync(string key, int count, int itemsPerFrame = 5)
+        public static UniTask PrewarmAsync(string key, int count, int itemsPerFrame = 5, CancellationToken cancellationToken = default)
         {
-            return Service.PrewarmAsync(key, count, itemsPerFrame);
+            return Service.PrewarmAsync(key, count, itemsPerFrame, cancellationToken);
         }
 
         public static GameObject Spawn(
