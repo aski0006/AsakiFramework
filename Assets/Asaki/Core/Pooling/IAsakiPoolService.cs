@@ -1,7 +1,7 @@
-using Cysharp.Threading.Tasks;
-using Asaki.Core.Context;
-using UnityEngine;
 using System.Threading;
+using Asaki.Core.Context;
+using Cysharp.Threading.Tasks;
+using UnityEngine;
 
 namespace Asaki.Core.Pooling
 {
@@ -21,7 +21,12 @@ namespace Asaki.Core.Pooling
         /// <param name="count">目标池内数量</param>
         /// <param name="itemsPerFrame">分帧生成速率 (防卡顿)</param>
         /// <param name="cancellationToken">取消令牌</param>
-        UniTask PrewarmAsync(string key, int count, int itemsPerFrame = 5, CancellationToken cancellationToken = default);
+        UniTask PrewarmAsync(
+            string key,
+            int count,
+            int itemsPerFrame = 5,
+            CancellationToken cancellationToken = default
+        );
 
         /// <summary>
         /// [同步生成] 获取对象。

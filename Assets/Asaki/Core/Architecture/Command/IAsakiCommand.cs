@@ -1,43 +1,42 @@
-﻿
-using Cysharp.Threading.Tasks;
+﻿using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
 {
-	public interface IAsakiCommand
-	{
-		void Create(IAsakiArchitecture architecture);
-		void Execute();
-	}
+    public interface IAsakiCommand
+    {
+        void Create(IAsakiArchitecture architecture);
+        void Execute();
+    }
 
-	public interface IAsakiCommand<TResult>
-	{
-		void Create(IAsakiArchitecture architecture);
-		TResult Execute();
-	}
+    public interface IAsakiCommand<TResult>
+    {
+        void Create(IAsakiArchitecture architecture);
+        TResult Execute();
+    }
 
-	public interface IAsakiCommandAsync
-	{
-		void Create(IAsakiArchitecture architecture);
-		UniTask ExecuteAsync();
-	}
-	
-	public interface IAsakiCommandAsync<TResult>
-	{
-		void Create(IAsakiArchitecture architecture);
-		UniTask<TResult> ExecuteAsync();
-	}
-	
-	public interface IAsakiUndoCommand : IAsakiCommand
-	{
-		void Undo();
-		void Redo();
-		bool CanUndo { get; }
-	}
-	
-	public interface IAsakiUndoCommand<TResult> : IAsakiCommand<TResult>
-	{
-		void Undo();
-		void Redo();
-		bool CanUndo { get; }
-	}
+    public interface IAsakiCommandAsync
+    {
+        void Create(IAsakiArchitecture architecture);
+        UniTask ExecuteAsync();
+    }
+
+    public interface IAsakiCommandAsync<TResult>
+    {
+        void Create(IAsakiArchitecture architecture);
+        UniTask<TResult> ExecuteAsync();
+    }
+
+    public interface IAsakiUndoCommand : IAsakiCommand
+    {
+        void Undo();
+        void Redo();
+        bool CanUndo { get; }
+    }
+
+    public interface IAsakiUndoCommand<TResult> : IAsakiCommand<TResult>
+    {
+        void Undo();
+        void Redo();
+        bool CanUndo { get; }
+    }
 }

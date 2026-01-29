@@ -3,146 +3,138 @@ using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
 {
-	public abstract class AsakiCommand : IAsakiCommand
-	{
-		protected IAsakiArchitecture Architecture { get; private set; }
-		public void Create(IAsakiArchitecture architecture)
-		{
-			Architecture = architecture;
-			OnCreate(); // 子类可重写此方法进行初始化
-		}
-		protected virtual void OnCreate() { }
-		
-		public abstract void Execute();
-		
-		protected T GetModel<T>() where T : class, IAsakiModel
-			=> Architecture.GetModel<T>();
+    public abstract class AsakiCommand : IAsakiCommand
+    {
+        protected IAsakiArchitecture Architecture { get; private set; }
 
-		protected T GetSystem<T>() where T : class, IAsakiSystem
-			=> Architecture.GetSystem<T>();
+        public void Create(IAsakiArchitecture architecture)
+        {
+            Architecture = architecture;
+            OnCreate(); // 子类可重写此方法进行初始化
+        }
 
-		protected void Log(string message)
-			=> ALog.Info($"[{GetType().Name}] {message}");
+        protected virtual void OnCreate() { }
 
-		protected void LogWarning(string message)
-			=> ALog.Warn($"[{GetType().Name}] {message}");
+        public abstract void Execute();
 
-		protected void LogError(string message)
-			=> ALog.Error($"[{GetType().Name}] {message}");
-	}
-	
-	public abstract class AsakiCommand<TResult> : IAsakiCommand<TResult>
-	{
-		protected IAsakiArchitecture Architecture { get; private set; }
+        protected T GetModel<T>()
+            where T : class, IAsakiModel => Architecture.GetModel<T>();
 
-		public void Create(IAsakiArchitecture architecture)
-		{
-			Architecture = architecture;
-			OnCreate();
-		}
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
 
-		protected virtual void OnCreate() { }
+        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
 
-		public abstract TResult Execute();
+        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
 
-		protected T GetModel<T>() where T : class, IAsakiModel
-			=> Architecture.GetModel<T>();
+        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+    }
 
-		protected T GetSystem<T>() where T : class, IAsakiSystem
-			=> Architecture.GetSystem<T>();
+    public abstract class AsakiCommand<TResult> : IAsakiCommand<TResult>
+    {
+        protected IAsakiArchitecture Architecture { get; private set; }
 
-		protected void Log(string message)
-			=> ALog.Info($"[{GetType().Name}] {message}");
+        public void Create(IAsakiArchitecture architecture)
+        {
+            Architecture = architecture;
+            OnCreate();
+        }
 
-		protected void LogWarning(string message)
-			=> ALog.Warn($"[{GetType().Name}] {message}");
+        protected virtual void OnCreate() { }
 
-		protected void LogError(string message)
-			=> ALog.Error($"[{GetType().Name}] {message}");
-	}
-	
-	public abstract class AsakiCommandAsync : IAsakiCommandAsync
-	{
-		protected IAsakiArchitecture Architecture { get; private set; }
+        public abstract TResult Execute();
 
-		public void Create(IAsakiArchitecture architecture)
-		{
-			Architecture = architecture;
-			OnCreate();
-		}
+        protected T GetModel<T>()
+            where T : class, IAsakiModel => Architecture.GetModel<T>();
 
-		protected virtual void OnCreate() { }
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
 
-		public abstract UniTask ExecuteAsync();
+        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
 
-		protected T GetModel<T>() where T : class, IAsakiModel
-			=> Architecture.GetModel<T>();
+        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
 
-		protected T GetSystem<T>() where T : class, IAsakiSystem
-			=> Architecture.GetSystem<T>();
+        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+    }
 
-		protected void Log(string message)
-			=> ALog.Info($"[{GetType().Name}] {message}");
+    public abstract class AsakiCommandAsync : IAsakiCommandAsync
+    {
+        protected IAsakiArchitecture Architecture { get; private set; }
 
-		protected void LogWarning(string message)
-			=> ALog.Warn($"[{GetType().Name}] {message}");
+        public void Create(IAsakiArchitecture architecture)
+        {
+            Architecture = architecture;
+            OnCreate();
+        }
 
-		protected void LogError(string message)
-			=> ALog.Error($"[{GetType().Name}] {message}");
-	}
-	
-	public abstract class AsakiCommandAsync<TResult> : IAsakiCommandAsync<TResult>
-	{
-		protected IAsakiArchitecture Architecture { get; private set; }
+        protected virtual void OnCreate() { }
 
-		public void Create(IAsakiArchitecture architecture)
-		{
-			Architecture = architecture;
-			OnCreate();
-		}
+        public abstract UniTask ExecuteAsync();
 
-		protected virtual void OnCreate() { }
+        protected T GetModel<T>()
+            where T : class, IAsakiModel => Architecture.GetModel<T>();
 
-		public abstract UniTask<TResult> ExecuteAsync();
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
 
-		protected T GetModel<T>() where T : class, IAsakiModel
-			=> Architecture.GetModel<T>();
+        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
 
-		protected T GetSystem<T>() where T : class, IAsakiSystem
-			=> Architecture.GetSystem<T>();
+        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
 
-		protected void Log(string message)
-			=> ALog.Info($"[{GetType().Name}] {message}");
+        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+    }
 
-		protected void LogWarning(string message)
-			=> ALog.Warn($"[{GetType().Name}] {message}");
+    public abstract class AsakiCommandAsync<TResult> : IAsakiCommandAsync<TResult>
+    {
+        protected IAsakiArchitecture Architecture { get; private set; }
 
-		protected void LogError(string message)
-			=> ALog.Error($"[{GetType().Name}] {message}");
-	}
-	
-	public abstract class AsakiUndoCommand : AsakiCommand, IAsakiUndoCommand
-	{
-		public virtual bool CanUndo => true;
+        public void Create(IAsakiArchitecture architecture)
+        {
+            Architecture = architecture;
+            OnCreate();
+        }
 
-		public abstract void Undo();
+        protected virtual void OnCreate() { }
 
-		public virtual void Redo()
-		{
-			// 默认 Redo = 重新执行
-			Execute();
-		}
-	}
-	
-	public abstract class AsakiUndoCommand<TResult> : AsakiCommand<TResult>, IAsakiUndoCommand<TResult>
-	{
-		public virtual bool CanUndo => true;
+        public abstract UniTask<TResult> ExecuteAsync();
 
-		public abstract void Undo();
+        protected T GetModel<T>()
+            where T : class, IAsakiModel => Architecture.GetModel<T>();
 
-		public virtual void Redo()
-		{
-			Execute();
-		}
-	}
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+
+        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+
+        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+
+        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+    }
+
+    public abstract class AsakiUndoCommand : AsakiCommand, IAsakiUndoCommand
+    {
+        public virtual bool CanUndo => true;
+
+        public abstract void Undo();
+
+        public virtual void Redo()
+        {
+            // 默认 Redo = 重新执行
+            Execute();
+        }
+    }
+
+    public abstract class AsakiUndoCommand<TResult>
+        : AsakiCommand<TResult>,
+            IAsakiUndoCommand<TResult>
+    {
+        public virtual bool CanUndo => true;
+
+        public abstract void Undo();
+
+        public virtual void Redo()
+        {
+            Execute();
+        }
+    }
 }

@@ -26,7 +26,7 @@ namespace Asaki.Core.Architecture
             {
                 model.Create();
             }
-            
+
             foreach (var system in _systems.Values)
             {
                 system.Setup();

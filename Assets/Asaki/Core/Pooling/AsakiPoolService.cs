@@ -2,11 +2,11 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Cysharp.Threading.Tasks;
 using Asaki.Core.Async;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -25,7 +25,8 @@ namespace Asaki.Core.Pooling
         private readonly IAsakiAsyncService _asyncService;
         private readonly IAsakiResourceService _resourceService;
         private readonly IAsakiEventService _eventService;
-        private readonly Dictionary<string, AsakiPoolData> _pools = new Dictionary<string, AsakiPoolData>();
+        private readonly Dictionary<string, AsakiPoolData> _pools =
+            new Dictionary<string, AsakiPoolData>();
 
         private Transform _globalRoot;
         private const string GLOBAL_ROOT_NAME = "[Asaki.Pool.Service]";
@@ -42,7 +43,8 @@ namespace Asaki.Core.Pooling
         )
         {
             _asyncService = asyncService ?? throw new ArgumentNullException(nameof(asyncService));
-            _resourceService = resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+            _resourceService =
+                resourceService ?? throw new ArgumentNullException(nameof(resourceService));
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
 
             InitializeGlobalRoot();
@@ -59,7 +61,12 @@ namespace Asaki.Core.Pooling
         // 3. 异步预热
         // =========================================================
 
-        public async UniTask PrewarmAsync(string key, int count, int itemsPerFrame = 5, CancellationToken cancellationToken = default)
+        public async UniTask PrewarmAsync(
+            string key,
+            int count,
+            int itemsPerFrame = 5,
+            CancellationToken cancellationToken = default
+        )
         {
             if (_isDisposed || string.IsNullOrEmpty(key))
                 return;
@@ -137,8 +144,8 @@ namespace Asaki.Core.Pooling
             if (!_pools.TryGetValue(key, out AsakiPoolData poolData))
             {
                 ALog.Error(
-                    $"[AsakiPool] Key not prewarmed: '{key}'. \n" +
-                    "Solution: Call 'await PrewarmAsync(\"{key}\", ...)' first."
+                    $"[AsakiPool] Key not prewarmed: '{key}'. \n"
+                        + "Solution: Call 'await PrewarmAsync(\"{key}\", ...)' first."
                 );
                 return null;
             }
@@ -206,7 +213,7 @@ namespace Asaki.Core.Pooling
             }
 
             // ===== [核心改动] 从映射表中获取 AsakiPoolItem =====
-            if (!poolData.ActiveItems.TryGetValue(go, out AsakiPoolItem item))
+            if (!poolData.ActiveItems.Remove(go, out AsakiPoolItem item))
             {
                 ALog.Warn(
                     $"[AsakiPool] GameObject not spawned from this pool: '{key}'. Destroying."
@@ -216,7 +223,6 @@ namespace Asaki.Core.Pooling
             }
 
             // 从活跃表中移除
-            poolData.ActiveItems.Remove(go);
 
             // ===== [新增] 生命周期回调（使用缓存的接口，0GC）=====
             // 1. Reset: 重置物理、动画状态
@@ -267,7 +273,8 @@ namespace Asaki.Core.Pooling
             }
             _pools.Clear();
 
-            if (!_globalRoot) return;
+            if (!_globalRoot)
+                return;
             if (Application.isPlaying)
                 Object.Destroy(_globalRoot.gameObject);
             else
