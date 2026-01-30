@@ -862,7 +862,9 @@ namespace Asaki.Unity.Services.Serialization
                 index < json.Length
                 && (char.IsDigit(json[index]) || json[index] == '.' || json[index] == '-')
             )
+            {
                 index++;
+            }
             string numStr = json.Substring(start, index - start);
             if (numStr.Contains("."))
                 return double.Parse(numStr, CultureInfo.InvariantCulture);
@@ -877,7 +879,9 @@ namespace Asaki.Unity.Services.Serialization
         private static void SkipWhitespace(string json, ref int index)
         {
             while (index < json.Length && char.IsWhiteSpace(json[index]))
+            {
                 index++;
+            }
         }
     }
 }

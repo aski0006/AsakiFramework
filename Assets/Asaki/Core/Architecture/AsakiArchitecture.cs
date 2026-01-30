@@ -9,8 +9,10 @@ namespace Asaki.Core.Architecture
 {
     public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInit
     {
-        private readonly Dictionary<Type, IAsakiModel> _models = new();
-        private readonly Dictionary<Type, IAsakiSystem> _systems = new();
+        private readonly Dictionary<Type, IAsakiModel> _models =
+            new Dictionary<Type, IAsakiModel>();
+        private readonly Dictionary<Type, IAsakiSystem> _systems =
+            new Dictionary<Type, IAsakiSystem>();
         private IAsakiSimulationService _simulationService;
         protected IAsakiResolver Resolver { get; private set; }
         private bool _isInited = false;
@@ -22,12 +24,12 @@ namespace Asaki.Core.Architecture
             Resolver = resolver ?? AsakiGlobalResolver.Instance;
             Resolver.TryGet(out _simulationService);
             OnSetup();
-            foreach (var model in _models.Values)
+            foreach (IAsakiModel model in _models.Values)
             {
                 model.Create();
             }
 
-            foreach (var system in _systems.Values)
+            foreach (IAsakiSystem system in _systems.Values)
             {
                 system.Setup();
                 BindSimulation(system);
@@ -63,7 +65,7 @@ namespace Asaki.Core.Architecture
             if (!_systems.TryAdd(type, system))
             {
                 ALog.Warn(
-                    $"[AsakiArchitecture] System {type.Name} is already registered in {this.GetType().Name}."
+                    $"[AsakiArchitecture] System {type.Name} is already registered in {GetType().Name}."
                 );
             }
         }
@@ -99,13 +101,13 @@ namespace Asaki.Core.Architecture
         {
             if (!_isInited)
                 return;
-            foreach (var system in _systems.Values)
+            foreach (IAsakiSystem system in _systems.Values)
             {
                 UnbindSimulation(system); // 停止心跳
                 system.Dispose(); // 释放资源
             }
             _systems.Clear();
-            foreach (var model in _models.Values)
+            foreach (IAsakiModel model in _models.Values)
             {
                 model.Dispose();
             }

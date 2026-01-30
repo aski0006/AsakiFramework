@@ -1,4 +1,5 @@
 ﻿// 文件: Assets/Asaki/Core/Configs/AsakiAudioConfig.cs
+
 using System;
 using System.Collections.Generic;
 using Asaki.Core.Audio;

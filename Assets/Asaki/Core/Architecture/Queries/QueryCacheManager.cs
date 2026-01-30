@@ -27,7 +27,7 @@ namespace Asaki.Core.Architecture.Queries
         {
             lock (_lock)
             {
-                if (_cache.TryGetValue(key, out var entry))
+                if (_cache.TryGetValue(key, out CacheEntry entry))
                 {
                     // 检查是否过期
                     if (UnityEngine.Time.time < entry.ExpireTime)
@@ -43,7 +43,7 @@ namespace Asaki.Core.Architecture.Queries
                 }
             }
 
-            result = default;
+            result = default(TResult);
             return false;
         }
 

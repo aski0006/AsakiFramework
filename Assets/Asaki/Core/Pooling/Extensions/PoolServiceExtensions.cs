@@ -22,10 +22,14 @@ namespace Asaki.Core.Pooling.Extensions
             IAsakiResourceService resourceService,
             Transform parent = null,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
         {
-            var factory = new PrefabInstanceFactory(resourceService, resourcePath, parent);
+            PrefabInstanceFactory factory = new PrefabInstanceFactory(
+                resourceService,
+                resourcePath,
+                parent
+            );
             return await service.CreatePoolAsync(key, factory, config, token);
         }
 
@@ -39,7 +43,7 @@ namespace Asaki.Core.Pooling.Extensions
             IAsakiResourceService resourceService,
             Transform parent = null,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
             where T : Component
         {
@@ -56,7 +60,7 @@ namespace Asaki.Core.Pooling.Extensions
             string resourcePath,
             IAsakiResourceService resourceService,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
             where T : Object
         {
@@ -73,10 +77,10 @@ namespace Asaki.Core.Pooling.Extensions
             GameObject prefab,
             Transform parent = null,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
         {
-            var factory = new GameObjectFactory(prefab, parent);
+            GameObjectFactory factory = new GameObjectFactory(prefab, parent);
             return await service.CreatePoolAsync(key, factory, config, token);
         }
     }

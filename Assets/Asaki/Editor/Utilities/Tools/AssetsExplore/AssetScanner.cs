@@ -142,7 +142,9 @@ namespace Asaki.Editor.Utilities.Tools.AssetsExplore
                             )
                             {
                                 lock (newCache)
+                                {
                                     newCache[relativePath] = cachedInfo;
+                                }
                                 return;
                             }
                         }
@@ -156,7 +158,9 @@ namespace Asaki.Editor.Utilities.Tools.AssetsExplore
                         if (info != null)
                         {
                             lock (newCache)
+                            {
                                 newCache[relativePath] = info;
+                            }
                             OnAssetFound?.Invoke(info);
                         }
                     }

@@ -541,7 +541,9 @@ namespace Asaki.Editor.Configuration
 
                 // 确保行有足够的列
                 while (colIndex >= _csvData[i].Count)
+                {
                     _csvData[i].Add("");
+                }
 
                 if (_csvData[i][colIndex] != newValue)
                 {
@@ -758,10 +760,14 @@ namespace Asaki.Editor.Configuration
         private void UpdateCellData(int row, int col, string newValue)
         {
             while (row >= _csvData.Count)
+            {
                 _csvData.Add(new List<string>());
+            }
             var rowList = _csvData[row];
             while (col >= rowList.Count)
+            {
                 rowList.Add("");
+            }
 
             if (rowList[col] != newValue)
             {
@@ -784,7 +790,9 @@ namespace Asaki.Editor.Configuration
             for (int i = 0; i < _csvData.Count; i++)
             {
                 while (idIndex >= _csvData[i].Count)
+                {
                     _csvData[i].Add("");
+                }
                 _csvData[i][idIndex] = (i + 1).ToString();
             }
             _isDirty = true;

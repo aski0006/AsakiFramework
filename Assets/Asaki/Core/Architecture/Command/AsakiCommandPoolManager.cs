@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
 
 namespace Asaki.Core.Architecture.Command
@@ -17,7 +16,7 @@ namespace Asaki.Core.Architecture.Command
 
             lock (_globalLock)
             {
-                if (!_pools.TryGetValue(type, out var poolObj))
+                if (!_pools.TryGetValue(type, out object poolObj))
                 {
                     // 创建新池
                     poolObj = new Stack<TCommand>(16);
@@ -51,7 +50,7 @@ namespace Asaki.Core.Architecture.Command
 
             lock (_globalLock)
             {
-                if (!_pools.TryGetValue(type, out var poolObj))
+                if (!_pools.TryGetValue(type, out object poolObj))
                 {
                     poolObj = new Stack<TCommand>(16);
                     _pools[type] = poolObj;
@@ -59,8 +58,8 @@ namespace Asaki.Core.Architecture.Command
 
                 var pool = (Stack<TCommand>)poolObj;
 
-                const int MAX_POOL_SIZE = 64;
-                if (pool.Count < MAX_POOL_SIZE)
+                const int maxPoolSize = 64;
+                if (pool.Count < maxPoolSize)
                 {
                     pool.Push(cmd);
                 }

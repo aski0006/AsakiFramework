@@ -108,7 +108,7 @@ namespace Asaki.Unity.Bootstrapper
         {
             if (_globalBehaviourServices == null)
                 return;
-            foreach (var behaviour in _globalBehaviourServices)
+            foreach (MonoBehaviour behaviour in _globalBehaviourServices)
             {
                 if (behaviour is not IAsakiGlobalService service)
                     continue;
@@ -116,7 +116,7 @@ namespace Asaki.Unity.Bootstrapper
                 Type type = behaviour.GetType();
                 AsakiContext.Register(type, service);
 
-                foreach (var i in type.GetInterfaces())
+                foreach (Type i in type.GetInterfaces())
                 {
                     if (
                         typeof(IAsakiService).IsAssignableFrom(i)
@@ -134,7 +134,7 @@ namespace Asaki.Unity.Bootstrapper
         {
             if (_globalBehaviourServices == null)
                 return;
-            foreach (var behaviour in _globalBehaviourServices)
+            foreach (MonoBehaviour behaviour in _globalBehaviourServices)
             {
                 if (behaviour is IAsakiGlobalService service)
                 {

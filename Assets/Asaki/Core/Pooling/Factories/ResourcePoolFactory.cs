@@ -37,7 +37,7 @@ namespace Asaki.Core.Pooling.Factories
                 );
         }
 
-        public async UniTask<T> CreateAsync(CancellationToken token = default)
+        public async UniTask<T> CreateAsync(CancellationToken token = default(CancellationToken))
         {
             await EnsureResourceLoadedAsync(token);
             return CreateResourceInstance();

@@ -66,7 +66,7 @@ namespace Asaki.Core.Architecture
                 TResult result;
                 if (_enableQueryProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     result = query.Query();
                     sw.Stop();
                     ALog.Info($"[Query] {typeof(TQuery).Name} took {sw.ElapsedMilliseconds}ms");
@@ -106,7 +106,7 @@ namespace Asaki.Core.Architecture
                 string cacheKey = typeof(TQuery).FullName;
 
                 // 尝试从缓存获取
-                if (_queryCache.TryGetCache<TResult>(cacheKey, out var cachedResult))
+                if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
                 {
                     if (_enableQueryLogging)
                         ALog.Info($"[Query] Cache hit: {typeof(TQuery).Name}");
@@ -146,7 +146,7 @@ namespace Asaki.Core.Architecture
                 TResult result;
                 if (_enableQueryProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     result = await query.QueryAsync();
                     sw.Stop();
                     ALog.Info(
@@ -185,7 +185,7 @@ namespace Asaki.Core.Architecture
             {
                 string cacheKey = typeof(TQuery).FullName;
 
-                if (_queryCache.TryGetCache<TResult>(cacheKey, out var cachedResult))
+                if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
                 {
                     if (_enableQueryLogging)
                         ALog.Info($"[QueryAsync] Cache hit: {typeof(TQuery).Name}");

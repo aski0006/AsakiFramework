@@ -22,7 +22,7 @@ namespace Asaki.Core.Architecture.Queries
 
             lock (_globalLock)
             {
-                if (!_pools.TryGetValue(type, out var poolObj))
+                if (!_pools.TryGetValue(type, out object poolObj))
                 {
                     poolObj = new Stack<TQuery>(16);
                     _pools[type] = poolObj;
@@ -55,7 +55,7 @@ namespace Asaki.Core.Architecture.Queries
 
             lock (_globalLock)
             {
-                if (!_pools.TryGetValue(type, out var poolObj))
+                if (!_pools.TryGetValue(type, out object poolObj))
                 {
                     poolObj = new Stack<TQuery>(16);
                     _pools[type] = poolObj;

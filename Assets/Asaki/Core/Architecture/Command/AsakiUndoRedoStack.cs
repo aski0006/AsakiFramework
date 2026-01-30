@@ -39,7 +39,7 @@ namespace Asaki.Core.Architecture.Command
                 return;
             }
 
-            var cmd = _undoStack.Pop();
+            IAsakiUndoCommand cmd = _undoStack.Pop();
             cmd.Undo();
             _redoStack.Push(cmd);
             ALog.Info($"[UndoRedo] Undid {cmd.GetType().Name}");
@@ -53,7 +53,7 @@ namespace Asaki.Core.Architecture.Command
                 return;
             }
 
-            var cmd = _redoStack.Pop();
+            IAsakiUndoCommand cmd = _redoStack.Pop();
             cmd.Redo();
             _undoStack.Push(cmd);
             ALog.Info($"[UndoRedo] Redid {cmd.GetType().Name}");
@@ -64,13 +64,13 @@ namespace Asaki.Core.Architecture.Command
             // 归还对象池
             while (_undoStack.Count > 0)
             {
-                var cmd = _undoStack.Pop();
+                IAsakiUndoCommand cmd = _undoStack.Pop();
                 AsakiCommandPoolManager.Return(cmd);
             }
 
             while (_redoStack.Count > 0)
             {
-                var cmd = _redoStack.Pop();
+                IAsakiUndoCommand cmd = _redoStack.Pop();
                 AsakiCommandPoolManager.Return(cmd);
             }
 

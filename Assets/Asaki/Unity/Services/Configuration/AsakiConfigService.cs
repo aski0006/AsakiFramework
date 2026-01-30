@@ -530,7 +530,9 @@ namespace Asaki.Unity.Services.Configuration
                 string[] headers = AsakiCsvUtils.ParseLine(lines[0]);
                 var headerMap = new Dictionary<string, int>();
                 for (int i = 0; i < headers.Length; i++)
+                {
                     headerMap[headers[i].Trim()] = i;
+                }
 
                 var result = new List<T>(lines.Length);
                 for (int i = 1; i < lines.Length; i++)

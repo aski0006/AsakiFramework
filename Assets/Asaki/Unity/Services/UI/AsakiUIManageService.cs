@@ -135,7 +135,10 @@ namespace Asaki.Unity.Services.UI
                             return null;
 
                         // 创建对象工厂
-                        var factory = new GameObjectFactory(prefabHandle.Asset, parent);
+                        GameObjectFactory factory = new GameObjectFactory(
+                            prefabHandle.Asset,
+                            parent
+                        );
 
                         // 创建对象池
                         await _poolService.CreatePoolAsync(info.AssetPath, factory, token: token);
@@ -486,7 +489,9 @@ namespace Asaki.Unity.Services.UI
                 temp.Push(cur);
             }
             while (temp.Count > 0)
+            {
                 _normalStack.Push(temp.Pop());
+            }
         }
 
         private async UniTask HandleCloseAsync(IAsakiWindow window)

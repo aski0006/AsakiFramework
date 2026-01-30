@@ -11,9 +11,15 @@ namespace Asaki.Core.Architecture
         private bool _enableCommandProfiling = false;
         private bool _enableCommandLogging = false;
 
-        public void EnableCommandProfiling(bool enable) => _enableCommandProfiling = enable;
+        public void EnableCommandProfiling(bool enable)
+        {
+            _enableCommandProfiling = enable;
+        }
 
-        public void EnableCommandLogging(bool enable) => _enableCommandLogging = enable;
+        public void EnableCommandLogging(bool enable)
+        {
+            _enableCommandLogging = enable;
+        }
 
         public void SendCommand<TCommand>()
             where TCommand : class, IAsakiCommand, new()
@@ -28,7 +34,7 @@ namespace Asaki.Core.Architecture
 
                 if (_enableCommandProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     cmd.Execute();
                     sw.Stop();
                     ALog.Info($"[Command] {typeof(TCommand).Name} took {sw.ElapsedMilliseconds}ms");
@@ -63,7 +69,7 @@ namespace Asaki.Core.Architecture
                 TResult result;
                 if (_enableCommandProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     result = cmd.Execute();
                     sw.Stop();
                     ALog.Info($"[Command] {typeof(TCommand).Name} took {sw.ElapsedMilliseconds}ms");
@@ -99,7 +105,7 @@ namespace Asaki.Core.Architecture
 
                 if (_enableCommandProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     await cmd.ExecuteAsync();
                     sw.Stop();
                     ALog.Info(
@@ -136,7 +142,7 @@ namespace Asaki.Core.Architecture
                 TResult result;
                 if (_enableCommandProfiling)
                 {
-                    var sw = Stopwatch.StartNew();
+                    Stopwatch sw = Stopwatch.StartNew();
                     result = await cmd.ExecuteAsync();
                     sw.Stop();
                     ALog.Info(

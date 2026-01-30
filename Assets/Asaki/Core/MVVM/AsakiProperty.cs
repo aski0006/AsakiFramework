@@ -210,9 +210,9 @@ namespace Asaki.Core.Reactive
                 return Subscribe(action);
             }
 
-            var subscription = Subscribe(action);
+            IDisposable subscription = Subscribe(action);
 
-            var tracker = owner.gameObject.GetComponent<AsakiBindingTracker>();
+            AsakiBindingTracker tracker = owner.gameObject.GetComponent<AsakiBindingTracker>();
             if (tracker == null)
             {
                 tracker = owner.gameObject.AddComponent<AsakiBindingTracker>();

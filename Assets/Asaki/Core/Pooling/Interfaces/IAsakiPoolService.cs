@@ -18,7 +18,7 @@ namespace Asaki.Core.Pooling.Interfaces
             string key,
             IAsakiPoolObjectFactory<T> factory,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
             where T : class;
 

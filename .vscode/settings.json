@@ -5,5 +5,13 @@
     },
     "[xml]": {
         "editor.defaultFormatter": "csharpier.csharpier-vscode"
-    }
+    },
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "csharpier.enableDebugLogs": false,
+    "omnisharp.enableAsyncCompletion": true,
+    "csharp.format.enable": true,
+    "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+    "dotnet.formatting.organizeImportsOnFormat": true,
 }

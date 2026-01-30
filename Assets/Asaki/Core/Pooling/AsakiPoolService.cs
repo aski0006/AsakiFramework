@@ -25,7 +25,7 @@ namespace Asaki.Core.Pooling
             string key,
             IAsakiPoolObjectFactory<T> factory,
             AsakiPoolConfig config = null,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
             where T : class
         {
@@ -114,7 +114,7 @@ namespace Asaki.Core.Pooling
             if (_pools.Count == 0)
                 return "[AsakiPool] Service: No active pools";
 
-            var sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder();
             sb.AppendLine($"[AsakiPool] Service statistics (total: {_pools.Count} pools):");
 
             foreach (var kvp in _pools)

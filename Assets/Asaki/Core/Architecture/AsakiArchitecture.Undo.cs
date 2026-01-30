@@ -59,15 +59,24 @@ namespace Asaki.Core.Architecture
             }
         }
 
-        public void Undo() => _asakiUndoRedoStack?.Undo();
+        public void Undo()
+        {
+            _asakiUndoRedoStack?.Undo();
+        }
 
-        public void Redo() => _asakiUndoRedoStack?.Redo();
+        public void Redo()
+        {
+            _asakiUndoRedoStack?.Redo();
+        }
 
         public bool CanUndo => _asakiUndoRedoStack?.CanUndo ?? false;
         public bool CanRedo => _asakiUndoRedoStack?.CanRedo ?? false;
         public int UndoCount => _asakiUndoRedoStack?.UndoCount ?? 0;
         public int RedoCount => _asakiUndoRedoStack?.RedoCount ?? 0;
 
-        public void ClearUndoHistory() => _asakiUndoRedoStack?.ClearHistory();
+        public void ClearUndoHistory()
+        {
+            _asakiUndoRedoStack?.ClearHistory();
+        }
     }
 }

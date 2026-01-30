@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Asaki.Core.Architecture;
 using Asaki.Core.Attributes;
-using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using UnityEngine;
 
@@ -47,7 +45,10 @@ namespace Asaki.Core.Context.Resolvers
         private bool _isBuilt = false;
 
 #if UNITY_EDITOR
-        public Dictionary<Type, IAsakiService> GetRuntimeServices() => _localServices;
+        public Dictionary<Type, IAsakiService> GetRuntimeServices()
+        {
+            return _localServices;
+        }
 #endif
 
         // ========================================================================
@@ -84,7 +85,7 @@ namespace Asaki.Core.Context.Resolvers
                 $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
             );
 
-            foreach (var service in _pendingInitServices)
+            foreach (IAsakiInit service in _pendingInitServices)
             {
                 try
                 {

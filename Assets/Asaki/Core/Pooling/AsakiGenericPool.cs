@@ -48,7 +48,7 @@ namespace Asaki.Core.Pooling
         public async UniTask PrewarmAsync(
             int count,
             int itemsPerFrame = 5,
-            CancellationToken token = default
+            CancellationToken token = default(CancellationToken)
         )
         {
             ThrowIfDisposed();
@@ -102,7 +102,7 @@ namespace Asaki.Core.Pooling
         /// <summary>
         /// 异步获取对象
         /// </summary>
-        public async UniTask<T> GetAsync(CancellationToken token = default)
+        public async UniTask<T> GetAsync(CancellationToken token = default(CancellationToken))
         {
             ThrowIfDisposed();
             _statistics.IncrementGet();
@@ -259,7 +259,9 @@ namespace Asaki.Core.Pooling
         {
             if (Config.OperationTimeout > 0)
             {
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(token);
+                using CancellationTokenSource cts = CancellationTokenSource.CreateLinkedTokenSource(
+                    token
+                );
                 cts.CancelAfter(TimeSpan.FromSeconds(Config.OperationTimeout));
                 return await _factory.CreateAsync(cts.Token);
             }

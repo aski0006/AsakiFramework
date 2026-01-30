@@ -42,7 +42,7 @@ namespace Asaki.Core.Pooling.Factories
             _parent = parent;
         }
 
-        public async UniTask<T> CreateAsync(CancellationToken token = default)
+        public async UniTask<T> CreateAsync(CancellationToken token = default(CancellationToken))
         {
             await EnsurePrefabLoadedAsync(token);
             return CreateComponentInstance();

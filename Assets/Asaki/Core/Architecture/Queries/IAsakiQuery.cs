@@ -12,6 +12,6 @@ namespace Asaki.Core.Architecture.Queries
     public interface IAsakiQueryAsync<TResult>
     {
         void Create(IAsakiArchitecture architecture);
-        UniTask<TResult> QueryAsync(CancellationToken token = default);
+        UniTask<TResult> QueryAsync(CancellationToken token = default(CancellationToken));
     }
 }

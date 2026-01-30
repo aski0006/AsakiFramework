@@ -441,7 +441,9 @@ namespace Asaki.Unity.Services.Resources
                     {
                         float total = 0f;
                         for (int i = 0; i < progresses.Length; i++)
+                        {
                             total += progresses[i];
+                        }
                         onProgress(total / progresses.Length);
                     }
                 };

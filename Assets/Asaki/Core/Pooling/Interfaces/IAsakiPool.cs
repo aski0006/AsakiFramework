@@ -41,12 +41,16 @@ namespace Asaki.Core.Pooling.Interfaces
         /// <param name="count">预热数量</param>
         /// <param name="itemsPerFrame">每帧创建数量</param>
         /// <param name="token">取消令牌</param>
-        UniTask PrewarmAsync(int count, int itemsPerFrame = 5, CancellationToken token = default);
+        UniTask PrewarmAsync(
+            int count,
+            int itemsPerFrame = 5,
+            CancellationToken token = default(CancellationToken)
+        );
 
         /// <summary>
         /// 异步获取对象
         /// </summary>
-        UniTask<T> GetAsync(CancellationToken token = default);
+        UniTask<T> GetAsync(CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// 同步获取对象

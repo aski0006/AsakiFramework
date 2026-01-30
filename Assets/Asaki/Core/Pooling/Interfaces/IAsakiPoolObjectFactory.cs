@@ -15,7 +15,7 @@ namespace Asaki.Core.Pooling.Interfaces
         /// </summary>
         /// <param name="token">取消令牌</param>
         /// <returns>创建的对象</returns>
-        UniTask<T> CreateAsync(CancellationToken token = default);
+        UniTask<T> CreateAsync(CancellationToken token = default(CancellationToken));
 
         /// <summary>
         /// 同步创建对象 - 用于不需要异步加载的场景

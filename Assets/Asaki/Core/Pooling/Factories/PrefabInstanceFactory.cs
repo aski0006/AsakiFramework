@@ -46,7 +46,9 @@ namespace Asaki.Core.Pooling.Factories
             _worldPositionStays = worldPositionStays;
         }
 
-        public async UniTask<GameObject> CreateAsync(CancellationToken token = default)
+        public async UniTask<GameObject> CreateAsync(
+            CancellationToken token = default(CancellationToken)
+        )
         {
             await EnsurePrefabLoadedAsync(token);
             return CreateGameObjectInstance();
@@ -117,7 +119,7 @@ namespace Asaki.Core.Pooling.Factories
 
             obj.SetActive(true);
 
-            var poolable = obj.GetComponent<IAsakiPoolable>();
+            IAsakiPoolable poolable = obj.GetComponent<IAsakiPoolable>();
             if (poolable != null)
             {
                 try
@@ -139,7 +141,7 @@ namespace Asaki.Core.Pooling.Factories
             if (!obj)
                 return;
 
-            var poolable = obj.GetComponent<IAsakiPoolable>();
+            IAsakiPoolable poolable = obj.GetComponent<IAsakiPoolable>();
             if (poolable != null)
             {
                 try

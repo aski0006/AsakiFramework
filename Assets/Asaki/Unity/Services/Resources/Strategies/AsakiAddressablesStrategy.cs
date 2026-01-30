@@ -132,7 +132,9 @@ namespace Asaki.Unity.Services.Resources.Strategies
             else
             {
                 while (!op.isDone)
+                {
                     await Task.Yield();
+                }
             }
         }
 

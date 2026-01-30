@@ -86,10 +86,10 @@ namespace Asaki.Unity.Services.Audio
             }
 
             // ✅ Create pool using prefab reference for agent
-            var agentFactory = new GameObjectFactory(
+            GameObjectFactory agentFactory = new GameObjectFactory(
                 _config.AsakiSoundAgentPrefab,
                 _rootTransform,
-                worldPositionStays: false
+                false
             );
 
             // Create component pool
@@ -144,8 +144,8 @@ namespace Asaki.Unity.Services.Audio
         // ==========================================================
         public AsakiAudioHandle Play(
             int assetId,
-            AsakiAudioParams p = default,
-            CancellationToken token = default
+            AsakiAudioParams p = default(AsakiAudioParams),
+            CancellationToken token = default(CancellationToken)
         )
         {
             // State checks
@@ -494,7 +494,9 @@ namespace Asaki.Unity.Services.Audio
             _goFactory = goFactory;
         }
 
-        public async UniTask<AsakiSoundAgent> CreateAsync(CancellationToken token = default)
+        public async UniTask<AsakiSoundAgent> CreateAsync(
+            CancellationToken token = default(CancellationToken)
+        )
         {
             GameObject go = await _goFactory.CreateAsync(token);
             return ExtractAgent(go);

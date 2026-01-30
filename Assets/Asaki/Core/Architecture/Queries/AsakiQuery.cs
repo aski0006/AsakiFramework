@@ -19,16 +19,31 @@ namespace Asaki.Core.Architecture.Queries
         public abstract TResult Query();
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 
     public abstract class AsakiQueryAsync<TResult> : IAsakiQueryAsync<TResult>
@@ -41,20 +56,37 @@ namespace Asaki.Core.Architecture.Queries
             OnCreate();
         }
 
-        public abstract UniTask<TResult> QueryAsync(CancellationToken token = default);
+        public abstract UniTask<TResult> QueryAsync(
+            CancellationToken token = default(CancellationToken)
+        );
 
         protected virtual void OnCreate() { }
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 }

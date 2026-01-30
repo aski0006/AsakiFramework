@@ -24,7 +24,7 @@ namespace Asaki.Core.Architecture.Command
     public interface IAsakiCommandAsync<TResult>
     {
         void Create(IAsakiArchitecture architecture);
-        UniTask<TResult> ExecuteAsync(CancellationToken token = default);
+        UniTask<TResult> ExecuteAsync(CancellationToken token = default(CancellationToken));
     }
 
     public interface IAsakiUndoCommand : IAsakiCommand

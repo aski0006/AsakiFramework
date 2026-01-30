@@ -26,7 +26,7 @@ namespace Asaki.Core.Pooling.Factories
             _worldPositionStays = worldPositionStays;
         }
 
-        public UniTask<GameObject> CreateAsync(CancellationToken token = default)
+        public UniTask<GameObject> CreateAsync(CancellationToken token = default(CancellationToken))
         {
             return UniTask.FromResult(CreateSync());
         }

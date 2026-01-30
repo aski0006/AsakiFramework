@@ -52,7 +52,7 @@ namespace Asaki.Core.Reactive
         /// </summary>
         public void ReleaseAll()
         {
-            foreach (var subscription in _subscriptions)
+            foreach (IDisposable subscription in _subscriptions)
             {
                 try
                 {

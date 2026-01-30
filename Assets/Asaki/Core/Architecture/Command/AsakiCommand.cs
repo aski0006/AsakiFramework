@@ -19,16 +19,31 @@ namespace Asaki.Core.Architecture.Command
         public abstract void Execute();
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 
     public abstract class AsakiCommand<TResult> : IAsakiCommand<TResult>
@@ -46,16 +61,31 @@ namespace Asaki.Core.Architecture.Command
         public abstract TResult Execute();
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 
     public abstract class AsakiCommandAsync : IAsakiCommandAsync
@@ -73,16 +103,31 @@ namespace Asaki.Core.Architecture.Command
         public abstract UniTask ExecuteAsync();
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 
     public abstract class AsakiCommandAsync<TResult> : IAsakiCommandAsync<TResult>
@@ -97,19 +142,36 @@ namespace Asaki.Core.Architecture.Command
 
         protected virtual void OnCreate() { }
 
-        public abstract UniTask<TResult> ExecuteAsync(CancellationToken token = default);
+        public abstract UniTask<TResult> ExecuteAsync(
+            CancellationToken token = default(CancellationToken)
+        );
 
         protected T GetModel<T>()
-            where T : class, IAsakiModel => Architecture.GetModel<T>();
+            where T : class, IAsakiModel
+        {
+            return Architecture.GetModel<T>();
+        }
 
         protected T GetSystem<T>()
-            where T : class, IAsakiSystem => Architecture.GetSystem<T>();
+            where T : class, IAsakiSystem
+        {
+            return Architecture.GetSystem<T>();
+        }
 
-        protected void Log(string message) => ALog.Info($"[{GetType().Name}] {message}");
+        protected void Log(string message)
+        {
+            ALog.Info($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogWarning(string message) => ALog.Warn($"[{GetType().Name}] {message}");
+        protected void LogWarning(string message)
+        {
+            ALog.Warn($"[{GetType().Name}] {message}");
+        }
 
-        protected void LogError(string message) => ALog.Error($"[{GetType().Name}] {message}");
+        protected void LogError(string message)
+        {
+            ALog.Error($"[{GetType().Name}] {message}");
+        }
     }
 
     public abstract class AsakiUndoCommand : AsakiCommand, IAsakiUndoCommand

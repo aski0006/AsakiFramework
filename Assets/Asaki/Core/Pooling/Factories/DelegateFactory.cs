@@ -54,7 +54,7 @@ namespace Asaki.Core.Pooling.Factories
             _validate = validate;
         }
 
-        public async UniTask<T> CreateAsync(CancellationToken token = default)
+        public async UniTask<T> CreateAsync(CancellationToken token = default(CancellationToken))
         {
             if (_createAsyncFunc != null)
                 return await _createAsyncFunc(token);
@@ -75,11 +75,20 @@ namespace Asaki.Core.Pooling.Factories
             throw new InvalidOperationException("No create function provided.");
         }
 
-        public void OnGet(T obj) => _onGet?.Invoke(obj);
+        public void OnGet(T obj)
+        {
+            _onGet?.Invoke(obj);
+        }
 
-        public void OnReturn(T obj) => _onReturn?.Invoke(obj);
+        public void OnReturn(T obj)
+        {
+            _onReturn?.Invoke(obj);
+        }
 
-        public void OnDestroy(T obj) => _onDestroy?.Invoke(obj);
+        public void OnDestroy(T obj)
+        {
+            _onDestroy?.Invoke(obj);
+        }
 
         public bool Validate(T obj)
         {
