@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Factories;
@@ -22,14 +23,18 @@ namespace Asaki.Core.Architecture
         /// </summary>
         private static void EnsureInitialized()
         {
-            if (_isInitialized) return;
+            if (_isInitialized)
+            {
+                return;
+            }
 
             lock (_initLock)
             {
-                if (_isInitialized) return;
-
-                _poolService = new AsakiPoolService();
-                _isInitialized = true;
+                if (_isInitialized)
+                {
+                    return;
+                }
+                _isInitialized = AsakiContext.TryGet(out _poolService);
                 ALog.Info("[AsakiArchitecturePool] Architecture pool manager initialized");
             }
         }
@@ -37,7 +42,8 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 租借 Command/Query 对象
         /// </summary>
-        public static async UniTask<T> RentAsync<T>(CancellationToken token = default) where T : class, new()
+        public static async UniTask<T> RentAsync<T>(CancellationToken token = default)
+            where T : class, new()
         {
             EnsureInitialized();
 
@@ -56,7 +62,8 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 同步租借(优先使用异步版本)
         /// </summary>
-        public static T Rent<T>() where T : class, new()
+        public static T Rent<T>()
+            where T : class, new()
         {
             EnsureInitialized();
 
@@ -66,7 +73,9 @@ namespace Asaki.Core.Architecture
             // 如果池不存在,创建新实例(不推荐,应使用 RentAsync)
             if (pool == null)
             {
-                ALog.Warn($"[AsakiArchitecturePool] Pool for {typeof(T).Name} not initialized, creating new instance. Consider using RentAsync.");
+                ALog.Warn(
+                    $"[AsakiArchitecturePool] Pool for {typeof(T).Name} not initialized, creating new instance. Consider using RentAsync."
+                );
                 return new T();
             }
 
@@ -76,16 +85,20 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 归还对象到池
         /// </summary>
-        public static bool Return<T>(T obj) where T : class
+        public static bool Return<T>(T obj)
+            where T : class
         {
-            if (!_isInitialized || obj == null) return false;
+            if (!_isInitialized || obj == null)
+                return false;
 
             string poolKey = GetPoolKey<T>();
             IAsakiPool<T> pool = _poolService.GetPool<T>(poolKey);
 
             if (pool == null)
             {
-                ALog.Warn($"[AsakiArchitecturePool] Pool for {typeof(T).Name} not found, object will be GC'd");
+                ALog.Warn(
+                    $"[AsakiArchitecturePool] Pool for {typeof(T).Name} not found, object will be GC'd"
+                );
                 return false;
             }
 
@@ -95,7 +108,11 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 创建类型专用池
         /// </summary>
-        private static async UniTask<IAsakiPool<T>> CreatePoolAsync<T>(string poolKey, CancellationToken token) where T : class, new()
+        private static async UniTask<IAsakiPool<T>> CreatePoolAsync<T>(
+            string poolKey,
+            CancellationToken token
+        )
+            where T : class, new()
         {
             // 创建轻量级对象工厂
             var factory = new DelegateFactory<T>(
@@ -114,12 +131,12 @@ namespace Asaki.Core.Architecture
             // 配置:轻量级对象,大容量,无预热
             var config = new AsakiPoolConfig
             {
-                InitialSize = 0,               // 懒加载,无预热
-                MaxSize = 128,                 // 限制最大 128 个缓存
-                EnableValidation = true,       // 启用验证
+                InitialSize = 0, // 懒加载,无预热
+                MaxSize = 128, // 限制最大 128 个缓存
+                EnableValidation = true, // 启用验证
                 EnableCollectionCheck = false, // 架构对象无需检测重复归还
-                AllowSyncCreation = true,      // 允许同步创建(轻量级对象)
-                OperationTimeout = 0f          // 无超时
+                AllowSyncCreation = true, // 允许同步创建(轻量级对象)
+                OperationTimeout = 0f, // 无超时
             };
 
             var pool = await _poolService.CreatePoolAsync(poolKey, factory, config, token);
@@ -141,7 +158,8 @@ namespace Asaki.Core.Architecture
         /// </summary>
         public static void ClearAll()
         {
-            if (!_isInitialized) return;
+            if (!_isInitialized)
+                return;
 
             _poolService?.Dispose();
             _poolService = null;
@@ -155,7 +173,8 @@ namespace Asaki.Core.Architecture
         /// </summary>
         public static string GetStatistics()
         {
-            if (!_isInitialized) return "[AsakiArchitecturePool] Not initialized";
+            if (!_isInitialized)
+                return "[AsakiArchitecturePool] Not initialized";
             return _poolService.GetStatisticsSummary();
         }
     }

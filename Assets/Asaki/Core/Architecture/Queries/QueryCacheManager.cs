@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Asaki.Core.Architecture.Queries
@@ -25,12 +25,15 @@ namespace Asaki.Core.Architecture.Queries
         /// </summary>
         public bool TryGetCache<TResult>(string key, out TResult result)
         {
+            // 在锁外获取 Unity 时间，避免在锁内调用 Unity API
+            float currentTime = UnityEngine.Time.time;
+
             lock (_lock)
             {
                 if (_cache.TryGetValue(key, out CacheEntry entry))
                 {
                     // 检查是否过期
-                    if (UnityEngine.Time.time < entry.ExpireTime)
+                    if (currentTime < entry.ExpireTime)
                     {
                         result = (TResult)entry.Result;
                         return true;
@@ -52,13 +55,12 @@ namespace Asaki.Core.Architecture.Queries
         /// </summary>
         public void SetCache<TResult>(string key, TResult result, float cacheSeconds)
         {
+            // 在锁外获取 Unity 时间，避免在锁内调用 Unity API
+            float expireTime = UnityEngine.Time.time + cacheSeconds;
+
             lock (_lock)
             {
-                _cache[key] = new CacheEntry
-                {
-                    Result = result,
-                    ExpireTime = UnityEngine.Time.time + cacheSeconds,
-                };
+                _cache[key] = new CacheEntry { Result = result, ExpireTime = expireTime };
             }
         }
 

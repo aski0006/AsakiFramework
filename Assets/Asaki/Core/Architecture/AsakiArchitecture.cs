@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
@@ -15,12 +15,15 @@ namespace Asaki.Core.Architecture
             new Dictionary<Type, IAsakiSystem>();
         private IAsakiSimulationService _simulationService;
         protected IAsakiResolver Resolver { get; private set; }
-        private bool _isInited = false;
+        private bool _isInited;
 
         public void Init(IAsakiResolver resolver)
         {
             if (_isInited)
+            {
                 return;
+            }
+
             Resolver = resolver ?? AsakiGlobalResolver.Instance;
             Resolver.TryGet(out _simulationService);
             OnSetup();
@@ -101,17 +104,40 @@ namespace Asaki.Core.Architecture
         {
             if (!_isInited)
                 return;
+
+            // 分别处理每个 System，避免一个失败影响其他
             foreach (IAsakiSystem system in _systems.Values)
             {
-                UnbindSimulation(system); // 停止心跳
-                system.Dispose(); // 释放资源
+                try
+                {
+                    UnbindSimulation(system); // 停止心跳
+                    system.Dispose(); // 释放资源
+                }
+                catch (System.Exception ex)
+                {
+                    ALog.Error(
+                        $"[AsakiArchitecture] Error disposing system {system.GetType().Name}: {ex}"
+                    );
+                }
             }
             _systems.Clear();
+
+            // 分别处理每个 Model，避免一个失败影响其他
             foreach (IAsakiModel model in _models.Values)
             {
-                model.Dispose();
+                try
+                {
+                    model.Dispose();
+                }
+                catch (System.Exception ex)
+                {
+                    ALog.Error(
+                        $"[AsakiArchitecture] Error disposing model {model.GetType().Name}: {ex}"
+                    );
+                }
             }
             _models.Clear();
+
             Resolver = null;
             _simulationService = null;
             _isInited = false;

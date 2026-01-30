@@ -18,7 +18,7 @@ namespace Game.Test
 	// 生成时间: 12/22/2025 18:10:13
 	using System;
 	using UnityEngine;
-	using Asaki.Core.MVVM;
+	using Asaki.Core.Reactive;
 
 	namespace Game.Test
 	{

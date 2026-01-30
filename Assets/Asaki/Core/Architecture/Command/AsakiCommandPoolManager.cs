@@ -1,77 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
-using Asaki.Core.Pooling.Interfaces;
+﻿using System.Threading;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
 {
+    /// <summary>
+    /// Command 对象池管理器
+    /// 统一使用 AsakiArchitecturePoolManager 实现
+    /// </summary>
     internal static class AsakiCommandPoolManager
     {
-        private static readonly Dictionary<Type, object> _pools = new Dictionary<Type, object>();
-        private static readonly object _globalLock = new object();
-
+        /// <summary>
+        /// 租借 Command 对象
+        /// </summary>
         public static TCommand Rent<TCommand>()
             where TCommand : class, new()
         {
-            Type type = typeof(TCommand);
-
-            lock (_globalLock)
-            {
-                if (!_pools.TryGetValue(type, out object poolObj))
-                {
-                    // 创建新池
-                    poolObj = new Stack<TCommand>(16);
-                    _pools[type] = poolObj;
-                }
-
-                var pool = (Stack<TCommand>)poolObj;
-
-                if (pool.Count > 0)
-                {
-                    return pool.Pop();
-                }
-            }
-
-            return new TCommand();
+            return AsakiArchitecturePoolManager.Rent<TCommand>();
         }
 
-        public static void Return<TCommand>(TCommand cmd)
+        /// <summary>
+        /// 异步租借 Command 对象
+        /// </summary>
+        public static async UniTask<TCommand> RentAsync<TCommand>(CancellationToken token = default)
+            where TCommand : class, new()
+        {
+            return await AsakiArchitecturePoolManager.RentAsync<TCommand>(token);
+        }
+
+        /// <summary>
+        /// 归还 Command 对象到池
+        /// </summary>
+        public static bool Return<TCommand>(TCommand cmd)
             where TCommand : class
         {
-            if (cmd == null)
-                return;
-
-            Type type = typeof(TCommand);
-
-            // 重置状态（如果实现了 IResettable）
-            if (cmd is IAsakiResettable resettable)
-            {
-                resettable.Reset();
-            }
-
-            lock (_globalLock)
-            {
-                if (!_pools.TryGetValue(type, out object poolObj))
-                {
-                    poolObj = new Stack<TCommand>(16);
-                    _pools[type] = poolObj;
-                }
-
-                var pool = (Stack<TCommand>)poolObj;
-
-                const int maxPoolSize = 64;
-                if (pool.Count < maxPoolSize)
-                {
-                    pool.Push(cmd);
-                }
-            }
+            return AsakiArchitecturePoolManager.Return(cmd);
         }
 
+        /// <summary>
+        /// 清空所有 Command 池
+        /// </summary>
         public static void ClearAll()
         {
-            lock (_globalLock)
-            {
-                _pools.Clear();
-            }
+            AsakiArchitecturePoolManager.ClearAll();
         }
     }
 }

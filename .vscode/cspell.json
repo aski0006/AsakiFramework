@@ -25,6 +25,7 @@
         "IAsakiAutoInject",
         "IAsakiInit",
         "IEnumerator",
+        "Inited",
         "Input",
         "Instantiate",
         "Invoke",

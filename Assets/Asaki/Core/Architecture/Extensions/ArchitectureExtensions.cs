@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using Asaki.Core.Architecture.Command;
 using Asaki.Core.Architecture.Queries;
 using Cysharp.Threading.Tasks;
@@ -33,7 +33,8 @@ namespace Asaki.Core.Architecture.Extensions
         /// </summary>
         public static async UniTask ExecutePooledCommandAsync<TCommand>(
             this IAsakiArchitecture architecture,
-            CancellationToken token = default)
+            CancellationToken token = default
+        )
             where TCommand : class, IAsakiCommandAsync, new()
         {
             TCommand cmd = await AsakiCommandPoolManager.RentAsync<TCommand>(token);
@@ -71,7 +72,8 @@ namespace Asaki.Core.Architecture.Extensions
         /// </summary>
         public static async UniTask<TResult> QueryPooledAsync<TQuery, TResult>(
             this IAsakiArchitecture architecture,
-            CancellationToken token = default)
+            CancellationToken token = default
+        )
             where TQuery : class, IAsakiQueryAsync<TResult>, new()
         {
             TQuery query = await QueryPoolManager.RentAsync<TQuery>(token);

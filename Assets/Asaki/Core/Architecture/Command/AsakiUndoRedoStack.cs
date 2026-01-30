@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Asaki.Core.Logging;
 
 namespace Asaki.Core.Architecture.Command
@@ -7,6 +7,9 @@ namespace Asaki.Core.Architecture.Command
     {
         private readonly Stack<IAsakiUndoCommand> _undoStack = new Stack<IAsakiUndoCommand>(64);
         private readonly Stack<IAsakiUndoCommand> _redoStack = new Stack<IAsakiUndoCommand>(64);
+
+        // 预分配数组用于 TrimStack，避免每次分配 List
+        private IAsakiUndoCommand[] _trimBuffer;
         private const int MAX_HISTORY = 100;
 
         public bool CanUndo => _undoStack.Count > 0;
@@ -82,19 +85,35 @@ namespace Asaki.Core.Architecture.Command
             if (stack.Count <= maxSize)
                 return;
 
-            var temp = new List<IAsakiUndoCommand>(stack);
+            // 使用预分配数组或 ArrayPool 避免 GC 分配
+            int count = stack.Count;
+            if (_trimBuffer == null || _trimBuffer.Length < count)
+            {
+                _trimBuffer = new IAsakiUndoCommand[count];
+            }
+
+            // 将栈内容复制到数组（从栈顶到栈底）
+            stack.CopyTo(_trimBuffer, 0);
             stack.Clear();
 
             // 保留最新的 maxSize 个命令
-            for (int i = 0; i < maxSize; i++)
+            // _trimBuffer[0] 是栈顶（最新），_trimBuffer[count-1] 是栈底（最旧）
+            int startIndex = count - maxSize;
+            for (int i = startIndex; i < count; i++)
             {
-                stack.Push(temp[i]);
+                stack.Push(_trimBuffer[i]);
             }
 
-            // 归还多余的命令到对象池
-            for (int i = maxSize; i < temp.Count; i++)
+            // 归还多余的命令到对象池（最旧的那些）
+            for (int i = 0; i < startIndex; i++)
             {
-                AsakiCommandPoolManager.Return(temp[i]);
+                AsakiCommandPoolManager.Return(_trimBuffer[i]);
+            }
+
+            // 清理引用，避免内存泄漏
+            for (int i = 0; i < count; i++)
+            {
+                _trimBuffer[i] = null;
             }
         }
     }

@@ -1,19 +1,19 @@
-﻿using Asaki.Core.Architecture;
+﻿using System;
+using Asaki.Core.Architecture;
 using Asaki.Core.Audio;
-using System;
 
 namespace Game.Examples.Architecture.Counter
 {
-	[Serializable]
-	public class CounterArchitecture : AsakiArchitecture
-	{
-		protected override void OnSetup()
-		{
-			Resolver.TryGet(out IAsakiAudioService audioService);
-			var model = new CounterModel();
-			RegisterModel(model);
-			RegisterSystem(new CounterSystem(model));
-			RegisterSystem(new AchievementSystem(model, audioService));
-		}
-	}
+    [Serializable]
+    public class CounterArchitecture : AsakiArchitecture
+    {
+        protected override void OnSetup()
+        {
+            Resolver.TryGet(out IAsakiAudioService audioService);
+            var model = new CounterModel();
+            RegisterModel(model);
+            RegisterSystem(new CounterSystem(model));
+            RegisterSystem(new AchievementSystem(model, audioService));
+        }
+    }
 }

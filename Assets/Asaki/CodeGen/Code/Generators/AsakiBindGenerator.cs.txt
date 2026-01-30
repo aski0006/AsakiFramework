@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -151,7 +151,7 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("// Generated Time: " + System.DateTime.Now.ToString(CultureInfo.InvariantCulture));
             sb.AppendLine("using System;");
             sb.AppendLine("using UnityEngine;");
-            sb.AppendLine("using Asaki.Core.MVVM;");
+            sb.AppendLine("using Asaki.Core.Reactive;");  // 更新命名空间
             sb.AppendLine();
 
             if (!isGlobal)
