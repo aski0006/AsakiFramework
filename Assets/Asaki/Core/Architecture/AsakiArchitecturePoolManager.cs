@@ -1,4 +1,5 @@
-﻿using System.Threading;
+using System;
+using System.Threading;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
@@ -88,11 +89,21 @@ namespace Asaki.Core.Architecture
         public static bool Return<T>(T obj)
             where T : class
         {
-            if (!_isInitialized || obj == null)
+            if (!_isInitialized || obj == null || _poolService == null)
                 return false;
 
             string poolKey = GetPoolKey<T>();
-            IAsakiPool<T> pool = _poolService.GetPool<T>(poolKey);
+            IAsakiPool<T> pool;
+
+            try
+            {
+                pool = _poolService.GetPool<T>(poolKey);
+            }
+            catch (ObjectDisposedException)
+            {
+                // 池服务已被处置，对象将由 GC 回收
+                return false;
+            }
 
             if (pool == null)
             {
