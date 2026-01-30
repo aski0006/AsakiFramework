@@ -11,7 +11,7 @@ namespace Asaki.Core.Pooling.Factories
     public class DelegateFactory<T> : IAsakiPoolObjectFactory<T>
         where T : class
     {
-        private readonly Func<UniTask<T>> _createAsyncFunc;
+        private readonly Func<CancellationToken, UniTask<T>> _createAsyncFunc;
         private readonly Func<T> _createSyncFunc;
         private readonly Action<T> _onGet;
         private readonly Action<T> _onReturn;
@@ -22,7 +22,7 @@ namespace Asaki.Core.Pooling.Factories
         /// 使用异步创建函数创建工厂
         /// </summary>
         public DelegateFactory(
-            Func<UniTask<T>> createAsync,
+            Func<CancellationToken, UniTask<T>> createAsync,
             Action<T> onGet = null,
             Action<T> onReturn = null,
             Action<T> onDestroy = null,
@@ -57,7 +57,7 @@ namespace Asaki.Core.Pooling.Factories
         public async UniTask<T> CreateAsync(CancellationToken token = default)
         {
             if (_createAsyncFunc != null)
-                return await _createAsyncFunc();
+                return await _createAsyncFunc(token);
             return _createSyncFunc?.Invoke();
         }
 

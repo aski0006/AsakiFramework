@@ -1,5 +1,4 @@
-﻿// 文件: Assets/Asaki/Core/Pooling/V2/Factories/PrefabInstanceFactory.cs
-using System;
+﻿using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
@@ -74,13 +73,16 @@ namespace Asaki.Core.Pooling.Factories
                         _prefabPath,
                         token
                     );
-                    _isHandleLoaded = true;
 
                     if (_prefabHandle == null || !_prefabHandle.IsValid)
                     {
                         ALog.Error(
                             $"[AsakiPool] PrefabInstanceFactory failed to load prefab: {_prefabPath}"
                         );
+                    }
+                    else
+                    {
+                        _isHandleLoaded = true;
                     }
                 }
                 catch (Exception ex)

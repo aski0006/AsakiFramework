@@ -26,17 +26,28 @@ namespace Asaki.Core.Pooling
         /// <summary>操作超时时间（秒，0表示无超时）</summary>
         public float OperationTimeout = 0f;
 
+        private static AsakiPoolConfig _default;
+
         /// <summary>默认配置</summary>
-        public static AsakiPoolConfig Default =>
-            new AsakiPoolConfig
+        public static AsakiPoolConfig Default
+        {
+            get
             {
-                InitialSize = 0,
-                MaxSize = 0,
-                EnableValidation = true,
-                EnableCollectionCheck = true,
-                AllowSyncCreation = false,
-                OperationTimeout = 0f,
-            };
+                if (_default == null)
+                {
+                    _default = new AsakiPoolConfig
+                    {
+                        InitialSize = 0,
+                        MaxSize = 0,
+                        EnableValidation = true,
+                        EnableCollectionCheck = true,
+                        AllowSyncCreation = false,
+                        OperationTimeout = 0f,
+                    };
+                }
+                return _default;
+            }
+        }
 
         /// <summary>
         /// 创建适用于 GameObject 的配置

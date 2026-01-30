@@ -1,5 +1,4 @@
-﻿// 文件: Assets/Asaki/Core/Pooling/V2/Factories/ComponentFactory.cs
-using System;
+﻿using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
@@ -65,13 +64,16 @@ namespace Asaki.Core.Pooling.Factories
             if (!_isHandleLoaded)
             {
                 _prefabHandle = await _resourceService.LoadAsync<GameObject>(_prefabPath, token);
-                _isHandleLoaded = true;
 
                 if (_prefabHandle == null || !_prefabHandle.IsValid)
                 {
                     ALog.Error(
                         $"[AsakiPool] ComponentFactory failed to load prefab: {_prefabPath}"
                     );
+                }
+                else
+                {
+                    _isHandleLoaded = true;
                 }
             }
         }

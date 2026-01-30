@@ -1,6 +1,4 @@
-﻿// 文件: Assets/Asaki/Core/Pooling/V2/Extensions/PoolServiceExtensions.cs
-
-using System.Threading;
+﻿using System.Threading;
 using Asaki.Core.Pooling.Factories;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;

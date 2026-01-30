@@ -1,5 +1,4 @@
-﻿// 文件: Assets/Asaki/Core/Pooling/V2/Factories/ResourcePoolFactory.cs
-using System;
+﻿using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
@@ -62,13 +61,25 @@ namespace Asaki.Core.Pooling.Factories
                 try
                 {
                     _handle = await _resourceService.LoadAsync<T>(_resourceKey, token);
-                    _isHandleLoaded = true;
 
                     if (_handle is not { IsValid: true })
                     {
                         ALog.Error(
                             $"[AsakiPool] ResourcePoolFactory failed to load resource: {_resourceKey}"
                         );
+                    }
+                    else
+                    {
+                        _isHandleLoaded = true;
+
+                        // 对非 GameObject 资源发出警告，因为池化意义不大
+                        if (typeof(T) != typeof(GameObject))
+                        {
+                            ALog.Warn(
+                                $"[AsakiPool] ResourcePoolFactory is pooling non-GameObject type {typeof(T).Name}. "
+                                    + "Consider using direct resource loading instead of pooling for shared assets like Sprite or AudioClip."
+                            );
+                        }
                     }
                 }
                 catch (Exception ex)

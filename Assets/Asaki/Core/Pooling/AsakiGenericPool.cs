@@ -18,6 +18,7 @@ namespace Asaki.Core.Pooling
         private readonly HashSet<T> _activeObjects;
         private readonly IAsakiPoolObjectFactory<T> _factory;
         private readonly AsakiPoolStatistics _statistics;
+        private readonly object _lock = new object();
 
         public string Key { get; }
         public AsakiPoolConfig Config { get; }
@@ -70,7 +71,10 @@ namespace Asaki.Core.Pooling
                     }
 
                     _factory.OnReturn(obj);
-                    _stack.Push(obj);
+                    lock (_lock)
+                    {
+                        _stack.Push(obj);
+                    }
                     _statistics.IncrementCreated();
                     batchCount++;
 
@@ -129,12 +133,15 @@ namespace Asaki.Core.Pooling
                 }
             }
 
-            // 记录活动对象
+            // 记录活动对象（线程安全）
             if (_activeObjects != null)
             {
-                if (!_activeObjects.Add(obj))
+                lock (_lock)
                 {
-                    ALog.Warn($"[AsakiPool] {Key} Duplicate object detected");
+                    if (!_activeObjects.Add(obj))
+                    {
+                        ALog.Warn($"[AsakiPool] {Key} Duplicate object detected");
+                    }
                 }
             }
 
@@ -164,7 +171,12 @@ namespace Asaki.Core.Pooling
             if (obj != null)
             {
                 if (_activeObjects != null)
-                    _activeObjects.Add(obj);
+                {
+                    lock (_lock)
+                    {
+                        _activeObjects.Add(obj);
+                    }
+                }
 
                 try
                 {
@@ -193,7 +205,12 @@ namespace Asaki.Core.Pooling
                     _statistics.IncrementCreated();
 
                     if (_activeObjects != null)
-                        _activeObjects.Add(obj);
+                    {
+                        lock (_lock)
+                        {
+                            _activeObjects.Add(obj);
+                        }
+                    }
 
                     _factory.OnGet(obj);
                     return obj;
@@ -210,26 +227,29 @@ namespace Asaki.Core.Pooling
         }
 
         /// <summary>
-        /// 尝试从池中获取对象
+        /// 尝试从池中获取对象（线程安全）
         /// </summary>
         private T TryGetFromPool()
         {
-            while (_stack.Count > 0)
+            lock (_lock)
             {
-                T candidate = _stack.Pop();
-
-                // 验证对象有效性
-                if (Config.EnableValidation && !_factory.Validate(candidate))
+                while (_stack.Count > 0)
                 {
-                    _factory.OnDestroy(candidate);
-                    _statistics.IncrementDestroyed();
-                    continue;
-                }
+                    T candidate = _stack.Pop();
 
-                _statistics.AdjustInactive(-1);
-                return candidate;
+                    // 验证对象有效性
+                    if (Config.EnableValidation && !_factory.Validate(candidate))
+                    {
+                        _factory.OnDestroy(candidate);
+                        _statistics.IncrementDestroyed();
+                        continue;
+                    }
+
+                    _statistics.AdjustInactive(-1);
+                    return candidate;
+                }
+                return null;
             }
-            return null;
         }
 
         /// <summary>
@@ -272,15 +292,18 @@ namespace Asaki.Core.Pooling
                 return false;
             }
 
-            // 检查对象是否来自此池
+            // 检查对象是否来自此池（线程安全）
             if (_activeObjects != null)
             {
-                if (!_activeObjects.Remove(obj))
+                lock (_lock)
                 {
-                    ALog.Error(
-                        $"[AsakiPool] {Key} Invalid object returned - not from this pool or already returned"
-                    );
-                    return false;
+                    if (!_activeObjects.Remove(obj))
+                    {
+                        ALog.Error(
+                            $"[AsakiPool] {Key} Invalid object returned - not from this pool or already returned"
+                        );
+                        return false;
+                    }
                 }
             }
 
@@ -293,59 +316,69 @@ namespace Asaki.Core.Pooling
                 return false;
             }
 
-            // 检查池是否已满
-            if (Config.MaxSize > 0 && _stack.Count >= Config.MaxSize)
+            // 检查池是否已满（线程安全）
+            lock (_lock)
             {
-                ALog.Info(
-                    $"[AsakiPool] {Key} Pool full ({_stack.Count}/{Config.MaxSize}), destroying object"
-                );
-                _factory.OnDestroy(obj);
-                _statistics.IncrementDestroyed();
-                return false;
-            }
+                if (Config.MaxSize > 0 && _stack.Count >= Config.MaxSize)
+                {
+                    ALog.Info(
+                        $"[AsakiPool] {Key} Pool full ({_stack.Count}/{Config.MaxSize}), destroying object"
+                    );
+                    _factory.OnDestroy(obj);
+                    _statistics.IncrementDestroyed();
+                    return false;
+                }
 
-            // 执行归还回调并入池
-            try
-            {
-                _factory.OnReturn(obj);
-            }
-            catch (Exception ex)
-            {
-                ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
-            }
+                // 执行归还回调并入池
+                try
+                {
+                    _factory.OnReturn(obj);
+                }
+                catch (Exception ex)
+                {
+                    ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
+                }
 
-            _stack.Push(obj);
-            _statistics.IncrementReturn();
-            return true;
+                _stack.Push(obj);
+                _statistics.IncrementReturn();
+                return true;
+            }
         }
 
         /// <summary>
-        /// 清空池中所有对象
+        /// 清空池中所有对象（线程安全）
         /// </summary>
         public void Clear()
         {
             ThrowIfDisposed();
-            int count = _stack.Count;
 
-            while (_stack.Count > 0)
+            lock (_lock)
             {
-                T obj = _stack.Pop();
-                try
-                {
-                    _factory.OnDestroy(obj);
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error($"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}", ex);
-                }
-            }
+                int count = _stack.Count;
 
-            _statistics.AdjustInactive(-count);
-            ALog.Info($"[AsakiPool] {Key} Cleared {count} objects");
+                while (_stack.Count > 0)
+                {
+                    T obj = _stack.Pop();
+                    try
+                    {
+                        _factory.OnDestroy(obj);
+                    }
+                    catch (Exception ex)
+                    {
+                        ALog.Error(
+                            $"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}",
+                            ex
+                        );
+                    }
+                }
+
+                _statistics.AdjustInactive(-count);
+                ALog.Info($"[AsakiPool] {Key} Cleared {count} objects");
+            }
         }
 
         /// <summary>
-        /// 收缩池到指定大小
+        /// 收缩池到指定大小（线程安全）
         /// </summary>
         public void Shrink(int targetSize)
         {
@@ -353,25 +386,31 @@ namespace Asaki.Core.Pooling
             if (targetSize < 0)
                 targetSize = 0;
 
-            int toRemove = _stack.Count - targetSize;
-            if (toRemove <= 0)
-                return;
-
-            for (int i = 0; i < toRemove; i++)
+            lock (_lock)
             {
-                T obj = _stack.Pop();
-                try
-                {
-                    _factory.OnDestroy(obj);
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error($"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}", ex);
-                }
-            }
+                int toRemove = _stack.Count - targetSize;
+                if (toRemove <= 0)
+                    return;
 
-            _statistics.AdjustInactive(-toRemove);
-            ALog.Info($"[AsakiPool] {Key} Shrunk by {toRemove} objects");
+                for (int i = 0; i < toRemove; i++)
+                {
+                    T obj = _stack.Pop();
+                    try
+                    {
+                        _factory.OnDestroy(obj);
+                    }
+                    catch (Exception ex)
+                    {
+                        ALog.Error(
+                            $"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}",
+                            ex
+                        );
+                    }
+                }
+
+                _statistics.AdjustInactive(-toRemove);
+                ALog.Info($"[AsakiPool] {Key} Shrunk by {toRemove} objects");
+            }
         }
 
         /// <summary>
