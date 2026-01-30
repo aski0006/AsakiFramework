@@ -1,0 +1,262 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.cs]
+# ReSharper 命名规则 - Unity 规范
+# 私有静态只读字段使用 _camelCase
+resharper_csharp_naming_rule.private_static_readonly = _ + aaBb
+resharper_csharp_naming_rule.private_static_readonly.style = _camelCase
+
+# 私有字段使用 _camelCase
+resharper_csharp_naming_rule.private_fields = _ + aaBb
+resharper_csharp_naming_rule.private_fields.style = _camelCase
+
+# 私有静态字段使用 _camelCase
+resharper_csharp_naming_rule.private_static_fields = _ + aaBb
+resharper_csharp_naming_rule.private_static_fields.style = _camelCase
+
+# 受保护字段使用 _camelCase
+resharper_csharp_naming_rule.protected_fields = _ + aaBb
+resharper_csharp_naming_rule.protected_fields.style = _camelCase
+
+# 受保护静态字段使用 _camelCase
+resharper_csharp_naming_rule.protected_static_fields = _ + aaBb
+resharper_csharp_naming_rule.protected_static_fields.style = _camelCase
+
+# 受保护静态只读字段使用 _camelCase
+resharper_csharp_naming_rule.protected_static_readonly = _ + aaBb
+resharper_csharp_naming_rule.protected_static_readonly.style = _camelCase
+
+# 内部字段使用 _camelCase
+resharper_csharp_naming_rule.internal_fields = _ + aaBb
+resharper_csharp_naming_rule.internal_fields.style = _camelCase
+
+# 内部静态字段使用 _camelCase
+resharper_csharp_naming_rule.internal_static_fields = _ + aaBb
+resharper_csharp_naming_rule.internal_static_fields.style = _camelCase
+
+# 内部静态只读字段使用 _camelCase
+resharper_csharp_naming_rule.internal_static_readonly = _ + aaBb
+resharper_csharp_naming_rule.internal_static_readonly.style = _camelCase
+
+# 常量使用 PascalCase
+resharper_csharp_naming_rule.constants = AaBb
+resharper_csharp_naming_rule.constants.style = PascalCase
+
+# 公共字段使用 PascalCase
+resharper_csharp_naming_rule.public_fields = AaBb
+resharper_csharp_naming_rule.public_fields.style = PascalCase
+
+# 属性使用 PascalCase
+resharper_csharp_naming_rule.property = AaBb
+resharper_csharp_naming_rule.property.style = PascalCase
+
+# 方法使用 PascalCase
+resharper_csharp_naming_rule.method = AaBb
+resharper_csharp_naming_rule.method.style = PascalCase
+
+# 类使用 PascalCase
+resharper_csharp_naming_rule.class = AaBb
+resharper_csharp_naming_rule.class.style = PascalCase
+
+# 接口使用 PascalCase 前缀 I
+resharper_csharp_naming_rule.interface = I + AaBb
+resharper_csharp_naming_rule.interface.style = PascalCase
+
+# 枚举使用 PascalCase
+resharper_csharp_naming_rule.enum = AaBb
+resharper_csharp_naming_rule.enum.style = PascalCase
+
+# 枚举成员使用 PascalCase
+resharper_csharp_naming_rule.enum_member = AaBb
+resharper_csharp_naming_rule.enum_member.style = PascalCase
+
+# 类型参数使用 T + PascalCase
+resharper_csharp_naming_rule.type_parameter = T + AaBb
+resharper_csharp_naming_rule.type_parameter.style = PascalCase
+
+# 命名空间使用 PascalCase
+resharper_csharp_naming_rule.namespace = AaBb
+resharper_csharp_naming_rule.namespace.style = PascalCase
+
+# 结构体使用 PascalCase
+resharper_csharp_naming_rule.struct = AaBb
+resharper_csharp_naming_rule.struct.style = PascalCase
+
+# 委托使用 PascalCase
+resharper_csharp_naming_rule.delegate = AaBb
+resharper_csharp_naming_rule.delegate.style = PascalCase
+
+# 事件使用 PascalCase
+resharper_csharp_naming_rule.event = AaBb
+resharper_csharp_naming_rule.event.style = PascalCase
+
+# 局部变量使用 camelCase
+resharper_csharp_naming_rule.local_variables = aaBb
+resharper_csharp_naming_rule.local_variables.style = camelCase
+
+# 参数使用 camelCase
+resharper_csharp_naming_rule.parameters = aaBb
+resharper_csharp_naming_rule.parameters.style = camelCase
+
+# Lambda 参数使用 camelCase
+resharper_csharp_naming_rule.local_functions = aaBb
+resharper_csharp_naming_rule.local_functions.style = camelCase
+
+# ReSharper 代码检查设置 - Unity 规范
+# 允许在 Unity 消息方法中使用空方法体
+resharper_check_empty_unity_message_methods = false
+
+# 允许在 Unity 中使用序列化字段的 public 字段
+resharper_unassigned_field_unity_highlighting = hint
+
+# Unity 序列化字段检查
+resharper_unused_field_unity_highlighting = hint
+
+# Unity 事件函数检查
+resharper_unity_event_function_highlighting = hint
+
+# 允许 Unity 的 Find 方法
+resharper_unity_expensive_camera_main_call_highlighting = warning
+
+# Unity 对象比较检查
+resharper_unity_null_coalescing_highlighting = warning
+resharper_unity_null_propagation_highlighting = warning
+
+# Unity 性能检查
+resharper_unity_performance_critical_code_highlighting = warning
+resharper_unity_performance_critical_code_invocation_highlighting = warning
+
+# Unity Burst 编译器检查
+resharper_burst_accessing_managed_array_highlighting = warning
+resharper_burst_accessing_managed_type_highlighting = error
+resharper_burst_code_contains_indirect_call_highlighting = error
+resharper_burst_function_pointer_method_invocation_highlighting = warning
+resharper_burst_mono_initialization_invocation_highlighting = warning
+resharper_burst_mono_string_formatting_method_highlighting = warning
+resharper_burst_try_catch_throw_statement_highlighting = error
+resharper_burst_type_contains_managed_fields_highlighting = error
+
+# Unity DOTS/Entities 检查
+resharper_entities_aspects_must_be_structs_highlighting = error
+resharper_entities_aspects_readonly_fields_highlighting = warning
+resharper_entities_aspects_readonly_structs_highlighting = warning
+resharper_entities_buffer_element_data_mutable_fields_highlighting = warning
+resharper_entities_component_data_mutable_fields_highlighting = warning
+resharper_entities_component_data_must_be_structs_highlighting = error
+resharper_entities_job_entity_authoring_component_properties_highlighting = warning
+
+# C# 代码风格设置
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
+
+# 使用 this. 限定符 - Unity 通常不使用
+dotnet_style_qualification_for_field = false:suggestion
+dotnet_style_qualification_for_property = false:suggestion
+dotnet_style_qualification_for_method = false:suggestion
+dotnet_style_qualification_for_event = false:suggestion
+
+# 使用 var 关键字 - Unity 推荐显式类型
+csharp_style_var_for_built_in_types = false:suggestion
+csharp_style_var_when_type_is_apparent = false:suggestion
+csharp_style_var_elsewhere = false:suggestion
+
+# 表达式体成员
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = false:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_indexers = true:suggestion
+csharp_style_expression_bodied_accessors = true:suggestion
+csharp_style_expression_bodied_lambdas = true:suggestion
+csharp_style_expression_bodied_local_functions = false:suggestion
+
+# 模式匹配
+csharp_style_pattern_matching_over_is_with_cast_check = true:suggestion
+csharp_style_pattern_matching_over_as_with_null_check = true:suggestion
+csharp_style_inlined_variable_declaration = true:suggestion
+
+# Null 检查风格
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:suggestion
+
+# 修饰符顺序
+dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
+dotnet_style_readonly_field = true:suggestion
+
+# 括号偏好
+dotnet_style_parentheses_in_arithmetic_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_other_binary_operators = always_for_clarity:suggestion
+dotnet_style_parentheses_in_other_operators = never_if_unnecessary:suggestion
+
+# 对象初始化器
+dotnet_style_object_initializer = true:suggestion
+dotnet_style_collection_initializer = true:suggestion
+dotnet_style_explicit_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_tuple_names = true:suggestion
+dotnet_style_prefer_inferred_anonymous_type_member_names = true:suggestion
+dotnet_style_prefer_auto_properties = true:suggestion
+dotnet_style_prefer_is_null_check_over_reference_equality_method = true:suggestion
+dotnet_style_prefer_conditional_expression_over_assignment = true:suggestion
+dotnet_style_prefer_conditional_expression_over_return = true:suggestion
+
+# 代码块风格
+csharp_prefer_braces = true:suggestion
+csharp_prefer_simple_using_statement = true:suggestion
+
+# 缩进和换行
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_new_line_before_members_in_object_initializers = true
+csharp_new_line_before_members_in_anonymous_types = true
+csharp_new_line_between_query_expression_clauses = true
+
+# 缩进
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_indent_labels = flush_left
+csharp_indent_block_contents = true
+csharp_indent_braces = false
+csharp_indent_case_contents_when_block = true
+
+# 间距
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_space_between_parentheses = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_around_binary_operators = before_and_after
+csharp_space_between_method_declaration_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+csharp_space_between_method_call_parameter_list_parentheses = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_call_name_and_opening_parenthesis = false
+csharp_space_after_comma = true
+csharp_space_before_comma = false
+csharp_space_after_dot = false
+csharp_space_before_dot = false
+csharp_space_after_semicolon_in_for_statement = true
+csharp_space_before_semicolon_in_for_statement = false
+csharp_space_around_declaration_statements = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_square_brackets = false
+
+# 换行
+csharp_preserve_single_line_statements = true
+csharp_preserve_single_line_blocks = true
+
+# using 指令排序
+dotnet_sort_system_directives_first = true
+dotnet_separate_import_directive_groups = false
