@@ -1,11 +1,9 @@
-// 文件: Assets/Asaki/Unity/Services/Audio/AsakiSoundAgent.cs
 using System;
 using System.Threading;
 using Asaki.Core.Audio;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
-using Asaki.Unity.Extensions;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
