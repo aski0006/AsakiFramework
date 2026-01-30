@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using Asaki.Core.Logging;
 using UnityEngine;
 
-namespace Asaki.Core.MVVM
+namespace Asaki.Core.Reactive
 {
     /// <summary>
     /// Asaki MVVM框架的核心可观察属性实现，提供值变化通知机制。
@@ -203,13 +204,16 @@ namespace Asaki.Core.MVVM
         {
             if (owner == null)
             {
-                Debug.LogWarning("[AsakiProperty] Subscribe 的 owner 参数为 null，将使用普通订阅方式。建议传入有效的 MonoBehaviour 以启用自动生命周期管理。");
+                ALog.Warn(
+                    "[AsakiProperty] Subscribe 的 owner 参数为 null，将使用普通订阅方式。建议传入有效的 MonoBehaviour 以启用自动生命周期管理。"
+                );
                 return Subscribe(action);
             }
 
             var subscription = Subscribe(action);
 
-            if (!owner.gameObject.TryGetComponent<AsakiBindingTracker>(out var tracker))
+            var tracker = owner.gameObject.GetComponent<AsakiBindingTracker>();
+            if (tracker == null)
             {
                 tracker = owner.gameObject.AddComponent<AsakiBindingTracker>();
             }

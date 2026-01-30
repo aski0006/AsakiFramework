@@ -1,6 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 using Asaki.Core.UI;
 using Asaki.Generated;
 using Asaki.Unity.Services.UI.Observers;

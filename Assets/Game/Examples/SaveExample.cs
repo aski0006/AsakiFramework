@@ -1,7 +1,7 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Context;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Services.Async;
 using System;

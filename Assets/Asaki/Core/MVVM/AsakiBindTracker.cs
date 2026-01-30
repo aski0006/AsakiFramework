@@ -1,8 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Asaki.Core.MVVM
+namespace Asaki.Core.Reactive
 {
     /// <summary>
     /// 绑定生命周期追踪器，用于自动管理 AsakiProperty 订阅的生命周期。
