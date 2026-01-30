@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using UnityEngine;
 
 namespace Asaki.Core.MVVM
 {
@@ -110,22 +111,12 @@ namespace Asaki.Core.MVVM
         }
 
         /// <summary>
-        /// 使用默认值初始化AsakiProperty实例。
-        /// </summary>
-        /// <remarks>
-        /// 对于引用类型，默认值为null；对于值类型，默认值为该类型的默认值（如int为0，bool为false）。
-        /// </remarks>
-        public AsakiProperty()
-        {
-            _value = default(T);
-        }
-
-        /// <summary>
         /// 使用指定的初始值初始化AsakiProperty实例。
         /// </summary>
-        /// <param name="initialValue">属性的初始值</param>
+        /// <param name="initialValue">属性的初始值，默认为类型的默认值</param>
         /// <remarks>
         /// 构造函数会直接设置初始值，但不会触发值变化通知，因为此时还没有订阅者。
+        /// 对于引用类型，默认值为null；对于值类型，默认值为该类型的默认值（如int为0，bool为false）。
         /// </remarks>
         public AsakiProperty(T initialValue = default(T))
         {
@@ -162,6 +153,7 @@ namespace Asaki.Core.MVVM
         /// <para>订阅后，每当属性值发生变化时，都会调用指定的委托。</para>
         /// <para>订阅时会立即用当前值调用一次委托，确保订阅者获得最新状态。</para>
         /// <para>可以通过<see cref="Unsubscribe(Action{T})"/>方法取消订阅。</para>
+        /// <para>⚠️ 注意：如果忘记取消订阅，可能导致内存泄漏。建议在 MonoBehaviour 中使用 <see cref="Subscribe(MonoBehaviour, Action{T})"/> 重载。</para>
         /// </remarks>
         /// <example>
         /// <code>
@@ -182,6 +174,48 @@ namespace Asaki.Core.MVVM
             _onValueChangedAction += action;
             action?.Invoke(_value);
             return new Subscription(this, () => _onValueChangedAction -= action);
+        }
+
+        /// <summary>
+        /// 订阅属性值的变化事件，并自动绑定到 MonoBehaviour 的生命周期。
+        /// </summary>
+        /// <param name="owner">订阅者所属的 MonoBehaviour，销毁时自动取消订阅</param>
+        /// <param name="action">值变化时要调用的委托</param>
+        /// <remarks>
+        /// <para>订阅后，每当属性值发生变化时，都会调用指定的委托。</para>
+        /// <para>订阅时会立即用当前值调用一次委托，确保订阅者获得最新状态。</para>
+        /// <para>当 MonoBehaviour 被销毁时，会自动取消订阅，防止内存泄漏。</para>
+        /// <para>这是 Unity 场景对象订阅属性的推荐方式。</para>
+        /// </remarks>
+        /// <example>
+        /// <code>
+        /// public class PlayerView : MonoBehaviour
+        /// {
+        ///     void Start()
+        ///     {
+        ///         // 自动绑定到生命周期，无需手动取消订阅
+        ///         GameState.Health.Subscribe(this, value => UpdateHealthUI(value));
+        ///     }
+        /// }
+        /// </code>
+        /// </example>
+        public IDisposable Subscribe(MonoBehaviour owner, Action<T> action)
+        {
+            if (owner == null)
+            {
+                Debug.LogWarning("[AsakiProperty] Subscribe 的 owner 参数为 null，将使用普通订阅方式。建议传入有效的 MonoBehaviour 以启用自动生命周期管理。");
+                return Subscribe(action);
+            }
+
+            var subscription = Subscribe(action);
+
+            if (!owner.gameObject.TryGetComponent<AsakiBindingTracker>(out var tracker))
+            {
+                tracker = owner.gameObject.AddComponent<AsakiBindingTracker>();
+            }
+            tracker.Track(subscription);
+
+            return subscription;
         }
 
         /// <summary>
@@ -283,13 +317,32 @@ namespace Asaki.Core.MVVM
         /// <para>通知顺序：先调用所有通过<see cref="Subscribe(Action{T})"/>注册的委托，
         /// 然后调用所有通过<see cref="Bind(IAsakiObserver{T})"/>注册的观察者。</para>
         /// <para>遍历观察者列表时从后往前遍历，以支持在通知过程中解除绑定。</para>
+        /// <para>使用快照机制确保在通知过程中集合被修改时不会出错。</para>
         /// </remarks>
         private void Notify()
         {
-            _onValueChangedAction?.Invoke(_value);
-            for (int i = _observers.Count - 1; i >= 0; i--)
+            // 创建委托快照，防止在通知过程中委托被修改
+            var actionSnapshot = _onValueChangedAction;
+            actionSnapshot?.Invoke(_value);
+
+            // 创建观察者快照，防止在通知过程中列表被修改
+            IAsakiObserver<T>[] observerSnapshot;
+            lock (_observers)
             {
-                _observers[i].OnValueChange(_value);
+                observerSnapshot = _observers.ToArray();
+            }
+
+            // 从后往前遍历，支持在通知过程中解除绑定
+            for (int i = observerSnapshot.Length - 1; i >= 0; i--)
+            {
+                try
+                {
+                    observerSnapshot[i]?.OnValueChange(_value);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[AsakiProperty] 通知观察者时发生错误: {ex.Message}");
+                }
             }
         }
 
@@ -297,10 +350,28 @@ namespace Asaki.Core.MVVM
         {
             if (value is not T typedValue)
                 return;
-            _onValueChangedAction?.Invoke(typedValue);
-            for (int i = _observers.Count - 1; i >= 0; i--)
+
+            // 创建委托快照
+            var actionSnapshot = _onValueChangedAction;
+            actionSnapshot?.Invoke(typedValue);
+
+            // 创建观察者快照
+            IAsakiObserver<T>[] observerSnapshot;
+            lock (_observers)
             {
-                _observers[i].OnValueChange(typedValue);
+                observerSnapshot = _observers.ToArray();
+            }
+
+            for (int i = observerSnapshot.Length - 1; i >= 0; i--)
+            {
+                try
+                {
+                    observerSnapshot[i]?.OnValueChange(typedValue);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[AsakiProperty] 通知观察者时发生错误: {ex.Message}");
+                }
             }
         }
 
