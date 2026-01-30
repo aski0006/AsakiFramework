@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Asaki.Core.MVVM
+namespace Asaki.Core.Reactive
 {
     public interface IAsakiPropertyBase : IDisposable
     {

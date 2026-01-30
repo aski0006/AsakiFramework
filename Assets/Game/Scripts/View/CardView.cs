@@ -1,6 +1,6 @@
 using Asaki.Core.Attributes;
 using Asaki.Core.Context;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 using Asaki.Core.Pooling;
 using Asaki.Core.Resources;
 using Asaki.Unity.Services.Async;

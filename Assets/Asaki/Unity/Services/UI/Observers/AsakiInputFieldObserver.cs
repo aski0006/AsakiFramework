@@ -1,4 +1,4 @@
-﻿using Asaki.Core.MVVM;
+﻿using Asaki.Core.Reactive;
 using TMPro;
 
 namespace Asaki.Unity.Services.UI.Observers

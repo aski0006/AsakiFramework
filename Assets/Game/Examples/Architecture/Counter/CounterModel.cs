@@ -1,6 +1,6 @@
 ﻿using Asaki.Core.Architecture;
 using Asaki.Core.Attributes;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 
 namespace Game.Examples.Architecture.Counter
 {

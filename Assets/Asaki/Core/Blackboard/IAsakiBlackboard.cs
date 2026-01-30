@@ -1,6 +1,6 @@
 ﻿using System;
 using Asaki.Core.Context;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 
 namespace Asaki.Core.Blackboard
 {

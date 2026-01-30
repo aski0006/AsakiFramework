@@ -1,4 +1,4 @@
-﻿namespace Asaki.Core.MVVM
+﻿namespace Asaki.Core.Reactive
 {
     /// <summary>
     /// Asaki MVVM框架的观察者接口，用于接收可观察对象的值变化通知。

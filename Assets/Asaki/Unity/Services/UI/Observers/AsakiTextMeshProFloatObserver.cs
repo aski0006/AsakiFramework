@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 using Asaki.Unity.Utils;
 using TMPro;
 using UnityEngine;

@@ -1,6 +1,6 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
-using Asaki.Core.MVVM;
+using Asaki.Core.Reactive;
 using System;
 using UnityEngine;
 
