@@ -14,30 +14,30 @@ using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
-	// 因为 Resources 加载资源时可能需要从池中生成对象
-	[AsakiModule(150, typeof(AsakiResourcesModule))]
-	public class AsakiPoolModule : IAsakiModule
-	{
-		private IAsakiPoolService _poolService;
+    // 因为 Resources 加载资源时可能需要从池中生成对象
+    [AsakiModule(150, typeof(AsakiResourcesModule))]
+    public class AsakiPoolModule : IAsakiModule
+    {
+        private IAsakiPoolService _poolService;
 
-		public void OnInit()
-		{
-			// 1. 获取依赖
-			_poolService = new AsakiPoolService();
+        public void OnInit()
+        {
+            // 1. 获取依赖
+            _poolService = new AsakiPoolService();
 
-			AsakiContext.Register(_poolService);
+            AsakiContext.Register(_poolService);
 
-			ALog.Info("[Asaki] Pooling Service initialized (Async-Native Mode).");
-		}
+            ALog.Info("[Asaki] Pooling Service initialized (Async-Native Mode).");
+        }
 
-		public UniTask OnInitAsync()
-		{
-			return UniTask.CompletedTask;
-		}
+        public UniTask OnInitAsync()
+        {
+            return UniTask.CompletedTask;
+        }
 
-		public void OnDispose()
-		{
-			_poolService?.Dispose();
-		}
-	}
+        public void OnDispose()
+        {
+            _poolService?.Dispose();
+        }
+    }
 }

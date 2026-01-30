@@ -136,6 +136,7 @@ namespace Asaki.Core.Audio
         {
             return new AsakiAudioParams(Position, Volume, Pitch, SpatialBlend, IsLoop, priority);
         }
+
         public AsakiAudioParams SetSpatialBlend(float spatialBlend)
         {
             return new AsakiAudioParams(Position, Volume, Pitch, spatialBlend, IsLoop, Priority);
@@ -145,16 +146,23 @@ namespace Asaki.Core.Audio
         {
             return new AsakiAudioParams(pos, Volume, Pitch, SpatialBlend, IsLoop, Priority);
         }
+
         public override string ToString()
         {
-            return "AsakiAudioParams(" +
-                "Position=" + Position +
-                ", Volume=" + Volume +
-                ", Pitch=" + Pitch +
-                ", SpatialBlend=" + SpatialBlend +
-                ", IsLoop=" + IsLoop +
-                ", Priority=" + Priority +
-                ")";
+            return "AsakiAudioParams("
+                + "Position="
+                + Position
+                + ", Volume="
+                + Volume
+                + ", Pitch="
+                + Pitch
+                + ", SpatialBlend="
+                + SpatialBlend
+                + ", IsLoop="
+                + IsLoop
+                + ", Priority="
+                + Priority
+                + ")";
         }
     }
 }

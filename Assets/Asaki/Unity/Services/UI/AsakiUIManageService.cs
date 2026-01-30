@@ -127,7 +127,10 @@ namespace Asaki.Unity.Services.UI
                     if (!_poolService.HasPool(info.AssetPath))
                     {
                         // 加载预制体
-                        var prefabHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
+                        var prefabHandle = await _resourceService.LoadAsync<GameObject>(
+                            info.AssetPath,
+                            token
+                        );
                         if (!prefabHandle.IsValid)
                             return null;
 

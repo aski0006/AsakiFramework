@@ -1,9 +1,8 @@
 using Asaki.Core.Attributes;
 using Asaki.Core.Context;
 using Asaki.Core.Reactive;
-using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
-using Asaki.Unity.Services.Async;
 using Asaki.Unity.Services.UI.Observers;
 using Cysharp.Threading.Tasks;
 using Game.Scripts.Data;

@@ -3,7 +3,7 @@ using System;
 using System.Threading;
 using Asaki.Core.Audio;
 using Asaki.Core.Logging;
-using Asaki.Core.Pooling;
+using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Asaki.Unity.Extensions;
 using Cysharp.Threading.Tasks;
@@ -189,13 +189,14 @@ namespace Asaki.Unity.Services.Audio
             if (!IsPlaying)
                 return;
 
-            FadeOutAndStop(fadeDuration).Forget(ex =>
-            {
-                if (ex is not OperationCanceledException)
+            FadeOutAndStop(fadeDuration)
+                .Forget(ex =>
                 {
-                    ALog.Error($"[AsakiSoundAgent] FadeOut error: {ex.Message}", ex);
-                }
-            });
+                    if (ex is not OperationCanceledException)
+                    {
+                        ALog.Error($"[AsakiSoundAgent] FadeOut error: {ex.Message}", ex);
+                    }
+                });
         }
 
         private async UniTask FadeOutAndStop(float duration)

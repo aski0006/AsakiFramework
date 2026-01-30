@@ -12,51 +12,49 @@ using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
-	// 优先级 400，通常依赖 Resources 加载音频
-	[AsakiModule(
-		400,
-		typeof(AsakiResourcesModule),
-		typeof(AsakiPoolModule),
-		typeof(AsakiEventBusModule)
-	)]
-	public class AsakiAudioModule : IAsakiModule, IAsakiInit<IAsakiResourceService, IAsakiPoolService>
-	{
-		private IAsakiAudioService _audioService;
-		private IAsakiResourceService _resService;
-		private IAsakiPoolService _poolService;
+    // 优先级 400，通常依赖 Resources 加载音频
+    [AsakiModule(
+        400,
+        typeof(AsakiResourcesModule),
+        typeof(AsakiPoolModule),
+        typeof(AsakiEventBusModule)
+    )]
+    public class AsakiAudioModule
+        : IAsakiModule,
+            IAsakiInit<IAsakiResourceService, IAsakiPoolService>
+    {
+        private IAsakiAudioService _audioService;
+        private IAsakiResourceService _resService;
+        private IAsakiPoolService _poolService;
 
-		[AsakiInject]
-		public void Init(IAsakiResourceService resource, IAsakiPoolService poolService)
-		{
-			_resService = resource;
-			_poolService = poolService;
-		}
+        [AsakiInject]
+        public void Init(IAsakiResourceService resource, IAsakiPoolService poolService)
+        {
+            _resService = resource;
+            _poolService = poolService;
+        }
 
-		public void OnInit()
-		{
-			AsakiConfig config = AsakiContext.Get<AsakiConfig>();
-			if (!config)
-				return;
+        public void OnInit()
+        {
+            AsakiConfig config = AsakiContext.Get<AsakiConfig>();
+            if (!config)
+                return;
 
-			_audioService = new AsakiAudioService(
-				_poolService,
-				_resService,
-				config.AudioConfig
-			);
+            _audioService = new AsakiAudioService(_poolService, _resService, config.AudioConfig);
 
-			_audioService.OnInit();
+            _audioService.OnInit();
 
-			AsakiContext.Register(_audioService);
-		}
+            AsakiContext.Register(_audioService);
+        }
 
-		public async UniTask OnInitAsync()
-		{
-			await _audioService.OnInitAsync();
-		}
+        public async UniTask OnInitAsync()
+        {
+            await _audioService.OnInitAsync();
+        }
 
-		public void OnDispose()
-		{
-			_audioService.OnDispose();
-		}
-	}
+        public void OnDispose()
+        {
+            _audioService.OnDispose();
+        }
+    }
 }

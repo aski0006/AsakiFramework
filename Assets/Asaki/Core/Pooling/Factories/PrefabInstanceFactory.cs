@@ -6,9 +6,11 @@ using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+// 使用 IAsakiPoolable 的旧命名空间兼容性导入
+using IAsakiPoolable = Asaki.Core.Pooling.Interfaces.IAsakiPoolable;
 using Object = UnityEngine.Object;
 
-namespace Asaki.Core.Pooling
+namespace Asaki.Core.Pooling.Factories
 {
     /// <summary>
     /// GameObject 预制体实例化工厂（集成资源服务）
@@ -26,13 +28,6 @@ namespace Asaki.Core.Pooling
         private ResHandle<GameObject> _prefabHandle;
         private bool _isHandleLoaded;
 
-        /// <summary>
-        /// 构造函数
-        /// </summary>
-        /// <param name="resourceService">资源服务</param>
-        /// <param name="prefabPath">预制体资源路径</param>
-        /// <param name="parent">实例化父节点（可选）</param>
-        /// <param name="worldPositionStays">实例化时是否保持世界坐标</param>
         public PrefabInstanceFactory(
             IAsakiResourceService resourceService,
             string prefabPath,
@@ -40,54 +35,86 @@ namespace Asaki.Core.Pooling
             bool worldPositionStays = false
         )
         {
-            _resourceService = resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+            _resourceService =
+                resourceService ?? throw new ArgumentNullException(nameof(resourceService));
             _prefabPath = !string.IsNullOrEmpty(prefabPath)
                 ? prefabPath
-                : throw new ArgumentException("Prefab path cannot be null or empty", nameof(prefabPath));
+                : throw new ArgumentException(
+                    "Prefab path cannot be null or empty",
+                    nameof(prefabPath)
+                );
             _parent = parent;
             _worldPositionStays = worldPositionStays;
         }
 
         public async UniTask<GameObject> CreateAsync(CancellationToken token = default)
         {
-            // 延迟加载预制体
+            await EnsurePrefabLoadedAsync(token);
+            return CreateGameObjectInstance();
+        }
+
+        public GameObject CreateSync()
+        {
+            if (!_isHandleLoaded)
+            {
+                throw new InvalidOperationException(
+                    "Prefab not loaded. Call CreateAsync first or ensure async initialization is complete."
+                );
+            }
+            return CreateGameObjectInstance();
+        }
+
+        private async UniTask EnsurePrefabLoadedAsync(CancellationToken token)
+        {
             if (!_isHandleLoaded)
             {
                 try
                 {
-                    _prefabHandle = await _resourceService.LoadAsync<GameObject>(_prefabPath, token);
+                    _prefabHandle = await _resourceService.LoadAsync<GameObject>(
+                        _prefabPath,
+                        token
+                    );
                     _isHandleLoaded = true;
 
                     if (_prefabHandle == null || !_prefabHandle.IsValid)
                     {
-                        ALog.Error($"[AsakiPoolService] PrefabInstanceFactory Prefab load failure: {_prefabPath}");
-                        return null;
+                        ALog.Error(
+                            $"[AsakiPool] PrefabInstanceFactory failed to load prefab: {_prefabPath}"
+                        );
                     }
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiPoolService] PrefabInstanceFactory Prefab load failure: {_prefabPath}, {ex.Message}", ex);
-                    return null;
+                    ALog.Error(
+                        $"[AsakiPool] PrefabInstanceFactory failed to load prefab: {_prefabPath}, {ex.Message}",
+                        ex
+                    );
                 }
             }
+        }
 
-            // 实例化
+        private GameObject CreateGameObjectInstance()
+        {
+            if (_prefabHandle == null || !_prefabHandle.IsValid)
+            {
+                return null;
+            }
+
             GameObject instance = _parent
                 ? Object.Instantiate(_prefabHandle.Asset, _parent, _worldPositionStays)
                 : Object.Instantiate(_prefabHandle.Asset);
 
-            instance.SetActive(false);  // 默认禁用，等待池激活
-
+            instance.SetActive(false);
             return instance;
         }
 
         public void OnGet(GameObject obj)
         {
-            if (!obj) return;
+            if (!obj)
+                return;
 
             obj.SetActive(true);
 
-            // ✅ 支持 IAsakiPoolable 接口
             var poolable = obj.GetComponent<IAsakiPoolable>();
             if (poolable != null)
             {
@@ -97,16 +124,19 @@ namespace Asaki.Core.Pooling
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiPoolService] PrefabInstanceFactory OnSpawn callback failed: {ex.Message}", ex);
+                    ALog.Error(
+                        $"[AsakiPool] PrefabInstanceFactory OnSpawn failed: {ex.Message}",
+                        ex
+                    );
                 }
             }
         }
 
         public void OnReturn(GameObject obj)
         {
-            if (!obj) return;
+            if (!obj)
+                return;
 
-            // ✅ 支持 IAsakiPoolable 接口
             var poolable = obj.GetComponent<IAsakiPoolable>();
             if (poolable != null)
             {
@@ -116,13 +146,15 @@ namespace Asaki.Core.Pooling
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiPoolService] PrefabInstanceFactory OnDespawn callback failed: {ex.Message}", ex);
+                    ALog.Error(
+                        $"[AsakiPool] PrefabInstanceFactory OnDespawn failed: {ex.Message}",
+                        ex
+                    );
                 }
             }
 
             obj.SetActive(false);
 
-            // 归位到父节点
             if (_parent && obj.transform.parent != _parent)
             {
                 obj.transform.SetParent(_parent, _worldPositionStays);
@@ -131,12 +163,13 @@ namespace Asaki.Core.Pooling
 
         public void OnDestroy(GameObject obj)
         {
-            if (obj) Object.Destroy(obj);
+            if (obj)
+                Object.Destroy(obj);
         }
 
         public bool Validate(GameObject obj)
         {
-            return obj;  // Unity 对象的隐式 bool 转换
+            return obj != null;
         }
 
         public void Dispose()
@@ -146,7 +179,7 @@ namespace Asaki.Core.Pooling
                 _prefabHandle.Dispose();
                 _prefabHandle = null;
                 _isHandleLoaded = false;
-                ALog.Info($"[AsakiPoolService] Released prefab handle: {_prefabPath}");
+                ALog.Info($"[AsakiPool] Released prefab handle: {_prefabPath}");
             }
         }
     }

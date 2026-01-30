@@ -21,7 +21,9 @@ namespace Asaki.Unity.Modules
         typeof(AsakiEventBusModule),
         typeof(AsakiSimulationModule)
     )]
-    public class AsakiUIModule : IAsakiModule, IAsakiInit<IAsakiEventService, IAsakiResourceService, IAsakiPoolService>
+    public class AsakiUIModule
+        : IAsakiModule,
+            IAsakiInit<IAsakiEventService, IAsakiResourceService, IAsakiPoolService>
     {
         private AsakiUIManageService _uiManageService;
         private IAsakiEventService _eventService;

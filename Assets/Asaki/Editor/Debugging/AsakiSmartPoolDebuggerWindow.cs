@@ -357,7 +357,10 @@ namespace Asaki.Editor.Debugging
                 {
                     // 反射获取统计信息
                     Type statsType = poolBase.Statistics.GetType();
-                    FieldInfo inactiveField = statsType.GetField("InactiveCount", BindingFlags.Public | BindingFlags.Instance);
+                    FieldInfo inactiveField = statsType.GetField(
+                        "InactiveCount",
+                        BindingFlags.Public | BindingFlags.Instance
+                    );
                     if (inactiveField != null)
                     {
                         inactiveCount = (int)inactiveField.GetValue(poolBase.Statistics);
@@ -370,7 +373,10 @@ namespace Asaki.Editor.Debugging
 
                 // 反射获取工厂信息
                 Type poolType = poolObj.GetType();
-                FieldInfo factoryField = poolType.GetField("_factory", BindingFlags.NonPublic | BindingFlags.Instance);
+                FieldInfo factoryField = poolType.GetField(
+                    "_factory",
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
                 if (factoryField != null)
                 {
                     object factoryObj = factoryField.GetValue(poolObj);
@@ -378,35 +384,50 @@ namespace Asaki.Editor.Debugging
                     {
                         // 尝试从工厂中获取预制体
                         Type factoryType = factoryObj.GetType();
-                        
+
                         // 尝试多种可能的字段名
-                        FieldInfo prefabField = factoryType.GetField("_prefab", BindingFlags.NonPublic | BindingFlags.Instance);
+                        FieldInfo prefabField = factoryType.GetField(
+                            "_prefab",
+                            BindingFlags.NonPublic | BindingFlags.Instance
+                        );
                         if (prefabField == null)
                         {
-                            prefabField = factoryType.GetField("prefab", BindingFlags.Public | BindingFlags.Instance);
+                            prefabField = factoryType.GetField(
+                                "prefab",
+                                BindingFlags.Public | BindingFlags.Instance
+                            );
                         }
                         if (prefabField == null)
                         {
-                            prefabField = factoryType.GetField("Prefab", BindingFlags.Public | BindingFlags.Instance);
+                            prefabField = factoryType.GetField(
+                                "Prefab",
+                                BindingFlags.Public | BindingFlags.Instance
+                            );
                         }
-                        
+
                         if (prefabField != null)
                         {
                             prefab = prefabField.GetValue(factoryObj) as GameObject;
                             hasHandle = prefab != null;
                         }
-                        
+
                         // 尝试从ResourceHandle获取
                         if (!hasHandle)
                         {
-                            FieldInfo handleField = factoryType.GetField("_handle", BindingFlags.NonPublic | BindingFlags.Instance);
+                            FieldInfo handleField = factoryType.GetField(
+                                "_handle",
+                                BindingFlags.NonPublic | BindingFlags.Instance
+                            );
                             if (handleField != null)
                             {
                                 object handleObj = handleField.GetValue(factoryObj);
                                 if (handleObj != null)
                                 {
                                     Type handleType = handleObj.GetType();
-                                    FieldInfo assetField = handleType.GetField("Asset", BindingFlags.Public | BindingFlags.Instance);
+                                    FieldInfo assetField = handleType.GetField(
+                                        "Asset",
+                                        BindingFlags.Public | BindingFlags.Instance
+                                    );
                                     if (assetField != null)
                                     {
                                         prefab = assetField.GetValue(handleObj) as GameObject;

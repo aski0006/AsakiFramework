@@ -6,16 +6,19 @@ using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+// 使用 IAsakiPoolable 的旧命名空间兼容性导入
+using IAsakiPoolable = Asaki.Core.Pooling.Interfaces.IAsakiPoolable;
 using Object = UnityEngine.Object;
 
-namespace Asaki.Core.Pooling
+namespace Asaki.Core.Pooling.Factories
 {
     /// <summary>
     /// Unity 组件工厂（直接池化组件而非 GameObject）
     /// 示例：池化 ParticleSystem, AudioSource, Rigidbody 等
     /// </summary>
     /// <typeparam name="T">组件类型（必须继承 Component）</typeparam>
-    public class ComponentFactory<T> : IAsakiPoolObjectFactory<T>, IDisposable where T : Component
+    public class ComponentFactory<T> : IAsakiPoolObjectFactory<T>, IDisposable
+        where T : Component
     {
         private readonly IAsakiResourceService _resourceService;
         private readonly string _prefabPath;
@@ -29,14 +32,35 @@ namespace Asaki.Core.Pooling
             Transform parent = null
         )
         {
-            _resourceService = resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+            _resourceService =
+                resourceService ?? throw new ArgumentNullException(nameof(resourceService));
             _prefabPath = !string.IsNullOrEmpty(prefabPath)
                 ? prefabPath
-                : throw new ArgumentException("Prefab path cannot be null or empty", nameof(prefabPath));
+                : throw new ArgumentException(
+                    "Prefab path cannot be null or empty",
+                    nameof(prefabPath)
+                );
             _parent = parent;
         }
 
         public async UniTask<T> CreateAsync(CancellationToken token = default)
+        {
+            await EnsurePrefabLoadedAsync(token);
+            return CreateComponentInstance();
+        }
+
+        public T CreateSync()
+        {
+            if (!_isHandleLoaded)
+            {
+                throw new InvalidOperationException(
+                    "Prefab not loaded. Call CreateAsync first or ensure async initialization is complete."
+                );
+            }
+            return CreateComponentInstance();
+        }
+
+        private async UniTask EnsurePrefabLoadedAsync(CancellationToken token)
         {
             if (!_isHandleLoaded)
             {
@@ -45,9 +69,18 @@ namespace Asaki.Core.Pooling
 
                 if (_prefabHandle == null || !_prefabHandle.IsValid)
                 {
-                    ALog.Error($"[AsakiPoolService] ComponentFactory Load Failure: {_prefabPath}");
-                    return null;
+                    ALog.Error(
+                        $"[AsakiPool] ComponentFactory failed to load prefab: {_prefabPath}"
+                    );
                 }
+            }
+        }
+
+        private T CreateComponentInstance()
+        {
+            if (_prefabHandle == null || !_prefabHandle.IsValid)
+            {
+                return null;
             }
 
             GameObject instance = _parent
@@ -56,11 +89,12 @@ namespace Asaki.Core.Pooling
 
             instance.SetActive(false);
 
-            // 获取组件
             T component = instance.GetComponent<T>();
             if (component == null)
             {
-                ALog.Error($"[AsakiPoolService] ComponentFactory Lack of: {typeof(T).Name} in {_prefabPath}");
+                ALog.Error(
+                    $"[AsakiPool] ComponentFactory missing component {typeof(T).Name} in {_prefabPath}"
+                );
                 Object.Destroy(instance);
                 return null;
             }
@@ -70,27 +104,39 @@ namespace Asaki.Core.Pooling
 
         public void OnGet(T component)
         {
-            if (!component) return;
+            if (!component)
+                return;
 
             component.gameObject.SetActive(true);
 
-            // 支持 IAsakiPoolable
             if (component is IAsakiPoolable poolable)
             {
-                try { poolable.OnSpawn(); }
-                catch (Exception ex) { ALog.Error($"[AsakiPoolService] ComponentFactory OnSpawn Failure: {ex.Message}", ex); }
+                try
+                {
+                    poolable.OnSpawn();
+                }
+                catch (Exception ex)
+                {
+                    ALog.Error($"[AsakiPool] ComponentFactory OnSpawn failed: {ex.Message}", ex);
+                }
             }
         }
 
         public void OnReturn(T component)
         {
-            if (!component) return;
+            if (!component)
+                return;
 
-            // 支持 IAsakiPoolable
             if (component is IAsakiPoolable poolable)
             {
-                try { poolable.OnDespawn(); }
-                catch (Exception ex) { ALog.Error($"[ComponentFactory] OnDespawn 失败: {ex.Message}", ex); }
+                try
+                {
+                    poolable.OnDespawn();
+                }
+                catch (Exception ex)
+                {
+                    ALog.Error($"[AsakiPool] ComponentFactory OnDespawn failed: {ex.Message}", ex);
+                }
             }
 
             component.gameObject.SetActive(false);
@@ -103,12 +149,13 @@ namespace Asaki.Core.Pooling
 
         public void OnDestroy(T component)
         {
-            if (component) Object.Destroy(component.gameObject);
+            if (component)
+                Object.Destroy(component.gameObject);
         }
 
         public bool Validate(T component)
         {
-            return component;
+            return component != null && component.gameObject != null;
         }
 
         public void Dispose()
