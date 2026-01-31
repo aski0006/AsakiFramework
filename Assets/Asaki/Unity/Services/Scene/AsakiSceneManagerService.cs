@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Asaki.Core.Async;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
@@ -22,7 +21,7 @@ namespace Asaki.Unity.Services.Scene
         private bool _isLoading;
         private bool _isDisposed;
         public string LastLoadedSceneName { get; private set; }
-        private TaskCompletionSource<bool> _activationTaskSignal;
+        private UniTaskCompletionSource<bool> _activationTaskSignal;
 
         public AsakiSceneManagerService(
             IAsakiEventService asakiEventService,
@@ -150,10 +149,10 @@ namespace Asaki.Unity.Services.Scene
 
                 if (activation == AsakiSceneActivation.ManualConfirm)
                 {
-                    _activationTaskSignal = new TaskCompletionSource<bool>();
-                    var signalTask = _activationTaskSignal
-                        .Task.AsUniTask()
-                        .AttachExternalCancellation(token);
+                    _activationTaskSignal = new UniTaskCompletionSource<bool>();
+                    UniTask signalTask = _activationTaskSignal.Task.AttachExternalCancellation(
+                        token
+                    );
                     UniTask waitTask = UniTask.Delay(
                         TimeSpan.MaxValue,
                         false,
@@ -161,11 +160,8 @@ namespace Asaki.Unity.Services.Scene
                         token,
                         false
                     );
-                    (bool hasResultLeft, bool result) result = await UniTask.WhenAny(
-                        signalTask,
-                        waitTask
-                    );
-                    if (result.hasResultLeft) // signalTask 先完成
+                    int completedIndex = await UniTask.WhenAny(signalTask, waitTask);
+                    if (completedIndex == 0) // signalTask 先完成 (索引 0)
                         return CancelSceneLoadOperation(targetScene);
                 }
 

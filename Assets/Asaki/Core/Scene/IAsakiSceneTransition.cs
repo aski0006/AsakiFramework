@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Threading;
-using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Scene
 {
     public interface IAsakiSceneTransition : IDisposable
     {
-        Task EnterAsync(CancellationToken ct);
+        UniTask EnterAsync(CancellationToken ct);
         void OnProgress(float normalizedProgress);
-        Task ExitAsync(CancellationToken ct);
+        UniTask ExitAsync(CancellationToken ct);
     }
 }
