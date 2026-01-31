@@ -432,16 +432,42 @@ namespace Asaki.Unity.Services.Audio
         public void StopGroup(int groupId, float fadeDuration = 0.2f) { }
 
         // ==========================================================
-        // 10. Query Methods
+        // 10. Query Methods (FSM-based)
         // ==========================================================
         public bool IsPlaying(AsakiAudioHandle handle)
         {
-            return _activeAgents.ContainsKey(handle);
+            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsPlaying;
         }
 
         public bool IsPaused(AsakiAudioHandle handle)
         {
             return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsPaused;
+        }
+
+        /// <summary>
+        /// 获取音频播放器的当前状态
+        /// </summary>
+        public AudioPlaybackState GetState(AsakiAudioHandle handle)
+        {
+            return TryGetAgent(handle, out AsakiSoundAgent agent)
+                ? agent.State
+                : AudioPlaybackState.Idle;
+        }
+
+        /// <summary>
+        /// 检查音频是否处于活跃状态（Loading/Ready/Playing/Paused/FadingOut）
+        /// </summary>
+        public bool IsActive(AsakiAudioHandle handle)
+        {
+            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsActive;
+        }
+
+        /// <summary>
+        /// 检查音频是否处于错误状态
+        /// </summary>
+        public bool IsError(AsakiAudioHandle handle)
+        {
+            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsError;
         }
 
         public float GetCurrentVolume(AsakiAudioHandle handle)
@@ -479,6 +505,44 @@ namespace Asaki.Unity.Services.Audio
                 return "[AsakiAudioService] Pool not initialized";
 
             return $"[AsakiAudioService] {_agentPool.Statistics}, Active: {_activeAgents.Count}";
+        }
+
+        /// <summary>
+        /// 获取当前活跃音频的状态统计
+        /// </summary>
+        public AudioStateStatistics GetStateStatistics()
+        {
+            var stats = new AudioStateStatistics();
+
+            foreach (var agent in _activeAgents.Values)
+            {
+                if (agent == null)
+                    continue;
+
+                switch (agent.State)
+                {
+                    case AudioPlaybackState.Loading:
+                        stats.LoadingCount++;
+                        break;
+                    case AudioPlaybackState.Ready:
+                        stats.ReadyCount++;
+                        break;
+                    case AudioPlaybackState.Playing:
+                        stats.PlayingCount++;
+                        break;
+                    case AudioPlaybackState.Paused:
+                        stats.PausedCount++;
+                        break;
+                    case AudioPlaybackState.FadingOut:
+                        stats.FadingOutCount++;
+                        break;
+                    case AudioPlaybackState.Error:
+                        stats.ErrorCount++;
+                        break;
+                }
+            }
+
+            return stats;
         }
     }
 
