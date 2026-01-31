@@ -2,30 +2,53 @@
 #
 # 获取最新版本：https://github.com/github/gitignore/blob/main/Unity.gitignore
 #
+
+# ========================
+# Unity 生成的文件夹
+# ========================
+
+# Unity 库文件夹 - 包含所有自动生成的缓存、编译后的 DLL 等
 /[Ll]ibrary/
+
+# 临时文件夹
 /[Tt]emp/
+
+# 编译输出文件夹
 /[Oo]bj/
+
+# 构输出文件夹
 /[Bb]uild/
 /[Bb]uilds/
+
+# 日志文件夹
 /[Ll]ogs/
+
+# 用户设置文件夹
 /[Uu]ser[Ss]ettings/
+
 # MemoryCaptures 文件夹可能会非常大
 # 它们也可能包含极其敏感的数据
 /[Mm]emoryCaptures/
+
+# ========================
+# Unity 生成的文件
+# ========================
+
 # 只有当对应的资源文件被忽略时，对应的 .meta 文件才应被忽略
 !/[Aa]ssets/**/*.meta
+
 # 如果你希望忽略 Asset Store Tools 插件，请取消注释下行
 # /[Aa]ssets/AssetStoreTools*
+
 # 自动生成的 Jetbrains Rider 插件
 /[Aa]ssets/Plugins/Editor/JetBrains*
-# Visual Studio 或 VSCode 缓存目录
-vs/
-vscode/
+
 # Gradle 缓存目录
-gradle/
+.gradle/
+
 # 自动生成的 VS/MD/Consulo 解决方案和项目文件
 ExportedObj/
-consulo/
+.consulo/
 *.csproj
 *.unityproj
 *.sln
@@ -40,22 +63,114 @@ consulo/
 *.mdb
 *.opendb
 *.VC.db
+
 # Unity3D 生成的 meta 文件
 *.pidb.meta
 *.pdb.meta
 *.mdb.meta
+
 # Unity3D 在崩溃报告时生成的文件
 sysinfo.txt
+
 # 构建产物
 *.apk
 *.aab
 *.unitypackage
+*.app
+
 # Crashlytics 生成的文件
 crashlytics-build.properties
+
+# ========================
+# Addressables
+# ========================
+
 # 已打包的 Addressables 文件
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
+
 # 临时自动生成的 Android 资源
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
-/Assets/Asaki/Generated/
-/Assets/Asaki/Doc/
+
+# ========================
+# IDE 和编辑器
+# ========================
+
+# Visual Studio
+.vs/
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# Trae IDE
+.trae/
+
+# ========================
+# 项目特定的生成文件
+# ========================
+
+# 自动生成的代码
+/Asaki.CodeGen/
+/[Aa]ssets/Asaki/Generated/
+/[Aa]ssets/Asaki/Doc/
+
+# UIElements Schema (自动生成)
+/[Uu]I[Ee]lements[Ss]chema/
+
+# ========================
+# 操作系统文件
+# ========================
+
+# Windows
+Thumbs.db
+Thumbs.db.meta
+ehthumbs.db
+ehthumbs.db.meta
+Desktop.ini
+Desktop.ini.meta
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.DS_Store.meta
+.AppleDouble
+.AppleDouble.meta
+.LSOverride
+.LSOverride.meta
+Icon
+Icon\r
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Linux
+*~
+.nfs*
+
+# ========================
+# 其他
+# ========================
+
+# 日志文件
+*.log
+*.log.meta
+
+# 备份文件
+*.bak
+*.bak.meta
+*.swp
+*.swp.meta
+*.swo
+*.swo.meta

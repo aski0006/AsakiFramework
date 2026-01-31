@@ -1,14 +1,12 @@
 {
-    "name": "Asaki.Editor",
+    "name": "Game.Editor",
     "rootNamespace": "",
     "references": [
-        "Unity.Rider.Editor",
-        "Asaki.Core",
-        "Asaki.Unity",
-        "UnityEditor.UI",
-        "UniTask.Editor",
-        "UniTask",
-        "Unity.TextMeshPro"
+        "GUID:d528c8c98d269ca44a06cd9624a03945",
+        "GUID:958d2909255c6af48a8af0b99ce21502",
+        "GUID:176bb787c79e6b34f94fabd7443913f7",
+        "GUID:b5684d55e453ef04d8b5c74234a5a069",
+        "GUID:38a80d2f0df49a5459c085908b4eb3ad"
     ],
     "includePlatforms": [
         "Editor"
