@@ -331,10 +331,11 @@ public class PlayerViewModel
 ```
 Assets/Asaki/
 ├── package.json              # 包配置
-├── README.md                 # 说明文档
-├── CHANGELOG.md              # 变更日志
-├── LICENSE                   # MIT 许可证
-├── Documentation~/           # 详细文档
+├── package.json.meta         # 包配置 meta 文件
+├── Documentation~/           # 详细文档（Unity 忽略此文件夹）
+│   ├── README.md             # 说明文档
+│   ├── CHANGELOG.md          # 变更日志
+│   ├── LICENSE               # MIT 许可证
 │   └── Architecture.md       # 架构指南
 ├── Core/                     # 核心架构
 │   ├── Architecture/         # 命令/查询模式
@@ -360,6 +361,8 @@ Assets/Asaki/
 └── Plugins/                  # 插件集成
     └── Localization/         # 本地化
 ```
+
+**注意**: `Documentation~` 文件夹名称以 `~` 结尾，Unity 会自动忽略此文件夹及其内容，不会导入到项目中。这样可以避免根目录文档文件的 meta 文件问题。
 
 ---
 
