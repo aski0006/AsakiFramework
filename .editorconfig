@@ -10,41 +10,37 @@ insert_final_newline = true
 
 [*.cs]
 # ReSharper 命名规则 - Unity 规范
+# 私有只读字段使用 _camelCase
+resharper_csharp_naming_rule.readonly_fields_private = _ + aaBb
+resharper_csharp_naming_rule.readonly_fields_private.style = _camelCase
+
 # 私有静态只读字段使用 _camelCase
-resharper_csharp_naming_rule.private_static_readonly = _ + aaBb
-resharper_csharp_naming_rule.private_static_readonly.style = _camelCase
+resharper_csharp_naming_rule.static_readonly_fields_private = _ + aaBb
+resharper_csharp_naming_rule.static_readonly_fields_private.style = _camelCase
 
-# 私有字段使用 _camelCase
-resharper_csharp_naming_rule.private_fields = _ + aaBb
-resharper_csharp_naming_rule.private_fields.style = _camelCase
+# 实例私有字段使用 _camelCase
+resharper_csharp_naming_rule.instance_fields_private = _ + aaBb
+resharper_csharp_naming_rule.instance_fields_private.style = _camelCase
 
-# 私有静态字段使用 _camelCase
-resharper_csharp_naming_rule.private_static_fields = _ + aaBb
-resharper_csharp_naming_rule.private_static_fields.style = _camelCase
+# 静态私有字段使用 _camelCase
+resharper_csharp_naming_rule.static_fields_private = _ + aaBb
+resharper_csharp_naming_rule.static_fields_private.style = _camelCase
 
-# 受保护字段使用 _camelCase
-resharper_csharp_naming_rule.protected_fields = _ + aaBb
-resharper_csharp_naming_rule.protected_fields.style = _camelCase
+# 受保护实例字段使用 _camelCase
+resharper_csharp_naming_rule.instance_fields_protected = _ + aaBb
+resharper_csharp_naming_rule.instance_fields_protected.style = _camelCase
 
 # 受保护静态字段使用 _camelCase
-resharper_csharp_naming_rule.protected_static_fields = _ + aaBb
-resharper_csharp_naming_rule.protected_static_fields.style = _camelCase
+resharper_csharp_naming_rule.static_fields_protected = _ + aaBb
+resharper_csharp_naming_rule.static_fields_protected.style = _camelCase
 
-# 受保护静态只读字段使用 _camelCase
-resharper_csharp_naming_rule.protected_static_readonly = _ + aaBb
-resharper_csharp_naming_rule.protected_static_readonly.style = _camelCase
-
-# 内部字段使用 _camelCase
-resharper_csharp_naming_rule.internal_fields = _ + aaBb
-resharper_csharp_naming_rule.internal_fields.style = _camelCase
+# 内部实例字段使用 _camelCase
+resharper_csharp_naming_rule.instance_fields_internal = _ + aaBb
+resharper_csharp_naming_rule.instance_fields_internal.style = _camelCase
 
 # 内部静态字段使用 _camelCase
-resharper_csharp_naming_rule.internal_static_fields = _ + aaBb
-resharper_csharp_naming_rule.internal_static_fields.style = _camelCase
-
-# 内部静态只读字段使用 _camelCase
-resharper_csharp_naming_rule.internal_static_readonly = _ + aaBb
-resharper_csharp_naming_rule.internal_static_readonly.style = _camelCase
+resharper_csharp_naming_rule.static_fields_internal = _ + aaBb
+resharper_csharp_naming_rule.static_fields_internal.style = _camelCase
 
 # 常量使用 PascalCase
 resharper_csharp_naming_rule.constants = AaBb

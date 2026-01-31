@@ -5,6 +5,7 @@ using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Core.Logging;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using AsakiBroker = Asaki.Core.Broker.AsakiBroker;
@@ -33,6 +34,11 @@ namespace Asaki.Unity.Bootstrapper
         [Header("Configuration")]
         [SerializeField]
         private AsakiConfig _config;
+
+        [Header("Performance")]
+        [Tooltip("每帧最大注入数量，0表示无限制")]
+        [SerializeField]
+        private int _maxInjectionsPerFrame = 0;
 
         private static AsakiBootstrapper _instance;
         private IAsakiLoggingService _logService;
@@ -71,7 +77,12 @@ namespace Asaki.Unity.Bootstrapper
             RegisterGlobalBehaviourServices();
         }
 
-        private async void Start()
+        private void Start()
+        {
+            StartAsync().Forget();
+        }
+
+        private async UniTaskVoid StartAsync()
         {
             try
             {
@@ -110,6 +121,8 @@ namespace Asaki.Unity.Bootstrapper
                 return;
             foreach (MonoBehaviour behaviour in _globalBehaviourServices)
             {
+                if (behaviour == null)
+                    continue;
                 if (behaviour is not IAsakiGlobalService service)
                     continue;
 

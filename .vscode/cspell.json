@@ -50,6 +50,7 @@
         "OnTriggerStay",
         "Physics",
         "Quaternion",
+        "resharper",
         "Rigidbody",
         "SetActive",
         "Start",
