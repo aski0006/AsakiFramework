@@ -1,9 +1,9 @@
-# Changelog
+﻿# Changelog
 
 所有对 Asaki Framework 的显著变更都将记录在此文件中。
 
-格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
-并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/ )，
+并且本项目遵循 [语义化版本](https://semver.org/lang/zh-CN/ )。
 
 ## [1.0.0] - 2025-01-31
 
@@ -54,6 +54,7 @@
 
 ### 依赖
 - Unity 2022.3 LTS+
+- UniTask 2.9.0+
 - Addressables 1.21.0+
 - Burst 1.8.0+
 - Collections 2.1.0+

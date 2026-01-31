@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "com.asaki.framework",
   "displayName": "Asaki Framework",
   "version": "1.0.0",
@@ -18,16 +18,16 @@
   "author": {
     "name": "Asaki",
     "email": "aski0006@gmail.com",
-    "url": "https://github.com/aski0006"
+    "url": "https://github.com/aski0006 "
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/aski0006/AsakiFramework.git"
+    "url": "https://github.com/aski0006/AsakiFramework.git "
   },
   "bugs": {
-    "url": "https://github.com/aski0006/AsakiFramework/issues"
+    "url": "https://github.com/aski0006/AsakiFramework/issues "
   },
-  "homepage": "https://github.com/aski0006/AsakiFramework#readme",
+  "homepage": "https://github.com/aski0006/AsakiFramework#readme ",
   "license": "MIT",
   "dependencies": {
     "com.unity.addressables": "1.21.0",

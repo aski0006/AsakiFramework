@@ -1,7 +1,7 @@
-# Asaki Framework
+﻿# Asaki Framework
 
-[![Unity Version](https://img.shields.io/badge/Unity-2022.3%2B-blue.svg)](https://unity3d.com)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Unity Version](https://img.shields.io/badge/Unity-2022.3%2B-blue.svg )](https://unity3d.com )
+[![License](https://img.shields.io/badge/License-MIT-green.svg )](LICENSE)
 
 一个全面的 Unity 游戏开发框架，提供架构模式、服务管理、UI 系统和开发工具。
 
@@ -38,7 +38,7 @@
 1. 打开 Unity 编辑器
 2. 进入 `Window > Package Manager`
 3. 点击 `+` 按钮，选择 `Add package from git URL`
-4. 输入：`https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0`
+4. 输入：`https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0 `
 
 ### 通过 manifest.json
 
@@ -47,7 +47,7 @@
 ```json
 {
   "dependencies": {
-    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0"
+    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0 "
   }
 }
 ```
@@ -56,7 +56,7 @@
 
 详细的使用文档和 API 参考请访问：
 
-📚 **[DeepWiki 文档](https://deepwiki.com/aski0006/AsakiFramework)**
+📚 **[DeepWiki 文档](https://deepwiki.com/aski0006/AsakiFramework )**
 
 文档包含：
 - 完整的功能介绍
@@ -70,9 +70,9 @@
 - **Unity**: 2022.3 LTS 或更高版本
 - **.NET**: .NET Standard 2.1
 - **依赖包**:
-  - Addressables 1.21.0+
-  - Burst 1.8.0+
-  - Collections 2.1.0+
+    - Addressables 1.21.0+
+    - Burst 1.8.0+
+    - Collections 2.1.0+
 
 ## 许可证
 
@@ -85,4 +85,4 @@
 ## 联系方式
 
 - Email: aski0006@gmail.com
-- GitHub: [@aski0006](https://github.com/aski0006)
+- GitHub: [@aski0006](https://github.com/aski0006 )
