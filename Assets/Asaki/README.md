@@ -38,7 +38,7 @@
 1. 打开 Unity 编辑器
 2. 进入 `Window > Package Manager`
 3. 点击 `+` 按钮，选择 `Add package from git URL`
-4. 输入：`https://github.com/aski0006/AsakiFramework.git#v1.0.0`
+4. 输入：`https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0`
 
 ### 通过 manifest.json
 
@@ -47,83 +47,23 @@
 ```json
 {
   "dependencies": {
-    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git#v1.0.0"
+    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0"
   }
 }
 ```
 
 ## 快速开始
 
-### 1. 初始化框架
+详细的使用文档和 API 参考请访问：
 
-```csharp
-public class GameBootstrapper : AsakiBootstrapper
-{
-    protected override void ConfigureModules(AsakiContext context)
-    {
-        context.AddModule<AsakiLogModule>();
-        context.AddModule<AsakiEventBusModule>();
-        context.AddModule<AsakiPoolModule>();
-        context.AddModule<AsakiUIModule>();
-        context.AddModule<AsakiAudioModule>();
-    }
-}
-```
+📚 **[DeepWiki 文档](https://deepwiki.com/aski0006/AsakiFramework)**
 
-### 2. 创建服务
-
-```csharp
-public interface IGameService : IAsakiService
-{
-    void DoSomething();
-}
-
-public class GameService : IGameService
-{
-    public void DoSomething()
-    {
-        // 实现
-    }
-}
-```
-
-### 3. 使用依赖注入
-
-```csharp
-public class GameController : MonoBehaviour, IAsakiAutoInject
-{
-    [AsakiInject] private IGameService _gameService;
-    [AsakiInject] private IAsakiUIService _uiService;
-
-    void Start()
-    {
-        _gameService.DoSomething();
-    }
-}
-```
-
-### 4. 使用 MVVM 绑定
-
-```csharp
-public class PlayerViewModel
-{
-    [AsakiBind] public AsakiProperty<int> Health { get; } = new(100);
-    [AsakiBind] public AsakiProperty<string> Name { get; } = new("Player");
-}
-
-public class PlayerView : MonoBehaviour
-{
-    [SerializeField] private TextMeshProUGUI healthText;
-    [SerializeField] private TextMeshProUGUI nameText;
-
-    void Start()
-    {
-        var vm = new PlayerViewModel();
-        vm.Health.Bind(v => healthText.text = $"Health: {v}");
-        vm.Name.Bind(v => nameText.text = v);
-    }
-}
-```
+文档包含：
+- 完整的功能介绍
+- 详细的使用教程
+- API 参考手册
+- 最佳实践指南
+- 示例代码
 
 ## 系统要求
 
@@ -133,12 +73,6 @@ public class PlayerView : MonoBehaviour
   - Addressables 1.21.0+
   - Burst 1.8.0+
   - Collections 2.1.0+
-
-## 文档
-
-- [架构指南](Documentation~/Architecture.md)
-- [API 参考](Documentation~/API.md)
-- [示例项目](Samples~)
 
 ## 许可证
 
