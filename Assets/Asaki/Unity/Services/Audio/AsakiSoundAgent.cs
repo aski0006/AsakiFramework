@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using Asaki.Core.Audio;
 using Asaki.Core.Logging;
@@ -317,7 +317,7 @@ namespace Asaki.Unity.Services.Audio
 
             while (timer < duration)
             {
-                timer += Time.unscaledDeltaTime;
+                timer += UnityEngine.Time.unscaledDeltaTime;
 
                 if (_source != null)
                 {

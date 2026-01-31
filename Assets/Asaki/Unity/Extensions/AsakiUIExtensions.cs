@@ -240,17 +240,5 @@ namespace Asaki.Unity.Extensions
                 group.blocksRaycasts = show;
             });
         }
-
-        public static UniTask<T> OpenAsync<T>(
-            this IAsakiUIService service,
-            WindowAssetId assetId,
-            object args = null,
-            CancellationToken token = default(CancellationToken)
-        )
-            where T : class, IAsakiWindow
-        {
-            // 核心逻辑：在这里进行枚举到 int 的强转
-            return service.OpenAsync<T>((int)assetId, args, token);
-        }
     }
 }

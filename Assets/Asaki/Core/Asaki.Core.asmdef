@@ -1,18 +1,18 @@
 {
-  "name": "Asaki.Core",
-  "rootNamespace": "",
-  "references": [
-    "GUID:d528c8c98d269ca44a06cd9624a03945",
-    "GUID:f51ebe6a0ceec4240a699833d6309b23",
-    "GUID:593a5b492d29ac6448b1ebf7f035ef33"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "Asaki.Core",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Rider.Editor",
+        "UniTask",
+        "UniTask.Addressables"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

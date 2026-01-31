@@ -1,21 +1,22 @@
 {
-  "name": "Asaki.Editor",
-  "rootNamespace": "",
-  "references": [
-    "Unity.Rider.Editor",
-    "UnityEditor.UI",
-    "Unity.TextMeshPro",
-    "Asaki.Core",
-    "Asaki.Unity",
-    "UniTask"
-  ],
-  "includePlatforms": [],
-  "excludePlatforms": [],
-  "allowUnsafeCode": false,
-  "overrideReferences": false,
-  "precompiledReferences": [],
-  "autoReferenced": true,
-  "defineConstraints": [],
-  "versionDefines": [],
-  "noEngineReferences": false
+    "name": "Asaki.Editor",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Rider.Editor",
+        "Asaki.Core",
+        "Asaki.Unity",
+        "UnityEditor.UI",
+        "UniTask.Editor"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [
+        "Editor"
+    ],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

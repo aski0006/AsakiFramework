@@ -1,4 +1,4 @@
-namespace Asaki.Core.Audio
+﻿namespace Asaki.Core.Audio
 {
     /// <summary>
     /// 音频状态统计信息

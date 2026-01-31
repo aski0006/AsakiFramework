@@ -1,5 +1,4 @@
 ﻿using Asaki.Core.Graphs;
-using Asaki.Editor.GraphEditors;
 using UnityEngine.UIElements;
 
 namespace Asaki.Editor.GraphEditors.Impl
