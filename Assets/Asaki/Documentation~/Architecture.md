@@ -91,9 +91,9 @@ AsakiBroker.Publish(new PlayerDamagedEvent { Damage = 10 });
 AsakiBroker.Subscribe<PlayerDamagedEvent>(OnPlayerDamaged);
 ```
 
-### 5. MVVM 绑定
+### 5. Reactive 响应式架构
 
-响应式数据绑定：
+响应式数据绑定系统（原 MVVM 架构升级）：
 
 ```csharp
 public class ViewModel
@@ -101,9 +101,27 @@ public class ViewModel
     [AsakiBind] public AsakiProperty<int> Score { get; } = new(0);
 }
 
-// 在 View 中绑定
-viewModel.Score.Bind(value => scoreText.text = value.ToString());
+// 在 View 中绑定 - 支持 MonoBehaviour 生命周期自动管理
+viewModel.Score.Subscribe(this, value => scoreText.text = value.ToString());
+
+// 或使用接口绑定
+public class ScoreObserver : IAsakiObserver<int>
+{
+    public void OnValueChange(int value)
+    {
+        Debug.Log($"Score: {value}");
+    }
+}
+viewModel.Score.Bind(new ScoreObserver());
 ```
+
+**命名空间**: `Asaki.Core.Reactive`
+
+**核心组件**:
+- `AsakiProperty<T>` - 响应式属性容器
+- `IAsakiObserver<T>` - 观察者接口
+- `AsakiBindTracker` - 绑定生命周期管理
+- UI 观察者组件 - 自动绑定到 UI 元素
 
 ## 服务生命周期
 

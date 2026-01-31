@@ -1,6 +1,6 @@
 # Asaki Framework v1.0.0 Release Notes
 
-**发布日期**: 2025年1月31日  
+**发布日期**: 2026年1月31日  
 **版本**: v1.0.0  
 **状态**: 正式版 (Stable)
 
@@ -12,6 +12,106 @@
 - **Unity 版本要求**: 2022.3 LTS 或更高版本
 - **.NET 版本**: .NET Standard 2.1
 - **包名**: `com.asaki.framework`
+- **发布年份**: 2026
+
+---
+
+## 依赖项
+
+### 必须安装
+
+| 包名 | 版本 | 说明 |
+|------|------|------|
+| UniTask | 2.9.0+ | 高性能异步任务库，框架核心依赖 |
+| TextMeshPro (TMP) | 3.0.0+ | Unity 官方文本渲染解决方案 |
+
+### 推荐安装
+
+| 包名 | 版本 | 说明 |
+|------|------|------|
+| Addressables | 1.21.0+ | Unity 资源管理系统（非强制要求，但推荐用于资源加载） |
+
+### 自动安装依赖
+
+安装本包时，以下依赖会自动安装：
+
+| 包名 | 版本 | 说明 |
+|------|------|------|
+| com.unity.addressables | 1.21.0+ | 资源管理系统 |
+| com.unity.burst | 1.8.0+ | 高性能编译 |
+| com.unity.collections | 2.1.0+ | 高性能集合 |
+| com.unity.mathematics | 1.2.0+ | 数学库 |
+
+---
+
+## 架构更新说明
+
+### Reactive 架构（原 MVVM 架构升级）
+
+从 v1.0.0 开始，框架将原 MVVM 架构升级为更灵活的 **Reactive 响应式架构**。这一变更带来了更好的性能、更清晰的代码结构和更强大的功能。
+
+#### 变更详情
+
+**1. 命名空间调整**
+- 原命名空间：`Asaki.Core.MVVM`
+- 新命名空间：`Asaki.Core.Reactive`
+
+**2. 核心组件升级**
+
+| 原组件 | 新组件 | 说明 |
+|--------|--------|------|
+| `AsakiProperty<T>` | `AsakiProperty<T>` | 保留类名，内部实现优化 |
+| `IAsakiObserver<T>` | `IAsakiObserver<T>` | 观察者接口，支持双向绑定 |
+| `AsakiBindTracker` | `AsakiBindTracker` | 绑定追踪器，增强生命周期管理 |
+
+**3. 实现方式改进**
+
+**Reactive 属性系统** (`AsakiProperty<T>`):
+```csharp
+// 创建可观察属性
+var health = new AsakiProperty<int>(100);
+
+// 订阅值变化（支持 MonoBehaviour 生命周期自动管理）
+health.Subscribe(this, value => healthBar.value = value);
+
+// 使用接口绑定
+public class HealthObserver : IAsakiObserver<int>
+{
+    public void OnValueChange(int value) 
+    {
+        Debug.Log($"Health: {value}");
+    }
+}
+health.Bind(new HealthObserver());
+```
+
+**特性绑定** (`[AsakiBind]`):
+```csharp
+public class PlayerViewModel
+{
+    [AsakiBind] public AsakiProperty<int> Score { get; } = new(0);
+    [AsakiBind] public AsakiProperty<string> PlayerName { get; } = new("Player");
+}
+```
+
+**UI 观察者组件**:
+框架提供了一系列 UI 观察者组件，自动将 Reactive 属性绑定到 UI 元素：
+- `AsakiTMPTextFloatObserver` - 绑定到 TMP Text (float)
+- `AsakiTMPTextIntObserver` - 绑定到 TMP Text (int)
+- `AsakiSliderObserver` - 绑定到 Slider
+- `AsakiToggleObserver` - 绑定到 Toggle
+- `AsakiInputFieldObserver` - 绑定到 InputField
+- `AsakiActiveObserver` - 绑定到 GameObject 激活状态
+
+**4. 影响范围**
+
+- **代码兼容性**: 现有使用 `AsakiProperty<T>` 的代码基本无需修改
+- **命名空间**: 需要更新 using 语句从 `Asaki.Core.MVVM` 改为 `Asaki.Core.Reactive`
+- **功能增强**: 
+  - 更高效的内存管理
+  - 支持 MonoBehaviour 自动生命周期管理
+  - 增强的线程安全性
+  - 更丰富的运算符重载支持
 
 ---
 
@@ -42,10 +142,12 @@
 - ✅ 自动订阅/取消订阅
 - ✅ 事件调试工具
 
-#### MVVM 绑定
+#### Reactive 响应式架构
 - ✅ 响应式属性 (`AsakiProperty<T>`)
 - ✅ 自动绑定特性 (`[AsakiBind]`)
 - ✅ 绑定追踪器 (`AsakiBindTracker`)
+- ✅ UI 观察者组件系统
+- ✅ MonoBehaviour 生命周期自动管理
 
 #### 状态机
 - ✅ 分层状态机 (`AsakiStateMachine`)
@@ -70,9 +172,10 @@
 - ✅ UI 层级管理
 - ✅ 窗口动画支持
 - ✅ 资源句柄适配
+- ✅ Reactive 属性绑定支持
 
 #### 资源服务
-- ✅ Addressables 集成
+- ✅ Addressables 集成（可选）
 - ✅ 多种加载策略
 - ✅ 依赖查找系统
 - ✅ 资源预加载
@@ -145,6 +248,21 @@
 
 ## 安装指南
 
+### 前置要求
+
+在安装 Asaki Framework 之前，请确保已安装以下依赖：
+
+1. **UniTask** (必须)
+   - 通过 Package Manager 添加：`https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask`
+   
+2. **TextMeshPro** (必须)
+   - 通常已包含在 Unity 2022.3+ 中
+   - 如未安装，通过 Package Manager 安装 TextMeshPro
+
+3. **Addressables** (推荐)
+   - 通过 Package Manager 安装 Addressables 包
+   - 用于资源管理系统（可选，但推荐）
+
 ### 方法 1: 通过 Package Manager (推荐)
 
 1. 打开 Unity 编辑器
@@ -167,19 +285,6 @@
 
 ---
 
-## 依赖项
-
-安装本包时，以下依赖会自动安装：
-
-| 包名 | 版本 | 说明 |
-|------|------|------|
-| com.unity.addressables | 1.21.0+ | 资源管理系统 |
-| com.unity.burst | 1.8.0+ | 高性能编译 |
-| com.unity.collections | 2.1.0+ | 高性能集合 |
-| com.unity.mathematics | 1.2.0+ | 数学库 |
-
----
-
 ## 快速开始
 
 详细的使用文档、API 参考和示例代码请访问：
@@ -199,6 +304,7 @@
 
 ### 升级指南
 - 从早期版本升级时，请备份项目
+- 更新命名空间：`Asaki.Core.MVVM` → `Asaki.Core.Reactive`
 - 检查 API 变更日志
 - 重新生成代码（如果有使用代码生成器）
 
@@ -239,7 +345,7 @@ Assets/Asaki/
 │   ├── FSM/                  # 状态机
 │   ├── Graphs/               # 图系统
 │   ├── Pooling/              # 对象池
-│   ├── Reactive/             # MVVM 绑定
+│   ├── Reactive/             # Reactive 响应式架构
 │   └── ...
 ├── Unity/                    # Unity 实现
 │   ├── Bootstrapper/         # 引导程序
@@ -294,4 +400,4 @@ Assets/Asaki/
 
 ---
 
-**© 2025 Asaki. All rights reserved.**
+**© 2026 Asaki. All rights reserved.**
