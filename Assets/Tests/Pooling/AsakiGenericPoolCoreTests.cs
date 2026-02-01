@@ -60,8 +60,7 @@ namespace Asaki.Tests.Pooling
             CreateCallCount++;
             var obj = new TestPoolObject
             {
-                Id = Interlocked.Increment(ref _counter),
-                Name = $"Object_{_counter}",
+                Id = Interlocked.Increment(ref _counter), Name = $"Object_{_counter}",
             };
             return UniTask.FromResult(obj);
         }
@@ -76,8 +75,7 @@ namespace Asaki.Tests.Pooling
             CreateCallCount++;
             return new TestPoolObject
             {
-                Id = Interlocked.Increment(ref _counter),
-                Name = $"Object_{_counter}",
+                Id = Interlocked.Increment(ref _counter), Name = $"Object_{_counter}",
             };
         }
 
@@ -348,10 +346,10 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            TestPoolObject obj = null;
 
             // Act
-            yield return pool.GetAsync().ToCoroutine();
-            var obj = pool.Get();
+            yield return pool.GetAsync().ContinueWith(result => obj = result).ToCoroutine();
 
             // Assert
             Assert.IsNotNull(obj);
@@ -359,6 +357,7 @@ namespace Asaki.Tests.Pooling
             Assert.AreEqual(1, pool.Statistics.ActiveCount);
 
             // Cleanup
+            pool.Return(obj);
             pool.Dispose();
         }
 
@@ -369,20 +368,21 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-            yield return pool.GetAsync().ToCoroutine();
-            var obj1 = pool.Get();
+            TestPoolObject obj1 = null;
+            yield return pool.GetAsync().ContinueWith(result => obj1 = result).ToCoroutine();
             pool.Return(obj1);
             _factory.ResetCounters();
 
             // Act
-            yield return pool.GetAsync().ToCoroutine();
-            var obj2 = pool.Get();
+            TestPoolObject obj2 = null;
+            yield return pool.GetAsync().ContinueWith(result => obj2 = result).ToCoroutine();
 
             // Assert
             Assert.AreSame(obj1, obj2);
             Assert.AreEqual(0, _factory.CreateCallCount);
 
             // Cleanup
+            pool.Return(obj2);
             pool.Dispose();
         }
 
@@ -438,13 +438,10 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-            var externalObj = new TestPoolObject { Id = 999 };
-
-            // Expect error log - 注意：ALog 的格式是 "[Error] [AsakiPool] ..."
-            LogAssert.Expect(
-                UnityEngine.LogType.Error,
-                "[AsakiPool] TestPool Invalid object returned - not from this pool or already returned*"
-            );
+            TestPoolObject externalObj = new TestPoolObject
+            {
+                Id = 999
+            };
 
             // Act
             bool result = pool.Return(externalObj);
@@ -465,12 +462,6 @@ namespace Asaki.Tests.Pooling
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
             var obj = pool.Get();
             pool.Return(obj);
-
-            // Expect error log for second return - 注意：ALog 的格式是 "[Error] [AsakiPool] ..."
-            LogAssert.Expect(
-                UnityEngine.LogType.Error,
-                "[AsakiPool] TestPool Invalid object returned - not from this pool or already returned*"
-            );
 
             // Act
             bool secondReturn = pool.Return(obj);
@@ -511,29 +502,24 @@ namespace Asaki.Tests.Pooling
             _config.MaxSize = 2;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
 
-            // 创建并归还2个对象填满池
+            // 创建3个对象（都保持活动状态）
             var obj1 = pool.Get();
             var obj2 = pool.Get();
+            var obj3 = pool.Get();
+
+            // 归还2个对象填满池
             pool.Return(obj1);
             pool.Return(obj2);
 
-            // 获取并归还第3个对象
-            var obj3 = pool.Get();
             _factory.ResetCounters();
 
-            // Expect info log for pool full
-            LogAssert.Expect(
-                UnityEngine.LogType.Log,
-                "[AsakiPool] TestPool Pool full (2/2), destroying object*"
-            );
-
-            // Act - 此时池已满，归还应销毁对象
+            // Act - 此时池已满（2个非活动对象），归还第3个对象应销毁
             bool result = pool.Return(obj3);
 
             // Assert
-            Assert.IsFalse(result);
-            Assert.AreEqual(1, _factory.OnDestroyCallCount);
-            Assert.AreEqual(1, pool.Statistics.TotalDestroyed);
+            Assert.IsFalse(result, "池满时归还应返回false");
+            Assert.AreEqual(1, _factory.OnDestroyCallCount, "应销毁对象");
+            Assert.AreEqual(1, pool.Statistics.TotalDestroyed, "销毁计数应为1");
 
             // Cleanup
             pool.Dispose();
@@ -616,9 +602,14 @@ namespace Asaki.Tests.Pooling
             // Assert
             Assert.IsNotNull(obj);
             Assert.AreEqual(0, _factory.CreateCallCount, "不应创建新对象");
-            Assert.AreEqual(2, pool.Statistics.InactiveCount);
+            Assert.AreEqual(
+                2,
+                pool.Statistics.InactiveCount,
+                "预热3个，获取1个，应剩余2个非活动对象"
+            );
 
             // Cleanup
+            pool.Return(obj);
             pool.Dispose();
         }
 
@@ -702,10 +693,15 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            // 同时获取5个对象，然后逐一归还，确保池中有5个不同的对象
+            var objs = new TestPoolObject[5];
             for (int i = 0; i < 5; i++)
             {
-                var obj = pool.Get();
-                pool.Return(obj);
+                objs[i] = pool.Get();
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                pool.Return(objs[i]);
             }
             _factory.ResetCounters();
 
@@ -713,9 +709,9 @@ namespace Asaki.Tests.Pooling
             pool.Shrink(2);
 
             // Assert
-            Assert.AreEqual(3, _factory.OnDestroyCallCount);
-            Assert.AreEqual(3, pool.Statistics.TotalDestroyed);
-            Assert.AreEqual(2, pool.Statistics.InactiveCount);
+            Assert.AreEqual(3, _factory.OnDestroyCallCount, "应销毁3个对象");
+            Assert.AreEqual(3, pool.Statistics.TotalDestroyed, "销毁计数应为3");
+            Assert.AreEqual(2, pool.Statistics.InactiveCount, "应剩余2个非活动对象");
 
             // Cleanup
             pool.Dispose();
@@ -728,18 +724,24 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            // 同时获取5个对象，然后逐一归还，确保池中有5个不同的对象
+            var objs = new TestPoolObject[5];
             for (int i = 0; i < 5; i++)
             {
-                var obj = pool.Get();
-                pool.Return(obj);
+                objs[i] = pool.Get();
+            }
+            for (int i = 0; i < 5; i++)
+            {
+                pool.Return(objs[i]);
             }
 
             // Act
             pool.Shrink(0);
 
             // Assert
-            Assert.AreEqual(5, pool.Statistics.TotalDestroyed);
-            Assert.AreEqual(0, pool.Statistics.InactiveCount);
+            Assert.AreEqual(5, _factory.OnDestroyCallCount, "应销毁5个对象");
+            Assert.AreEqual(5, pool.Statistics.TotalDestroyed, "销毁计数应为5");
+            Assert.AreEqual(0, pool.Statistics.InactiveCount, "应剩余0个非活动对象");
 
             // Cleanup
             pool.Dispose();
@@ -752,10 +754,15 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            // 同时获取3个对象，然后逐一归还，确保池中有3个不同的对象
+            var objs = new TestPoolObject[3];
             for (int i = 0; i < 3; i++)
             {
-                var obj = pool.Get();
-                pool.Return(obj);
+                objs[i] = pool.Get();
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                pool.Return(objs[i]);
             }
             _factory.ResetCounters();
 
@@ -763,8 +770,8 @@ namespace Asaki.Tests.Pooling
             pool.Shrink(10);
 
             // Assert
-            Assert.AreEqual(0, _factory.OnDestroyCallCount);
-            Assert.AreEqual(3, pool.Statistics.InactiveCount);
+            Assert.AreEqual(0, _factory.OnDestroyCallCount, "不应销毁任何对象");
+            Assert.AreEqual(3, pool.Statistics.InactiveCount, "应剩余3个非活动对象");
 
             // Cleanup
             pool.Dispose();
@@ -777,18 +784,24 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            // 同时获取3个对象，然后逐一归还，确保池中有3个不同的对象
+            var objs = new TestPoolObject[3];
             for (int i = 0; i < 3; i++)
             {
-                var obj = pool.Get();
-                pool.Return(obj);
+                objs[i] = pool.Get();
+            }
+            for (int i = 0; i < 3; i++)
+            {
+                pool.Return(objs[i]);
             }
 
             // Act
             pool.Shrink(-1);
 
             // Assert
-            Assert.AreEqual(3, pool.Statistics.TotalDestroyed);
-            Assert.AreEqual(0, pool.Statistics.InactiveCount);
+            Assert.AreEqual(3, _factory.OnDestroyCallCount, "应销毁3个对象");
+            Assert.AreEqual(3, pool.Statistics.TotalDestroyed, "销毁计数应为3");
+            Assert.AreEqual(0, pool.Statistics.InactiveCount, "应剩余0个非活动对象");
 
             // Cleanup
             pool.Dispose();

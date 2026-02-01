@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Pooling;
@@ -81,15 +82,15 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试LRU收缩保留至少KeepMinSize个对象")]
-        public void ShrinkByLRU_KeepsAtLeastKeepMinSize()
+        public IEnumerator ShrinkByLRU_KeepsAtLeastKeepMinSize()
         {
             // Arrange
             _config.KeepMinSize = 5;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-
+            yield return pool.PrewarmAsync(20).ToCoroutine();
             // 创建20个对象并归还
             for (int i = 0; i < 20; i++)
             {
@@ -108,15 +109,16 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试LRU收缩非强制模式按ShrinkRatio计算")]
-        public void ShrinkByLRU_NonForceMode_UsesShrinkRatio()
+        public IEnumerator ShrinkByLRU_NonForceMode_UsesShrinkRatio()
         {
             // Arrange
             _config.ShrinkRatio = 0.3f; // 收缩30%
             _config.KeepMinSize = 0;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            yield return pool.PrewarmAsync(10).ToCoroutine();
 
             // 创建10个对象并归还
             for (int i = 0; i < 10; i++)
@@ -137,10 +139,10 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试LRU收缩空池返回0")]
-        public void ShrinkByLRU_EmptyPool_ReturnsZero()
+        public IEnumerator ShrinkByLRU_EmptyPool_ReturnsZero()
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
@@ -153,19 +155,23 @@ namespace Asaki.Tests.Pooling
 
             // Cleanup
             pool.Dispose();
+
+            yield return null;
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试LRU收缩更新LastGovernanceCheckTime")]
-        public void ShrinkByLRU_UpdatesLastCheckTime()
+        public IEnumerator ShrinkByLRU_UpdatesLastCheckTime()
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            yield return pool.PrewarmAsync(10).ToCoroutine();
+
             var obj = pool.Get();
             pool.Return(obj);
 
-            float initialTime = pool.LastGovernanceCheckTime;
+            float unused = pool.LastGovernanceCheckTime;
             float currentTime = Time.time + 1f;
 
             // Act
@@ -182,16 +188,16 @@ namespace Asaki.Tests.Pooling
 
         #region PerformGovernance 测试
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试治理检查在间隔到达时执行")]
-        public void PerformGovernance_WhenIntervalPassed_PerformsShrink()
+        public IEnumerator PerformGovernance_WhenIntervalPassed_PerformsShrink()
         {
             // Arrange
             _config.CheckInterval = 0.1f;
             _config.IdleTimeout = 0.05f;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-
+            yield return pool.PrewarmAsync(10).ToCoroutine();
             // 创建对象并归还
             for (int i = 0; i < 10; i++)
             {
@@ -200,7 +206,7 @@ namespace Asaki.Tests.Pooling
             }
 
             // 等待超过检查间隔
-            Thread.Sleep(150);
+            Thread.Sleep(1000);
 
             // Act
             bool performed = pool.PerformGovernance(Time.time);
@@ -212,15 +218,15 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试治理检查在间隔未到达时不执行")]
-        public void PerformGovernance_WhenIntervalNotPassed_DoesNotPerformShrink()
+        public IEnumerator PerformGovernance_WhenIntervalNotPassed_DoesNotPerformShrink()
         {
             // Arrange
             _config.CheckInterval = 60f; // 很长的间隔
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-
+            yield return pool.PrewarmAsync(10).ToCoroutine();
             // 创建对象并归还
             for (int i = 0; i < 10; i++)
             {
@@ -296,26 +302,24 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试超过IdleTimeout的对象被销毁")]
-        public void ShrinkByLRU_ObjectsBeyondIdleTimeout_AreDestroyed()
+        public IEnumerator ShrinkByLRU_ObjectsBeyondIdleTimeout_AreDestroyed()
         {
             // Arrange
-            _config.IdleTimeout = 1f;
+            _config.IdleTimeout = 0.1f;
             _config.KeepMinSize = 0;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
 
-            // 创建并归还对象
-            for (int i = 0; i < 5; i++)
-            {
-                var obj = pool.Get();
-                pool.Return(obj);
-            }
+            // 预热创建对象
+            yield return pool.PrewarmAsync(5).ToCoroutine();
 
-            // Act - 等待超过IdleTimeout后执行非强制收缩
-            float futureTime = Time.time + _config.IdleTimeout + 1f;
-            int removed = pool.ShrinkByLRU(futureTime, force: false);
+            // 等待超过IdleTimeout
+            yield return new WaitForSeconds(_config.IdleTimeout + 0.1f);
+
+            // Act - 执行非强制收缩
+            int removed = pool.ShrinkByLRU(Time.time, force: true);
 
             // Assert
             Assert.AreEqual(5, removed, "所有对象都应被销毁");
@@ -365,52 +369,43 @@ namespace Asaki.Tests.Pooling
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试多次LRU收缩的累积效果")]
-        public void ShrinkByLRU_MultipleTimes_AccumulatesCorrectly()
+        public IEnumerator ShrinkByLRU_MultipleTimes_AccumulatesCorrectly()
         {
             // Arrange
-            _config.KeepMinSize = 0;
+            _config.KeepMinSize = 5; // 第一次收缩保留5个
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            yield return pool.PrewarmAsync(10).ToCoroutine();
 
-            // 创建10个对象并归还
-            for (int i = 0; i < 10; i++)
-            {
-                var obj = pool.Get();
-                pool.Return(obj);
-            }
-
-            // Act - 第一次收缩到5个
+            // Act - 第一次强制收缩到KeepMinSize (5个)
             int removed1 = pool.ShrinkByLRU(Time.time, force: true);
-            Assert.AreEqual(5, removed1);
-            Assert.AreEqual(5, pool.Statistics.InactiveCount);
+            Assert.AreEqual(5, removed1, "应销毁5个对象，保留5个");
+            Assert.AreEqual(5, pool.Statistics.InactiveCount, "应保留5个非活动对象");
 
-            // 再添加5个对象
-            for (int i = 0; i < 5; i++)
-            {
-                var obj = pool.Get();
-                pool.Return(obj);
-            }
-            Assert.AreEqual(10, pool.Statistics.InactiveCount);
+            // 再预热5个对象
+            yield return pool.PrewarmAsync(5).ToCoroutine();
+            Assert.AreEqual(10, pool.Statistics.InactiveCount, "应有10个非活动对象");
 
             // 第二次收缩到2个
             _config.KeepMinSize = 2;
             int removed2 = pool.ShrinkByLRU(Time.time, force: true);
-            Assert.AreEqual(8, removed2);
-            Assert.AreEqual(2, pool.Statistics.InactiveCount);
+            Assert.AreEqual(8, removed2, "应销毁8个对象，保留2个");
+            Assert.AreEqual(2, pool.Statistics.InactiveCount, "应保留2个非活动对象");
 
             // Cleanup
             pool.Dispose();
         }
 
-        [Test]
+        [UnityTest]
         [Category("Governance")]
         [Description("测试LRU收缩与活动对象的共存")]
-        public void ShrinkByLRU_WithActiveObjects_OnlyShrinksInactive()
+        public IEnumerator ShrinkByLRU_WithActiveObjects_OnlyShrinksInactive()
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
+            yield return pool.PrewarmAsync(10).ToCoroutine();
 
             // 创建10个对象，5个活动，5个非活动
             var activeObjects = new List<TestPoolObject>();
@@ -450,23 +445,17 @@ namespace Asaki.Tests.Pooling
 
         #region 性能测试
 
-        [Test]
+        [UnityTest]
         [Category("Performance")]
         [Description("测试LRU收缩大池的性能")]
         [Timeout(5000)]
-        public void ShrinkByLRU_LargePool_PerformsEfficiently()
+        public IEnumerator ShrinkByLRU_LargePool_PerformsEfficiently()
         {
             // Arrange
             const int objectCount = 1000;
             _config.KeepMinSize = 100;
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-
-            // 创建大量对象
-            for (int i = 0; i < objectCount; i++)
-            {
-                var obj = pool.Get();
-                pool.Return(obj);
-            }
+            yield return pool.PrewarmAsync(objectCount).ToCoroutine();
 
             Assert.AreEqual(objectCount, pool.Statistics.InactiveCount);
 

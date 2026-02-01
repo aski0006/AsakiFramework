@@ -34,7 +34,7 @@ namespace Asaki.Core.Pooling
         }
 
         /// <summary>
-        /// 增加销毁计数
+        /// 增加销毁计数（销毁非活动对象）
         /// 线程安全，确保非活动计数不会低于0
         /// </summary>
         public void IncrementDestroyed()
@@ -49,6 +49,25 @@ namespace Asaki.Core.Pooling
                     break;
             } while (
                 Interlocked.CompareExchange(ref _inactiveCount, current - 1, current) != current
+            );
+        }
+
+        /// <summary>
+        /// 增加销毁计数（销毁活动对象，如池满时）
+        /// 线程安全，确保活动计数不会低于0
+        /// </summary>
+        public void IncrementDestroyedFromActive()
+        {
+            Interlocked.Increment(ref _totalDestroyed);
+            // 使用循环确保活动计数不会低于0
+            int current;
+            do
+            {
+                current = _activeCount;
+                if (current <= 0)
+                    break;
+            } while (
+                Interlocked.CompareExchange(ref _activeCount, current - 1, current) != current
             );
         }
 

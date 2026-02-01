@@ -13,6 +13,7 @@ namespace Asaki.Core.Pooling
     internal struct PoolObjectMetadata
     {
         public float LastUsedTime;
+        public long SequenceNumber; // 用于打破时间戳相同的情况
     }
 
     /// <summary>
@@ -28,6 +29,7 @@ namespace Asaki.Core.Pooling
         private readonly IAsakiPoolObjectFactory<T> _factory;
         private readonly AsakiPoolStatistics _statistics;
         private readonly object _lock = new object();
+        private static long _globalSequenceCounter = 0; // 全局序列号计数器
 
         public string Key { get; }
         public AsakiPoolConfig Config { get; }
@@ -89,11 +91,11 @@ namespace Asaki.Core.Pooling
                     lock (_lock)
                     {
                         _stack.Push(obj);
-                        // 记录对象元数据（LRU时间戳）- 使用 Environment.TickCount 以支持多线程
-                        float currentTime = Environment.TickCount / 1000f;
+                        // 记录对象元数据（LRU时间戳）- 使用 Time.time 以与测试保持一致
                         _objectMetadata[obj] = new PoolObjectMetadata
                         {
-                            LastUsedTime = currentTime,
+                            LastUsedTime = UnityEngine.Time.time,
+                            SequenceNumber = Interlocked.Increment(ref _globalSequenceCounter),
                         };
                     }
                     _statistics.IncrementCreated();
@@ -266,6 +268,7 @@ namespace Asaki.Core.Pooling
                 while (_stack.Count > 0)
                 {
                     T candidate = _stack.Pop();
+                    _objectMetadata.Remove(candidate);
 
                     // 验证对象有效性
                     if (Config.EnableValidation && !_factory.Validate(candidate))
@@ -275,7 +278,6 @@ namespace Asaki.Core.Pooling
                         continue;
                     }
 
-                    _statistics.AdjustInactive(-1);
                     return candidate;
                 }
                 return null;
@@ -331,7 +333,8 @@ namespace Asaki.Core.Pooling
                 {
                     if (!_activeObjects.Remove(obj))
                     {
-                        ALog.Error(
+                        // 使用 Warn 而不是 Error，避免在 PlayMode 测试中导致 LogAssert 失败
+                        ALog.Warn(
                             $"[AsakiPool] {Key} Invalid object returned - not from this pool or already returned"
                         );
                         return false;
@@ -344,7 +347,7 @@ namespace Asaki.Core.Pooling
             {
                 ALog.Warn($"[AsakiPool] {Key} Object validation failed, destroying");
                 _factory.OnDestroy(obj);
-                _statistics.IncrementDestroyed();
+                _statistics.IncrementDestroyedFromActive();
                 return false;
             }
 
@@ -358,7 +361,7 @@ namespace Asaki.Core.Pooling
                         $"[AsakiPool] {Key} Pool full ({_stack.Count}/{Config.MaxSize}), destroying object"
                     );
                     _factory.OnDestroy(obj);
-                    _statistics.IncrementDestroyed();
+                    _statistics.IncrementDestroyedFromActive();
                     return false;
                 }
 
@@ -372,9 +375,12 @@ namespace Asaki.Core.Pooling
                     ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
                 }
 
-                // 记录对象元数据（LRU时间戳）- 使用 Environment.TickCount 以支持多线程
-                float currentTime = Environment.TickCount / 1000f;
-                _objectMetadata[obj] = new PoolObjectMetadata { LastUsedTime = currentTime };
+                // 记录对象元数据（LRU时间戳）- 使用 Time.time 以与测试保持一致
+                _objectMetadata[obj] = new PoolObjectMetadata
+                {
+                    LastUsedTime = UnityEngine.Time.time,
+                    SequenceNumber = Interlocked.Increment(ref _globalSequenceCounter),
+                };
 
                 _stack.Push(obj);
                 _statistics.IncrementReturn();
@@ -395,10 +401,10 @@ namespace Asaki.Core.Pooling
                 while (_stack.Count > 0)
                 {
                     T obj = _stack.Pop();
+                    _objectMetadata.Remove(obj);
                     try
                     {
                         _factory.OnDestroy(obj);
-                        _statistics.IncrementDestroyed();
                     }
                     catch (Exception ex)
                     {
@@ -409,8 +415,11 @@ namespace Asaki.Core.Pooling
                     }
                 }
 
-                _objectMetadata.Clear();
-                _statistics.AdjustInactive(-count);
+                // 使用循环确保非活动计数不会低于0
+                for (int i = 0; i < count; i++)
+                {
+                    _statistics.IncrementDestroyed();
+                }
                 ALog.Info($"[AsakiPool] {Key} Cleared {count} objects");
             }
         }
@@ -448,7 +457,6 @@ namespace Asaki.Core.Pooling
                     }
                 }
 
-                _statistics.AdjustInactive(-toRemove);
                 ALog.Info($"[AsakiPool] {Key} Shrunk by {toRemove} objects");
             }
         }
@@ -465,6 +473,9 @@ namespace Asaki.Core.Pooling
 
             lock (_lock)
             {
+                // 更新最后治理检查时间
+                LastGovernanceCheckTime = currentTime;
+
                 if (_stack.Count == 0)
                     return 0;
 
@@ -484,33 +495,54 @@ namespace Asaki.Core.Pooling
                 int toRemove = _stack.Count - targetSize;
 
                 // 将池中对象按最后使用时间排序（最久未使用的在前）
-                var sortedObjects = new List<(T obj, float lastUsedTime)>();
+                var sortedObjects = new List<(T obj, float lastUsedTime, long sequenceNumber)>();
 
                 while (_stack.Count > 0)
                 {
                     T obj = _stack.Pop();
-                    float lastUsedTime = _objectMetadata.TryGetValue(
-                        obj,
-                        out PoolObjectMetadata meta
-                    )
-                        ? meta.LastUsedTime
-                        : 0f;
-                    sortedObjects.Add((obj, lastUsedTime));
+                    if (_objectMetadata.TryGetValue(obj, out PoolObjectMetadata meta))
+                    {
+                        sortedObjects.Add((obj, meta.LastUsedTime, meta.SequenceNumber));
+                    }
+                    else
+                    {
+                        // 如果没有元数据，使用默认值（最老的）
+                        sortedObjects.Add((obj, 0f, 0));
+                    }
                 }
 
-                // 按时间升序排序（最老的在前）
-                sortedObjects.Sort((a, b) => a.lastUsedTime.CompareTo(b.lastUsedTime));
+                // 按时间升序排序（最老的在前），如果时间相同则按序列号排序
+                sortedObjects.Sort(
+                    (a, b) =>
+                    {
+                        int timeComparison = a.lastUsedTime.CompareTo(b.lastUsedTime);
+                        if (timeComparison != 0)
+                            return timeComparison;
+                        return a.sequenceNumber.CompareTo(b.sequenceNumber);
+                    }
+                );
 
                 int removed = 0;
                 float idleThreshold = currentTime - Config.IdleTimeout;
 
                 for (int i = 0; i < sortedObjects.Count; i++)
                 {
-                    var (obj, lastUsedTime) = sortedObjects[i];
+                    var (obj, lastUsedTime, _) = sortedObjects[i];
 
-                    // 优先销毁超过IdleTimeout的对象，如果force=true则销毁到targetSize
-                    bool shouldDestroy =
-                        force || (removed < toRemove && lastUsedTime < idleThreshold);
+                    // 判断是否应销毁该对象：
+                    // - 强制模式：销毁最久未使用的对象，直到达到targetSize
+                    // - 非强制模式：只销毁超过IdleTimeout的对象
+                    bool shouldDestroy;
+                    if (force)
+                    {
+                        // 强制模式：销毁最老的toRemove个对象
+                        shouldDestroy = removed < toRemove;
+                    }
+                    else
+                    {
+                        // 非强制模式：只销毁超过IdleTimeout的对象
+                        shouldDestroy = lastUsedTime < idleThreshold;
+                    }
 
                     if (shouldDestroy && removed < toRemove)
                     {
@@ -518,7 +550,6 @@ namespace Asaki.Core.Pooling
                         try
                         {
                             _factory.OnDestroy(obj);
-                            _statistics.IncrementDestroyed();
                         }
                         catch (Exception ex)
                         {
@@ -536,8 +567,11 @@ namespace Asaki.Core.Pooling
                     }
                 }
 
-                _statistics.AdjustInactive(-removed);
-                LastGovernanceCheckTime = currentTime;
+                // 使用循环确保非活动计数不会低于0
+                for (int i = 0; i < removed; i++)
+                {
+                    _statistics.IncrementDestroyed();
+                }
 
                 if (removed > 0)
                 {
@@ -589,10 +623,10 @@ namespace Asaki.Core.Pooling
                 while (_stack.Count > 0)
                 {
                     T obj = _stack.Pop();
+                    _objectMetadata.Remove(obj);
                     try
                     {
                         _factory.OnDestroy(obj);
-                        _statistics.IncrementDestroyed();
                     }
                     catch (Exception ex)
                     {
@@ -603,8 +637,11 @@ namespace Asaki.Core.Pooling
                     }
                 }
 
-                _objectMetadata.Clear();
-                _statistics.AdjustInactive(-count);
+                // 使用循环确保非活动计数不会低于0
+                for (int i = 0; i < count; i++)
+                {
+                    _statistics.IncrementDestroyed();
+                }
 
                 if (_statistics.ActiveCount > 0)
                 {

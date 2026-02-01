@@ -20,7 +20,7 @@ namespace Asaki.Tests.Pooling
 
             // Assert
             Assert.AreEqual(0, config.InitialSize, "默认初始大小应为0");
-            Assert.AreEqual(0, config.MaxSize, "默认最大大小应为0（无限制）");
+            Assert.AreEqual(100, config.MaxSize, "默认最大大小应为100");
             Assert.IsTrue(config.EnableValidation, "默认应启用验证");
             Assert.IsTrue(config.EnableCollectionCheck, "默认应启用集合检查");
             Assert.IsFalse(config.AllowSyncCreation, "默认应禁用同步创建");
