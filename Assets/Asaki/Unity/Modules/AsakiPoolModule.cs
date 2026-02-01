@@ -8,6 +8,7 @@ using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
+using Asaki.Core.Simulation;
 using Cysharp.Threading.Tasks;
 
 // 引用 Pooling 的命名空间
@@ -15,15 +16,19 @@ using Cysharp.Threading.Tasks;
 namespace Asaki.Unity.Modules
 {
     // 因为 Resources 加载资源时可能需要从池中生成对象
-    [AsakiModule(150, typeof(AsakiResourcesModule))]
+    [AsakiModule(150, typeof(AsakiResourcesModule), typeof(AsakiSimulationModule))]
     public class AsakiPoolModule : IAsakiModule
     {
         private IAsakiPoolService _poolService;
+        private IAsakiSimulationService _simulationService;
 
         public void OnInit()
         {
+            // 0. 获取依赖
+            _simulationService = AsakiContext.Get<IAsakiSimulationService>();
+
             // 1. 获取依赖
-            _poolService = new AsakiPoolService();
+            _poolService = new AsakiPoolService(_simulationService);
 
             AsakiContext.Register(_poolService);
 

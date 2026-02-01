@@ -39,7 +39,7 @@ namespace Asaki.Core.Audio
         Error,
 
         /// <summary>重置/清理</summary>
-        Reset
+        Reset,
     }
 
     /// <summary>

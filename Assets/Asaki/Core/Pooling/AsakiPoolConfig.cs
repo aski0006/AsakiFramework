@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace Asaki.Core.Pooling
@@ -59,7 +59,7 @@ namespace Asaki.Core.Pooling
                     _default = new AsakiPoolConfig
                     {
                         InitialSize = 0,
-                        MaxSize = 0,
+                        MaxSize = 100,  // 从 0 改为 100，使默认池可用
                         EnableValidation = true,
                         EnableCollectionCheck = true,
                         AllowSyncCreation = false,

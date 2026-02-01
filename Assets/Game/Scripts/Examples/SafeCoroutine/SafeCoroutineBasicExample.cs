@@ -224,5 +224,4 @@ namespace Game.Scripts.Examples.SafeCoroutine
             _questCoroutine?.Stop();
         }
     }
-
 }

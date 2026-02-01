@@ -36,38 +36,64 @@ namespace Asaki.Core.Audio
         private void InitializeTransitions()
         {
             // Idle 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Idle, StateTrigger.Play)] = AudioPlaybackState.Loading;
+            _transitions[new StateTransition(AudioPlaybackState.Idle, StateTrigger.Play)] =
+                AudioPlaybackState.Loading;
 
             // Loading 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Loading, StateTrigger.LoadComplete)] = AudioPlaybackState.Ready;
-            _transitions[new StateTransition(AudioPlaybackState.Loading, StateTrigger.LoadFailed)] = AudioPlaybackState.Error;
-            _transitions[new StateTransition(AudioPlaybackState.Loading, StateTrigger.StopImmediate)] = AudioPlaybackState.Stopped;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Loading, StateTrigger.LoadComplete)
+            ] = AudioPlaybackState.Ready;
+            _transitions[new StateTransition(AudioPlaybackState.Loading, StateTrigger.LoadFailed)] =
+                AudioPlaybackState.Error;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Loading, StateTrigger.StopImmediate)
+            ] = AudioPlaybackState.Stopped;
 
             // Ready 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Ready, StateTrigger.Play)] = AudioPlaybackState.Playing;
-            _transitions[new StateTransition(AudioPlaybackState.Ready, StateTrigger.StopImmediate)] = AudioPlaybackState.Stopped;
+            _transitions[new StateTransition(AudioPlaybackState.Ready, StateTrigger.Play)] =
+                AudioPlaybackState.Playing;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Ready, StateTrigger.StopImmediate)
+            ] = AudioPlaybackState.Stopped;
 
             // Playing 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Pause)] = AudioPlaybackState.Paused;
-            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Stop)] = AudioPlaybackState.FadingOut;
-            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.StopImmediate)] = AudioPlaybackState.Stopped;
-            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.PlaybackFinished)] = AudioPlaybackState.Stopped;
-            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Error)] = AudioPlaybackState.Error;
+            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Pause)] =
+                AudioPlaybackState.Paused;
+            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Stop)] =
+                AudioPlaybackState.FadingOut;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Playing, StateTrigger.StopImmediate)
+            ] = AudioPlaybackState.Stopped;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Playing, StateTrigger.PlaybackFinished)
+            ] = AudioPlaybackState.Stopped;
+            _transitions[new StateTransition(AudioPlaybackState.Playing, StateTrigger.Error)] =
+                AudioPlaybackState.Error;
 
             // Paused 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Paused, StateTrigger.Resume)] = AudioPlaybackState.Playing;
-            _transitions[new StateTransition(AudioPlaybackState.Paused, StateTrigger.Stop)] = AudioPlaybackState.FadingOut;
-            _transitions[new StateTransition(AudioPlaybackState.Paused, StateTrigger.StopImmediate)] = AudioPlaybackState.Stopped;
+            _transitions[new StateTransition(AudioPlaybackState.Paused, StateTrigger.Resume)] =
+                AudioPlaybackState.Playing;
+            _transitions[new StateTransition(AudioPlaybackState.Paused, StateTrigger.Stop)] =
+                AudioPlaybackState.FadingOut;
+            _transitions[
+                new StateTransition(AudioPlaybackState.Paused, StateTrigger.StopImmediate)
+            ] = AudioPlaybackState.Stopped;
 
             // FadingOut 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.FadingOut, StateTrigger.FadeComplete)] = AudioPlaybackState.Stopped;
-            _transitions[new StateTransition(AudioPlaybackState.FadingOut, StateTrigger.StopImmediate)] = AudioPlaybackState.Stopped;
+            _transitions[
+                new StateTransition(AudioPlaybackState.FadingOut, StateTrigger.FadeComplete)
+            ] = AudioPlaybackState.Stopped;
+            _transitions[
+                new StateTransition(AudioPlaybackState.FadingOut, StateTrigger.StopImmediate)
+            ] = AudioPlaybackState.Stopped;
 
             // Stopped 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Stopped, StateTrigger.Reset)] = AudioPlaybackState.Idle;
+            _transitions[new StateTransition(AudioPlaybackState.Stopped, StateTrigger.Reset)] =
+                AudioPlaybackState.Idle;
 
             // Error 状态转换
-            _transitions[new StateTransition(AudioPlaybackState.Error, StateTrigger.Reset)] = AudioPlaybackState.Idle;
+            _transitions[new StateTransition(AudioPlaybackState.Error, StateTrigger.Reset)] =
+                AudioPlaybackState.Idle;
         }
 
         /// <summary>

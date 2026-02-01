@@ -52,6 +52,5 @@ namespace Game.Scripts.Examples.Architecture.Counter
         {
             _subscription?.Dispose();
         }
-
     }
 }

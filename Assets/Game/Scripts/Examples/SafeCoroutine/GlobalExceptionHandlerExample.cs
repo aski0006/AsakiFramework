@@ -36,7 +36,7 @@ namespace Game.Scripts.Examples.SafeCoroutine
                 this.StartSafeCoroutine(
                     RandomFailingCoroutine(index),
                     null, // 使用全局异常处理器
-                    null  // 使用全局完成处理
+                    null // 使用全局完成处理
                 );
             }
         }

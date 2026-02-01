@@ -117,14 +117,7 @@ namespace Asaki.Core.Logging
 
                 case AsakiLogLevel.Error:
                 case AsakiLogLevel.Fatal:
-                    if (ex != null)
-                    {
-                        UnityEngine.Debug.LogError($"{formatted}\n{ex}");
-                    }
-                    else
-                    {
-                        UnityEngine.Debug.LogError(formatted);
-                    }
+                    UnityEngine.Debug.LogError(ex != null ? $"{formatted}\n{ex}" : formatted);
                     break;
             }
         }

@@ -28,14 +28,17 @@ namespace Asaki.Unity.Services.Audio
         public AudioPlaybackState State => StateMachine?.CurrentState ?? AudioPlaybackState.Idle;
 
         /// <summary>前一个状态</summary>
-        public AudioPlaybackState PreviousState => StateMachine?.PreviousState ?? AudioPlaybackState.Idle;
+        public AudioPlaybackState PreviousState =>
+            StateMachine?.PreviousState ?? AudioPlaybackState.Idle;
 
         /// <summary>是否正在播放（包含Loading和Ready状态）</summary>
-        public bool IsActive => State is AudioPlaybackState.Loading
-                                       or AudioPlaybackState.Ready
-                                       or AudioPlaybackState.Playing
-                                       or AudioPlaybackState.Paused
-                                       or AudioPlaybackState.FadingOut;
+        public bool IsActive =>
+            State
+                is AudioPlaybackState.Loading
+                    or AudioPlaybackState.Ready
+                    or AudioPlaybackState.Playing
+                    or AudioPlaybackState.Paused
+                    or AudioPlaybackState.FadingOut;
 
         /// <summary>是否真正在播放音频</summary>
         public bool IsPlaying => State == AudioPlaybackState.Playing;
@@ -354,9 +357,13 @@ namespace Asaki.Unity.Services.Audio
         public void SetVolume(float vol)
         {
             // 允许在 Playing、Paused、FadingOut 状态修改音量
-            if (_source && State is AudioPlaybackState.Playing
-                              or AudioPlaybackState.Paused
-                              or AudioPlaybackState.FadingOut)
+            if (
+                _source
+                && State
+                    is AudioPlaybackState.Playing
+                        or AudioPlaybackState.Paused
+                        or AudioPlaybackState.FadingOut
+            )
             {
                 _source.volume = vol;
             }
@@ -364,9 +371,13 @@ namespace Asaki.Unity.Services.Audio
 
         public void SetPitch(float pitch)
         {
-            if (_source && State is AudioPlaybackState.Playing
-                              or AudioPlaybackState.Paused
-                              or AudioPlaybackState.FadingOut)
+            if (
+                _source
+                && State
+                    is AudioPlaybackState.Playing
+                        or AudioPlaybackState.Paused
+                        or AudioPlaybackState.FadingOut
+            )
             {
                 _source.pitch = pitch;
             }

@@ -21,6 +21,13 @@ namespace Asaki.Core.Pooling
             new Dictionary<string, IAsakiPoolBase>();
         private bool _isDisposed;
         private bool _lowMemoryHandlerRegistered = false;
+        private IAsakiSimulationService _simulationService;
+
+        public AsakiPoolService(IAsakiSimulationService simulationService)
+        {
+            _simulationService = simulationService;
+            _simulationService.Register(this);
+        }
 
         /// <summary>
         /// 创建对象池
@@ -163,7 +170,7 @@ namespace Asaki.Core.Pooling
         {
             ALog.Warn("[AsakiPool] Low memory detected! Emergency shrinking all pools...");
 
-            float currentTime = Time.time;
+            float currentTime = UnityEngine.Time.time;
             int totalRemoved = 0;
 
             foreach (var kvp in _pools)
@@ -175,7 +182,9 @@ namespace Asaki.Core.Pooling
                 }
             }
 
-            ALog.Info($"[AsakiPool] Emergency shrink completed, total removed: {totalRemoved} objects");
+            ALog.Info(
+                $"[AsakiPool] Emergency shrink completed, total removed: {totalRemoved} objects"
+            );
         }
 
         /// <summary>
@@ -207,7 +216,7 @@ namespace Asaki.Core.Pooling
             if (_isDisposed || _pools.Count == 0)
                 return;
 
-            float currentTime = Time.time;
+            float currentTime = UnityEngine.Time.time;
             int totalRemoved = 0;
 
             foreach (var kvp in _pools)
@@ -224,7 +233,9 @@ namespace Asaki.Core.Pooling
 
             if (totalRemoved > 0)
             {
-                ALog.Debug($"[AsakiPool] Governance tick completed, total removed: {totalRemoved} objects");
+                ALog.Info(
+                    $"[AsakiPool] Governance tick completed, total removed: {totalRemoved} objects"
+                );
             }
         }
 
@@ -237,7 +248,7 @@ namespace Asaki.Core.Pooling
         {
             ThrowIfDisposed();
 
-            float currentTime = Time.time;
+            float currentTime = UnityEngine.Time.time;
             int totalRemoved = 0;
 
             foreach (var kvp in _pools)
@@ -248,11 +259,15 @@ namespace Asaki.Core.Pooling
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiPool] Manual governance failed for pool '{kvp.Key}': {ex.Message}");
+                    ALog.Error(
+                        $"[AsakiPool] Manual governance failed for pool '{kvp.Key}': {ex.Message}"
+                    );
                 }
             }
 
-            ALog.Info($"[AsakiPool] Manual governance completed, total removed: {totalRemoved} objects");
+            ALog.Info(
+                $"[AsakiPool] Manual governance completed, total removed: {totalRemoved} objects"
+            );
             return totalRemoved;
         }
 
@@ -262,7 +277,10 @@ namespace Asaki.Core.Pooling
         public void Dispose()
         {
             if (_isDisposed)
+            {
                 return;
+            }
+
             _isDisposed = true;
 
             // 注销低内存监听
@@ -270,7 +288,7 @@ namespace Asaki.Core.Pooling
 
             ALog.Info($"[AsakiPool] Service disposing, cleaning up {_pools.Count} pools");
 
-            foreach (var kvp in _pools)
+            foreach (KeyValuePair<string, IAsakiPoolBase> kvp in _pools)
             {
                 try
                 {
@@ -286,6 +304,7 @@ namespace Asaki.Core.Pooling
             }
 
             _pools.Clear();
+            _simulationService?.Unregister(this);
         }
 
         private void ThrowIfDisposed()

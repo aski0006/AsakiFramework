@@ -1,0 +1,30 @@
+{
+    "name": "Tests",
+    "rootNamespace": "",
+    "references": [
+        "Unity.Rider.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner",
+        "Asaki.Core",
+        "Asaki.Editor",
+        "Asaki.Generated",
+        "Asaki.Plungins",
+        "Asaki.Unity",
+        "Unity.Addressables",
+        "Unity.TextMeshPro",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

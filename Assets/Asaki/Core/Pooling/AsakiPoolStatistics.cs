@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using Asaki.Core.Pooling.Interfaces;
 
 namespace Asaki.Core.Pooling
@@ -31,7 +31,6 @@ namespace Asaki.Core.Pooling
         public void IncrementCreated()
         {
             Interlocked.Increment(ref _totalCreated);
-            Interlocked.Increment(ref _inactiveCount);
         }
 
         /// <summary>
@@ -57,20 +56,26 @@ namespace Asaki.Core.Pooling
         /// 增加获取计数
         /// 线程安全
         /// </summary>
-        public void IncrementGet()
+        /// <param name="fromPool">是否从池中获取（true=从池获取，false=新创建）</param>
+        public void IncrementGet(bool fromPool)
         {
             Interlocked.Increment(ref _getCallCount);
             Interlocked.Increment(ref _activeCount);
-            // 使用循环确保非活动计数不会低于0
-            int current;
-            do
+
+            // 只有从池中获取时才减少非活动计数
+            if (fromPool)
             {
-                current = _inactiveCount;
-                if (current <= 0)
-                    break;
-            } while (
-                Interlocked.CompareExchange(ref _inactiveCount, current - 1, current) != current
-            );
+                // 使用循环确保非活动计数不会低于0
+                int current;
+                do
+                {
+                    current = _inactiveCount;
+                    if (current <= 0)
+                        break;
+                } while (
+                    Interlocked.CompareExchange(ref _inactiveCount, current - 1, current) != current
+                );
+            }
         }
 
         /// <summary>
