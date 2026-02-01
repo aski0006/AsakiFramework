@@ -1,4 +1,5 @@
 ﻿using System;
+using UnityEngine;
 
 namespace Asaki.Core.Pooling
 {
@@ -25,6 +26,26 @@ namespace Asaki.Core.Pooling
 
         /// <summary>操作超时时间（秒，0表示无超时）</summary>
         public float OperationTimeout = 0f;
+
+        #region Pool Governance (对象池治理)
+
+        /// <summary>是否启用自动收缩</summary>
+        public bool EnableAutoShrink = true;
+
+        /// <summary>检查间隔（秒）</summary>
+        public float CheckInterval = 30f;
+
+        /// <summary>对象闲置多久视为"过期" (TTL, 秒)</summary>
+        public float IdleTimeout = 60f;
+
+        /// <summary>收缩时的保底数量</summary>
+        public int KeepMinSize = 5;
+
+        /// <summary>每次收缩的比例（0-1，平滑释放）</summary>
+        [Range(0f, 1f)]
+        public float ShrinkRatio = 0.5f;
+
+        #endregion
 
         private static AsakiPoolConfig _default;
 

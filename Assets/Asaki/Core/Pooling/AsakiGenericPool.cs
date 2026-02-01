@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Logging;
@@ -8,13 +8,22 @@ using Cysharp.Threading.Tasks;
 namespace Asaki.Core.Pooling
 {
     /// <summary>
+    /// 池内对象元数据（用于LRU淘汰）
+    /// </summary>
+    internal struct PoolObjectMetadata
+    {
+        public float LastUsedTime;
+    }
+
+    /// <summary>
     /// 通用对象池实现
-    /// 支持异步/同步创建、预热、对象验证、重复归还检测等功能
+    /// 支持异步/同步创建、预热、对象验证、重复归还检测、LRU淘汰等功能
     /// </summary>
     public class AsakiGenericPool<T> : IAsakiPool<T>
         where T : class
     {
         private readonly Stack<T> _stack;
+        private readonly Dictionary<T, PoolObjectMetadata> _objectMetadata;
         private readonly HashSet<T> _activeObjects;
         private readonly IAsakiPoolObjectFactory<T> _factory;
         private readonly AsakiPoolStatistics _statistics;
@@ -25,6 +34,9 @@ namespace Asaki.Core.Pooling
         public IAsakiPoolStatistics Statistics => _statistics;
         public Type ObjectType => typeof(T);
         private bool _isDisposed;
+
+        /// <summary>上次治理检查时间</summary>
+        public float LastGovernanceCheckTime { get; private set; }
 
         public AsakiGenericPool(
             string key,
@@ -38,8 +50,10 @@ namespace Asaki.Core.Pooling
 
             int capacity = Config.InitialSize > 0 ? Config.InitialSize : 16;
             _stack = new Stack<T>(capacity);
+            _objectMetadata = new Dictionary<T, PoolObjectMetadata>(capacity);
             _activeObjects = Config.EnableCollectionCheck ? new HashSet<T>() : null;
             _statistics = new AsakiPoolStatistics { MaxSize = Config.MaxSize };
+            LastGovernanceCheckTime = 0f;
         }
 
         /// <summary>
@@ -341,6 +355,10 @@ namespace Asaki.Core.Pooling
                     ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
                 }
 
+                // 记录对象元数据（LRU时间戳）
+                float currentTime = UnityEngine.Time.time;
+                _objectMetadata[obj] = new PoolObjectMetadata { LastUsedTime = currentTime };
+
                 _stack.Push(obj);
                 _statistics.IncrementReturn();
                 return true;
@@ -374,6 +392,7 @@ namespace Asaki.Core.Pooling
                     }
                 }
 
+                _objectMetadata.Clear();
                 _statistics.AdjustInactive(-count);
                 ALog.Info($"[AsakiPool] {Key} Cleared {count} objects");
             }
@@ -397,6 +416,7 @@ namespace Asaki.Core.Pooling
                 for (int i = 0; i < toRemove; i++)
                 {
                     T obj = _stack.Pop();
+                    _objectMetadata.Remove(obj);
                     try
                     {
                         _factory.OnDestroy(obj);
@@ -413,6 +433,118 @@ namespace Asaki.Core.Pooling
                 _statistics.AdjustInactive(-toRemove);
                 ALog.Info($"[AsakiPool] {Key} Shrunk by {toRemove} objects");
             }
+        }
+
+        /// <summary>
+        /// 基于LRU策略收缩池，优先销毁闲置时间超过IdleTimeout的对象
+        /// </summary>
+        /// <param name="currentTime">当前时间（Time.time）</param>
+        /// <param name="force">是否强制收缩到KeepMinSize</param>
+        /// <returns>实际销毁的对象数量</returns>
+        public int ShrinkByLRU(float currentTime, bool force = false)
+        {
+            ThrowIfDisposed();
+
+            lock (_lock)
+            {
+                if (_stack.Count == 0)
+                    return 0;
+
+                // 计算目标大小
+                int targetSize = Config.KeepMinSize;
+                if (!force)
+                {
+                    // 非强制模式：根据收缩比例计算
+                    int shrinkCount = (int)(_stack.Count * Config.ShrinkRatio);
+                    targetSize = Math.Max(Config.KeepMinSize, _stack.Count - shrinkCount);
+                }
+
+                if (_stack.Count <= targetSize)
+                    return 0;
+
+                // 将池中对象按最后使用时间排序（最久未使用的在前）
+                var sortedObjects = new List<(T obj, float lastUsedTime)>();
+                var tempStack = new Stack<T>();
+
+                while (_stack.Count > 0)
+                {
+                    T obj = _stack.Pop();
+                    float lastUsedTime = _objectMetadata.TryGetValue(obj, out var meta)
+                        ? meta.LastUsedTime
+                        : 0f;
+                    sortedObjects.Add((obj, lastUsedTime));
+                }
+
+                // 按时间升序排序（最老的在前）
+                sortedObjects.Sort((a, b) => a.lastUsedTime.CompareTo(b.lastUsedTime));
+
+                int toRemove = _stack.Count + sortedObjects.Count - targetSize;
+                int removed = 0;
+                float idleThreshold = currentTime - Config.IdleTimeout;
+
+                for (int i = 0; i < sortedObjects.Count; i++)
+                {
+                    var (obj, lastUsedTime) = sortedObjects[i];
+
+                    // 优先销毁超过IdleTimeout的对象，如果force=true则销毁到targetSize
+                    bool shouldDestroy =
+                        force || (removed < toRemove && lastUsedTime < idleThreshold);
+
+                    if (shouldDestroy && removed < toRemove)
+                    {
+                        _objectMetadata.Remove(obj);
+                        try
+                        {
+                            _factory.OnDestroy(obj);
+                        }
+                        catch (Exception ex)
+                        {
+                            ALog.Error(
+                                $"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}",
+                                ex
+                            );
+                        }
+                        removed++;
+                    }
+                    else
+                    {
+                        // 保留的对象重新入栈
+                        _stack.Push(obj);
+                    }
+                }
+
+                _statistics.AdjustInactive(-removed);
+                LastGovernanceCheckTime = currentTime;
+
+                if (removed > 0)
+                {
+                    ALog.Info(
+                        $"[AsakiPool] {Key} LRU Shrink removed {removed} objects (idle > {Config.IdleTimeout}s), remaining: {_stack.Count}"
+                    );
+                }
+
+                return removed;
+            }
+        }
+
+        /// <summary>
+        /// 执行池治理检查
+        /// </summary>
+        /// <param name="currentTime">当前时间（Time.time）</param>
+        /// <returns>是否执行了收缩操作</returns>
+        public bool PerformGovernance(float currentTime)
+        {
+            ThrowIfDisposed();
+
+            if (!Config.EnableAutoShrink)
+                return false;
+
+            // 检查是否到达检查间隔
+            if (currentTime - LastGovernanceCheckTime < Config.CheckInterval)
+                return false;
+
+            int removed = ShrinkByLRU(currentTime, force: false);
+            return removed > 0;
         }
 
         /// <summary>
