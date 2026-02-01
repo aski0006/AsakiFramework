@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,7 +23,7 @@ namespace Asaki.Core.Logging
     /// <para>线程模型：</para>
     /// <list type="number">
     ///   <item>主线程：调用 <see cref="ApplyConfig"/> 与 <see cref="Dispose"/></item>
-    ///   <item>Writer 线程：独占执行 <see cref="WriteLoop"/> 与文件 I/O</item>
+    ///   <item>Writer 线程：独占执行 <see cref="WriteLoopAsync"/> 与文件 I/O</item>
     ///   <item>ThreadPool：异步执行历史清理，避免阻塞 Writer</item>
     /// </list>
     /// <para>异常策略：所有 I/O 异常仅记录到 Unity 控制台，永不抛出；Writer 线程崩溃后自动退出并释放资源</para>
@@ -61,8 +61,8 @@ namespace Asaki.Core.Logging
         private readonly System.Threading.CancellationTokenSource _cts =
             new System.Threading.CancellationTokenSource();
 
-        /// <summary>退出标志，确保 <see cref="Dispose"/> 逻辑仅执行一次，防止重复释放</summary>
-        private bool _isDisposed;
+        /// <summary>退出标志，确保 <see cref="Dispose"/> 逻辑仅执行一次，防止重复释放。使用volatile确保多线程可见性</summary>
+        private volatile bool _isDisposed;
 
         // 文件状态
         /// <summary>日志文件存储目录，通常位于 <c>Application.persistentDataPath/Logs</c></summary>
@@ -80,15 +80,22 @@ namespace Asaki.Core.Logging
         /// <summary>当前文件已写入的字节数（包含文件头），用于触发大小轮转</summary>
         private long _currentWrittenBytes;
 
-        // 配置 (默认值)
+        // 配置 (使用volatile和锁确保线程安全)
+        /// <summary>配置锁，保护所有配置字段的读写</summary>
+        private readonly object _configLock = new object();
+
+        /// <summary>文件操作锁，保护文件创建、写入和销毁的互斥访问</summary>
+        private readonly object _fileOperationLock = new object();
+
         /// <summary>单个日志文件的最大字节数，默认 2 MB</summary>
-        private int _maxFileSize = 2 * 1024 * 1024;
+        private volatile int _maxFileSize = 2 * 1024 * 1024;
 
         /// <summary>保留的历史日志文件数量，默认 10 个</summary>
-        private int _maxHistoryFiles = 10;
+        private volatile int _maxHistoryFiles = 10;
 
         /// <summary>日志文件名前缀，默认 "Log"</summary>
-        private string _filePrefix = "Log";
+        /// <remarks>使用volatile确保写入线程能读取到最新值</remarks>
+        private volatile string _filePrefix = "Log";
 
         /// <summary>
         /// 初始化 <see cref="AsakiLogFileWriter"/> 的新实例，并立即启动后台写入线程
@@ -99,10 +106,10 @@ namespace Asaki.Core.Logging
         /// 构造函数内部完成以下步骤：
         /// <list type="number">
         ///   <item>创建 <see cref="Application.persistentDataPath"/>/Logs 目录</item>
-        ///   <item>创建首个日志文件并写入版本/会话头</item>
         ///   <item>启动后台线程，循环等待写入信号</item>
         /// </list>
-        /// 文件命名格式：<c>{FilePrefix}_yyyyMMdd_HHmmss.asakilog</c>
+        /// 注意：日志文件不会立即创建，而是在首次 ApplyConfig 或第一次写入时创建
+        /// 文件命名格式：<c>{FilePrefix}_yyyyMMdd_HHmmss_fff_{Guid}.asakilog</c>
         /// </remarks>
         public AsakiLogFileWriter(AsakiLogAggregator aggregator)
         {
@@ -113,10 +120,7 @@ namespace Asaki.Core.Logging
             if (!Directory.Exists(_logDir))
                 Directory.CreateDirectory(_logDir);
 
-            // 2. 初始创建一个日志文件
-            OpenNewFile();
-
-            // 3. 启动异步写入循环
+            // 2. 启动异步写入循环（文件延迟到 ApplyConfig 时创建）
             _writeTask = WriteLoopAsync(_cts.Token);
         }
 
@@ -132,19 +136,35 @@ namespace Asaki.Core.Logging
         ///   <item><see cref="AsakiLogConfig.MaxHistoryFiles"/> → 立即异步清理多余历史文件</item>
         /// </list>
         /// <para>清理操作在 ThreadPool 中执行，不会阻塞 Writer 线程或主线程</para>
+        /// <para>线程安全：使用锁保护配置更新，确保写入线程读取到一致的数据</para>
         /// </remarks>
         public void ApplyConfig(AsakiLogConfig config)
         {
             if (config == null)
                 return;
 
-            _maxFileSize = config.MaxFileSizeKB * 1024;
-            _maxHistoryFiles = config.MaxHistoryFiles;
-            _filePrefix = string.IsNullOrEmpty(config.FilePrefix) ? "Log" : config.FilePrefix;
+            // 使用锁保护配置更新，确保原子性
+            lock (_configLock)
+            {
+                _maxFileSize = config.MaxFileSizeKB * 1024;
+                _maxHistoryFiles = config.MaxHistoryFiles;
+                _filePrefix = string.IsNullOrEmpty(config.FilePrefix) ? "Log" : config.FilePrefix;
+            }
 
             // 异步触发一次历史清理
             // 不要在写入过程中做 IO 删除操作，避免阻塞写入
             CleanupHistoryAsync().Forget();
+        }
+
+        /// <summary>
+        /// 安全地读取配置值
+        /// </summary>
+        private (int maxFileSize, int maxHistoryFiles, string filePrefix) GetConfigSnapshot()
+        {
+            lock (_configLock)
+            {
+                return (_maxFileSize, _maxHistoryFiles, _filePrefix);
+            }
         }
 
         /// <summary>
@@ -160,41 +180,55 @@ namespace Asaki.Core.Logging
         /// 创建新的日志文件并关闭旧文件（如果存在）
         /// </summary>
         /// <remarks>
-        /// <para>文件命名：<c>{_filePrefix}_yyyyMMdd_HHmmss.asakilog</c></para>
+        /// <para>文件命名：<c>{_filePrefix}_yyyyMMdd_HHmmss_fff_{Guid}.asakilog</c>（包含毫秒和GUID确保唯一性）</para>
         /// <para>文件头写入：<c>#VERSION:2.3</c> 与 <c>#SESSION:{DateTime.Now}</c></para>
         /// <para>使用 <see cref="FileShare.Read"/> 允许外部工具（如日志查看器）在写入时读取文件</para>
         /// <para>异常处理：任何 I/O 异常仅记录到 Unity 控制台，不向上抛出</para>
+        /// <para>线程安全：必须持有 <see cref="_fileOperationLock"/> 锁才能调用</para>
         /// </remarks>
         private void OpenNewFile()
         {
-            try
+            lock (_fileOperationLock)
             {
-                // 关闭旧的
-                _streamWriter?.Dispose();
-                _fileStream?.Dispose();
+                try
+                {
+                    // 检查是否已释放，避免在 Dispose 后创建新文件
+                    if (_isDisposed)
+                        return;
 
-                // 创建新的
-                string fileName = $"{_filePrefix}_{DateTime.Now:yyyyMMdd_HHmmss}.asakilog";
-                _currentFilePath = Path.Combine(_logDir, fileName);
+                    // 关闭旧的
+                    _streamWriter?.Dispose();
+                    _fileStream?.Dispose();
+                    _streamWriter = null;
+                    _fileStream = null;
 
-                // 使用 FileShare.Read 允许外部查看
-                _fileStream = new FileStream(
-                    _currentFilePath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.Read
-                );
-                _streamWriter = new StreamWriter(_fileStream, Encoding.UTF8);
-                _streamWriter.AutoFlush = false; // 手动 Flush 提高性能
+                    // 获取当前配置快照
+                    var config = GetConfigSnapshot();
 
-                // 写入头信息
-                _streamWriter.Write($"#VERSION:2.3\n#SESSION:{DateTime.Now}\n");
-                _streamWriter.Flush();
-                _currentWrittenBytes = _fileStream.Length;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[AsakiWriter] Failed to create log file: {ex.Message}");
+                    // 创建新的（包含毫秒和GUID确保文件名唯一，避免并发冲突）
+                    string fileName =
+                        $"{config.filePrefix}_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}.asakilog";
+                    _currentFilePath = Path.Combine(_logDir, fileName);
+
+                    // 使用 FileShare.Read 允许外部查看
+                    _fileStream = new FileStream(
+                        _currentFilePath,
+                        FileMode.Create,
+                        FileAccess.Write,
+                        FileShare.Read
+                    );
+                    _streamWriter = new StreamWriter(_fileStream, Encoding.UTF8);
+                    _streamWriter.AutoFlush = false; // 手动 Flush 提高性能
+
+                    // 写入头信息
+                    _streamWriter.Write($"#VERSION:2.3\n#SESSION:{DateTime.Now}\n");
+                    _streamWriter.Flush();
+                    _currentWrittenBytes = _fileStream.Length;
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[AsakiWriter] Failed to create log file: {ex.Message}");
+                }
             }
         }
 
@@ -253,6 +287,7 @@ namespace Asaki.Core.Logging
         /// <remarks>
         /// <para>执行步骤：</para>
         /// <list type="number">
+        ///   <item>主动调用 <see cref="AsakiLogAggregator.Sync"/> 将输入队列数据转移到 IO 缓冲区</item>
         ///   <item>通过 <see cref="AsakiLogAggregator.SwapIOBuffer"/> 获取待写入数据</item>
         ///   <item>使用 <see cref="_sb"/> 批量构建输出字符串，减少 I/O 次数</item>
         ///   <item>对消息、Payload、堆栈 JSON 调用 <see cref="Sanitize"/> 转义特殊字符</item>
@@ -261,9 +296,14 @@ namespace Asaki.Core.Logging
         ///   <item>将用过的 <see cref="LogWriteCommand"/> 对象归还对象池</item>
         /// </list>
         /// <para>异常处理：任何写入异常仅记录到控制台，不中断后续日志</para>
+        /// <para>线程安全：使用 <see cref="_fileOperationLock"/> 保护文件写入操作</para>
         /// </remarks>
         private async UniTask FlushBufferAsync()
         {
+            // 0. 主动触发 Sync，将输入队列中的日志转移到 IO 缓冲区
+            // 这对于测试环境很重要，因为测试可能不会手动调用 Sync
+            _aggregator.Sync();
+
             // 1. 获取数据 (双缓冲交换)
             var buffer = _aggregator.SwapIOBuffer();
             if (buffer == null || buffer.Count == 0)
@@ -310,18 +350,39 @@ namespace Asaki.Core.Logging
                     LogCommandPool.Return(cmd);
                 }
 
-                if (_sb.Length > 0 && _streamWriter != null)
+                if (_sb.Length > 0)
                 {
-                    // 2. 写入文件
+                    // 2. 写入文件（使用文件操作锁保护）
                     await UniTask.SwitchToThreadPool();
-                    _streamWriter.Write(_sb.ToString());
-                    _streamWriter.Flush(); // 确保刷入磁盘
-
-                    // 3. 更新长度并检查轮转
-                    _currentWrittenBytes = _fileStream.Length; // 获取真实文件大小
-                    if (_currentWrittenBytes > _maxFileSize)
+                    lock (_fileOperationLock)
                     {
-                        OpenNewFile(); // 触发轮转
+                        // 再次检查 Dispose 状态，避免在 Dispose 后写入
+                        if (_isDisposed)
+                        {
+                            return;
+                        }
+
+                        // 如果文件流未创建，先创建文件（首次写入时）
+                        if (_streamWriter == null || _fileStream == null)
+                        {
+                            OpenNewFile();
+                            // 如果创建失败，放弃本次写入
+                            if (_streamWriter == null || _fileStream == null)
+                                return;
+                        }
+
+                        _streamWriter.Write(_sb.ToString());
+                        _streamWriter.Flush(); // 确保刷入磁盘
+
+                        // 3. 更新长度并检查轮转
+                        _currentWrittenBytes = _fileStream.Length; // 获取真实文件大小
+
+                        // 读取配置快照进行大小检查
+                        var config = GetConfigSnapshot();
+                        if (_currentWrittenBytes > config.maxFileSize)
+                        {
+                            OpenNewFile(); // 触发轮转
+                        }
                     }
                 }
             }
@@ -339,7 +400,7 @@ namespace Asaki.Core.Logging
         /// 清理旧日志 (保留最近的 N 个)
         /// </summary>
         /// <remarks>
-        /// <para>扫描 <see cref="_logDir"/> 下所有 <c>*.asakilog</c> 文件，按创建时间降序排序</para>
+        /// <para>扫描 <see cref="_logDir"/> 下当前前缀的 <c>{prefix}_*.asakilog</c> 文件，按创建时间降序排序</para>
         /// <para>删除超出 <see cref="_maxHistoryFiles"/> 限制的旧文件</para>
         /// <para>异常处理：任何 I/O 异常均被忽略，防止清理失败影响日志写入</para>
         /// <para>线程安全：方法可在任意线程调用，内部无共享状态写操作</para>
@@ -348,15 +409,19 @@ namespace Asaki.Core.Logging
         {
             try
             {
+                // 读取配置快照
+                var config = GetConfigSnapshot();
+
                 DirectoryInfo dirInfo = new DirectoryInfo(_logDir);
+                // 只清理当前前缀的文件，避免影响其他测试/实例
                 var files = dirInfo
-                    .GetFiles("*.asakilog")
+                    .GetFiles($"{config.filePrefix}_*.asakilog")
                     .OrderByDescending(f => f.CreationTime) // 最新的在前
                     .ToList();
 
-                if (files.Count <= _maxHistoryFiles)
+                if (files.Count <= config.maxHistoryFiles)
                     return;
-                for (int i = _maxHistoryFiles; i < files.Count; i++)
+                for (int i = config.maxHistoryFiles; i < files.Count; i++)
                 {
                     try
                     {
@@ -398,16 +463,19 @@ namespace Asaki.Core.Logging
         /// <para>幂等性：可安全多次调用，仅首次调用生效</para>
         /// <para>执行流程：</para>
         /// <list type="number">
-        ///   <item>触发取消令牌</item>
-        ///   <item>等待异步操作结束</item>
-        ///   <item>释放所有资源</item>
+        ///   <item>设置 Dispose 标志</item>
+        ///   <item>触发取消令牌停止异步操作</item>
+        ///   <item>使用文件操作锁保护文件资源释放</item>
         /// </list>
         /// <para>异常处理：忽略等待过程中的异常，确保资源释放</para>
+        /// <para>线程安全：使用 <see cref="_fileOperationLock"/> 保护文件资源释放</para>
         /// </remarks>
         public void Dispose()
         {
+            // 使用简单的赋值，因为volatile确保可见性，且双重检查避免竞态
             if (_isDisposed)
                 return;
+
             _isDisposed = true;
 
             try
@@ -425,9 +493,14 @@ namespace Asaki.Core.Logging
             finally
             {
                 _cts.Dispose();
-                // 直接清理文件资源
-                _streamWriter?.Dispose();
-                _fileStream?.Dispose();
+                // 使用文件操作锁保护文件资源释放，确保与 FlushBufferAsync 和 OpenNewFile 的互斥访问
+                lock (_fileOperationLock)
+                {
+                    _streamWriter?.Dispose();
+                    _streamWriter = null;
+                    _fileStream?.Dispose();
+                    _fileStream = null;
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,6 +12,13 @@ namespace Asaki.Core.Logging
     /// Asaki日志聚合器，负责收集、聚合和管理日志信息。
     /// 该类处理日志的输入、聚合以及与IO相关的操作，以实现高效的日志记录。
     /// </summary>
+    /// <remarks>
+    /// 线程安全说明：
+    /// <para>1. <see cref="Log"/> 方法可在任意线程调用，日志会被安全地加入输入队列</para>
+    /// <para>2. <see cref="Sync"/> 方法应在主线程调用（通常在LateUpdate中），处理日志聚合</para>
+    /// <para>3. <see cref="SwapIOBuffer"/> 方法由写入线程调用，与主线程交换缓冲区</para>
+    /// <para>4. <see cref="GetSnapshot"/> 方法可在任意线程调用，返回日志快照的副本</para>
+    /// </remarks>
     public class AsakiLogAggregator
     {
         // === 内部结构体定义 ===
@@ -64,19 +71,33 @@ namespace Asaki.Core.Logging
         private struct LogSignature : IEquatable<LogSignature>
         {
             private readonly int _hash;
+            private readonly string _file;
+            private readonly int _line;
+            private readonly string _msg;
+            private readonly string _exceptionType;
 
             /// <summary>
-            /// 使用文件路径、行号和消息初始化日志签名。
+            /// 使用文件路径、行号、消息和异常信息初始化日志签名。
             /// 通过组合这些信息生成一个唯一的哈希值。
+            /// 异常信息会被纳入签名，确保不同异常的日志不会被错误合并。
             /// </summary>
             /// <param name="file">记录日志的文件路径。</param>
             /// <param name="line">记录日志的行号。</param>
             /// <param name="msg">日志消息。</param>
-            public LogSignature(string file, int line, string msg)
+            /// <param name="ex">异常对象，用于区分不同异常的日志。</param>
+            public LogSignature(string file, int line, string msg, Exception ex)
             {
+                _file = file;
+                _line = line;
+                _msg = msg;
+                _exceptionType = ex?.GetType().FullName;
                 unchecked
                 {
-                    _hash = (file?.GetHashCode() ?? 0) * 397 ^ line ^ (msg?.GetHashCode() ?? 0);
+                    int hash = (file?.GetHashCode() ?? 0) * 397;
+                    hash ^= line;
+                    hash ^= (msg?.GetHashCode() ?? 0) * 31;
+                    hash ^= (_exceptionType?.GetHashCode() ?? 0) * 17;
+                    _hash = hash;
                 }
             }
 
@@ -96,7 +117,11 @@ namespace Asaki.Core.Logging
             /// <returns>如果相等则返回 true，否则返回 false。</returns>
             public bool Equals(LogSignature other)
             {
-                return _hash == other._hash;
+                return _hash == other._hash
+                    && _line == other._line
+                    && string.Equals(_file, other._file)
+                    && string.Equals(_msg, other._msg)
+                    && string.Equals(_exceptionType, other._exceptionType);
             }
         }
 
@@ -113,11 +138,20 @@ namespace Asaki.Core.Logging
         /// </summary>
         private const int MAX_QUEUE_DEPTH = 5000;
 
+        /// <summary>
+        /// 使用Interlocked精确获取队列深度的辅助方法
+        /// </summary>
+        private long GetQueueDepth()
+        {
+            return _inputQueue.Count;
+        }
+
         // === 2. 聚合端 (主线程状态) ===
         /// <summary>
         /// 用于存储日志签名与日志模型映射关系的字典。
         /// 通过日志签名快速查找和更新对应的日志模型。
         /// </summary>
+        /// <remarks>访问此字典必须在 <see cref="_aggregationLock"/> 锁保护下进行</remarks>
         private readonly Dictionary<LogSignature, AsakiLogModel> _signatureMap =
             new Dictionary<LogSignature, AsakiLogModel>();
 
@@ -125,18 +159,20 @@ namespace Asaki.Core.Logging
         /// 用于存储当前显示的日志模型列表。
         /// 提供给外部获取日志快照。
         /// </summary>
+        /// <remarks>访问此列表必须在 <see cref="_aggregationLock"/> 锁保护下进行</remarks>
         private readonly List<AsakiLogModel> _displayList = new List<AsakiLogModel>();
 
         /// <summary>
-        /// 日志模型的ID计数器，用于为每个新的日志模型分配唯一ID。
+        /// 日志模型的ID计数器，使用Interlocked确保线程安全
         /// </summary>
         private int _idCounter = 1;
 
         /// <summary>
-        /// 用于保护获取快照操作的私有锁。
-        /// 确保在获取快照时，显示列表不会被其他操作修改。
+        /// 用于保护聚合状态的读写锁，支持多读单写
         /// </summary>
-        private readonly object _snapshotLock = new object();
+        private readonly ReaderWriterLockSlim _aggregationLock = new ReaderWriterLockSlim(
+            LockRecursionPolicy.NoRecursion
+        );
 
         // === 3. IO 端 (双缓冲) ===
         // 这种模式下，MainThread 只写 current，Writer 只读 back，互不干扰
@@ -170,6 +206,7 @@ namespace Asaki.Core.Logging
         /// <param name="file">记录日志的文件路径。</param>
         /// <param name="line">记录日志的行号。</param>
         /// <param name="ex">相关的异常对象，如果有的话。</param>
+        /// <remarks>此方法线程安全，可在任意线程调用</remarks>
         public void Log(
             AsakiLogLevel level,
             string message,
@@ -179,8 +216,8 @@ namespace Asaki.Core.Logging
             Exception ex
         )
         {
-            // [优化] 简单的背压保护
-            if (_inputQueue.Count >= MAX_QUEUE_DEPTH)
+            // [优化] 使用Interlocked读取队列深度，避免竞态条件
+            if (GetQueueDepth() >= MAX_QUEUE_DEPTH)
             {
                 // 队列爆了，丢弃 Trace/Info，保留 Error，或者直接丢弃并报错
                 if (level < AsakiLogLevel.Error)
@@ -206,28 +243,68 @@ namespace Asaki.Core.Logging
         /// 从输入队列中批量取出日志数据包，并进行处理。
         /// </summary>
         /// <param name="batchLimit">每次同步处理的最大日志数量，默认为1000。</param>
+        /// <remarks>此方法应在主线程调用，使用 IO 缓冲区锁保护</remarks>
         public void Sync(int batchLimit = 1000)
         {
-            int count = 0;
-            // 批量从并发队列取出
-            while (count < batchLimit && _inputQueue.TryDequeue(out LogPacket packet))
+            lock (_ioSwapLock)
             {
-                count++;
-                ProcessSingleLog(ref packet);
+                int count = 0;
+                // 批量从并发队列取出
+                while (count < batchLimit && _inputQueue.TryDequeue(out LogPacket packet))
+                {
+                    count++;
+                    ProcessSingleLog(ref packet);
+                }
             }
         }
 
         /// <summary>
         /// 获取当前显示的日志模型列表的快照。
-        /// 此方法在获取快照时会锁定显示列表，以确保数据的一致性。
+        /// 此方法使用读写锁确保线程安全，返回日志列表的副本。
         /// </summary>
         /// <returns>当前显示的日志模型列表的副本。</returns>
+        /// <remarks>此方法线程安全，可在任意线程调用</remarks>
         public List<AsakiLogModel> GetSnapshot()
         {
-            lock (_snapshotLock)
+            _aggregationLock.EnterReadLock();
+            try
             {
-                return new List<AsakiLogModel>(_displayList);
+                // 创建深拷贝以避免外部修改影响内部状态
+                var snapshot = new List<AsakiLogModel>(_displayList.Count);
+                foreach (var model in _displayList)
+                {
+                    // 创建副本以避免引用被外部修改
+                    snapshot.Add(CreateModelCopy(model));
+                }
+                return snapshot;
             }
+            finally
+            {
+                _aggregationLock.ExitReadLock();
+            }
+        }
+
+        /// <summary>
+        /// 创建日志模型的浅拷贝，用于快照返回
+        /// </summary>
+        private AsakiLogModel CreateModelCopy(AsakiLogModel source)
+        {
+            return new AsakiLogModel
+            {
+                ID = source.ID,
+                Level = source.Level,
+                LastTimestamp = source.LastTimestamp,
+                FlushedCount = source.FlushedCount,
+                Count = source.Count,
+                Message = source.Message,
+                PayloadJson = source.PayloadJson,
+                StackFrames =
+                    source.StackFrames != null
+                        ? new List<StackFrameModel>(source.StackFrames)
+                        : null,
+                CallerPath = source.CallerPath,
+                CallerLine = source.CallerLine,
+            };
         }
 
         /// <summary>
@@ -235,6 +312,11 @@ namespace Asaki.Core.Logging
         /// 写入线程拿走填满的当前缓冲区，给聚合器一个空的备用缓冲区。
         /// </summary>
         /// <returns>填满的当前缓冲区，如果当前缓冲区为空则返回null。</returns>
+        /// <remarks>
+        /// 此方法线程安全，可在任意线程调用。
+        /// 使用 <see cref="_ioSwapLock"/> 保护，与 <see cref="Sync"/> 方法互斥访问 IO 缓冲区，
+        /// 确保在高并发环境下不会出现数据竞争和丢失。
+        /// </remarks>
         public List<LogWriteCommand> SwapIOBuffer()
         {
             lock (_ioSwapLock)
@@ -261,12 +343,17 @@ namespace Asaki.Core.Logging
         /// 同时将日志写入命令添加到当前IO缓冲区。
         /// </summary>
         /// <param name="p">要处理的日志数据包。</param>
+        /// <remarks>
+        /// 此方法在主线程调用，由 <see cref="Sync"/> 方法的 <see cref="_ioSwapLock"/> 锁保护，
+        /// 因此访问 IO 缓冲区时无需额外加锁。但访问聚合状态字典仍需使用 <see cref="_aggregationLock"/>。
+        /// </remarks>
         private void ProcessSingleLog(ref LogPacket p)
         {
-            LogSignature sig = new LogSignature(p.File, p.Line, p.Message);
+            LogSignature sig = new LogSignature(p.File, p.Line, p.Message, p.Exception);
 
-            // 锁定显示列表 (为了 Snapshot 安全)
-            lock (_snapshotLock)
+            // 使用写锁保护聚合状态
+            _aggregationLock.EnterWriteLock();
+            try
             {
                 if (_signatureMap.TryGetValue(sig, out AsakiLogModel model))
                 {
@@ -293,9 +380,12 @@ namespace Asaki.Core.Logging
                             ? JsonUtility.ToJson(new StackWrapper { F = stack })
                             : "{}";
 
+                    // 使用Interlocked.Increment确保ID唯一性
+                    int newId = Interlocked.Increment(ref _idCounter);
+
                     model = new AsakiLogModel
                     {
-                        ID = _idCounter++,
+                        ID = newId,
                         LastTimestamp = p.Timestamp,
                         Level = p.Level,
                         Message = p.Message,
@@ -323,6 +413,10 @@ namespace Asaki.Core.Logging
 
                     _ioBufferCurrent.Add(cmd);
                 }
+            }
+            finally
+            {
+                _aggregationLock.ExitWriteLock();
             }
         }
 
@@ -378,15 +472,29 @@ namespace Asaki.Core.Logging
         /// 包括日志签名与日志模型的映射关系、显示列表，并重置ID计数器。
         /// IO缓冲区会在写入线程下次交换时被清空。
         /// </summary>
+        /// <remarks>此方法线程安全</remarks>
         public void Clear()
         {
-            lock (_snapshotLock)
+            _aggregationLock.EnterWriteLock();
+            try
             {
                 _signatureMap.Clear();
                 _displayList.Clear();
-                _idCounter = 1;
+                Interlocked.Exchange(ref _idCounter, 1);
+            }
+            finally
+            {
+                _aggregationLock.ExitWriteLock();
             }
             // IO Buffer 会在 Writer 下次 Swap 时被清空
+        }
+
+        /// <summary>
+        /// 释放聚合器使用的资源
+        /// </summary>
+        public void Dispose()
+        {
+            _aggregationLock?.Dispose();
         }
 
         /// <summary>

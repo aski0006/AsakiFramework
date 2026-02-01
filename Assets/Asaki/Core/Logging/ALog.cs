@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Asaki.Core.Context;
@@ -14,8 +14,9 @@ namespace Asaki.Core.Logging
     {
         /// <summary>
         /// 缓存的日志服务实例，避免每次调用日志方法时都去上下文查找服务。
+        /// 使用volatile确保多线程环境下的可见性。
         /// </summary>
-        private static IAsakiLoggingService _cachedService;
+        private static volatile IAsakiLoggingService _cachedService;
 
 #if UNITY_EDITOR
         /// <summary>
