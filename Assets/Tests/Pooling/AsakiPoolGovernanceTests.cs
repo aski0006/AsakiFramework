@@ -206,7 +206,7 @@ namespace Asaki.Tests.Pooling
             }
 
             // 等待超过检查间隔
-            Thread.Sleep(1000);
+            yield return new WaitForSeconds(1f);
 
             // Act
             bool performed = pool.PerformGovernance(Time.time);

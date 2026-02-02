@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Threading;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Factories;
@@ -22,10 +23,10 @@ namespace Asaki.Tests.Pooling
         [TestFixture]
         public class DelegateFactoryTests
         {
-            [Test]
+            [UnityTest]
             [Category("Unit")]
             [Description("测试异步创建函数")]
-            public async UniTask CreateAsync_WithAsyncFunc_CreatesObject()
+            public IEnumerator CreateAsync_WithAsyncFunc_CreatesObject()
             {
                 // Arrange
                 bool createCalled = false;
@@ -38,11 +39,12 @@ namespace Asaki.Tests.Pooling
                 );
 
                 // Act
-                var result = await factory.CreateAsync();
+                var result = factory.CreateAsync();
 
                 // Assert
                 Assert.IsTrue(createCalled);
-                Assert.AreEqual("test", result);
+                Assert.AreEqual("test", result.GetAwaiter().GetResult());
+                yield return null;
             }
 
             [Test]
@@ -228,23 +230,25 @@ namespace Asaki.Tests.Pooling
                 });
             }
 
-            [Test]
+            [UnityTest]
             [Category("Unit")]
             [Description("测试异步创建返回GameObject")]
-            public async UniTask CreateAsync_ReturnsGameObject()
+            public IEnumerator CreateAsync_ReturnsGameObject()
             {
                 // Arrange
                 var factory = new GameObjectFactory(_prefab);
 
                 // Act
-                var result = await factory.CreateAsync();
+                var result = factory.CreateAsync();
 
                 // Assert
                 Assert.IsNotNull(result);
                 Assert.AreNotSame(_prefab, result);
 
                 // Cleanup
-                UnityEngine.Object.DestroyImmediate(result);
+                UnityEngine.Object.Destroy(result.GetAwaiter().GetResult(), 1f);
+                yield return new WaitForSeconds(1f);
+                yield return null;
             }
 
             [Test]

@@ -171,46 +171,64 @@ namespace Asaki.Tests.Pooling
                 });
         }
 
-        [Test]
+        [UnityTest]
         [Category("Unit")]
         [Description("测试创建池时传入null key抛出异常")]
-        public void CreatePoolAsync_WithNullKey_ThrowsArgumentException()
+        public IEnumerator CreatePoolAsync_WithNullKey_ThrowsArgumentException()
         {
             // Arrange
             var factory = new TestObjectFactory();
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-            {
-                _poolService.CreatePoolAsync<TestPoolObject>(null, factory).Forget();
-            });
+            var task = _poolService.CreatePoolAsync<TestPoolObject>(null, factory);
+            Exception capturedException = null;
+
+            yield return task.ToCoroutine(
+                resultHandler: _ => { },
+                exceptionHandler: ex => capturedException = ex
+            );
+
+            Assert.IsNotNull(capturedException, "Expected exception was not thrown");
+            Assert.IsInstanceOf<ArgumentException>(capturedException);
         }
 
-        [Test]
+        [UnityTest]
         [Category("Unit")]
         [Description("测试创建池时传入空字符串key抛出异常")]
-        public void CreatePoolAsync_WithEmptyKey_ThrowsArgumentException()
+        public IEnumerator CreatePoolAsync_WithEmptyKey_ThrowsArgumentException()
         {
             // Arrange
             var factory = new TestObjectFactory();
 
             // Act & Assert
-            Assert.Throws<ArgumentException>(() =>
-            {
-                _poolService.CreatePoolAsync<TestPoolObject>("", factory).Forget();
-            });
+            var task = _poolService.CreatePoolAsync<TestPoolObject>("", factory);
+            Exception capturedException = null;
+
+            yield return task.ToCoroutine(
+                resultHandler: _ => { },
+                exceptionHandler: ex => capturedException = ex
+            );
+
+            Assert.IsNotNull(capturedException, "Expected exception was not thrown");
+            Assert.IsInstanceOf<ArgumentException>(capturedException);
         }
 
-        [Test]
+        [UnityTest]
         [Category("Unit")]
         [Description("测试创建池时传入null factory抛出异常")]
-        public void CreatePoolAsync_WithNullFactory_ThrowsArgumentNullException()
+        public IEnumerator CreatePoolAsync_WithNullFactory_ThrowsArgumentNullException()
         {
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                _poolService.CreatePoolAsync<TestPoolObject>("TestPool", null).Forget();
-            });
+            var task = _poolService.CreatePoolAsync<TestPoolObject>("TestPool", null);
+            Exception capturedException = null;
+
+            yield return task.ToCoroutine(
+                resultHandler: _ => { },
+                exceptionHandler: ex => capturedException = ex
+            );
+
+            Assert.IsNotNull(capturedException, "Expected exception was not thrown");
+            Assert.IsInstanceOf<ArgumentNullException>(capturedException);
         }
 
         [UnityTest]
@@ -227,12 +245,17 @@ namespace Asaki.Tests.Pooling
                 .ToCoroutine();
 
             // Assert - Creating second pool with same key should throw
-            Assert.Throws<ArgumentException>(() =>
-            {
-                _poolService.CreatePoolAsync<TestPoolObject>("TestPool", factory).Forget();
-            });
+            var task = _poolService.CreatePoolAsync<TestPoolObject>("TestPool", factory);
+            Exception capturedException = null;
 
-            yield return null;
+            yield return task.ToCoroutine(
+                resultHandler: _ => { },
+                exceptionHandler: ex => capturedException = ex
+            );
+
+            Assert.IsNotNull(capturedException, "Expected exception was not thrown");
+            Assert.IsInstanceOf<ArgumentException>(capturedException);
+            StringAssert.Contains("already exists", capturedException.Message);
         }
 
         [UnityTest]
@@ -311,6 +334,9 @@ namespace Asaki.Tests.Pooling
             yield return _poolService
                 .CreatePoolAsync<TestPoolObject>("TestPool", factory)
                 .ToCoroutine();
+
+            // 由于 ALog 接管了 Unity 日志，忽略日志错误
+            LogAssert.ignoreFailingMessages = true;
 
             // Act - 尝试用错误类型获取
             var pool = _poolService.GetPool<string>("TestPool");
@@ -425,9 +451,15 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var factory = new TestObjectFactory();
+            var config = new AsakiPoolConfig
+            {
+                InitialSize = 1,
+                MaxSize = 10,
+                AllowSyncCreation = true,
+            };
             IAsakiPool<TestPoolObject> pool = null;
             yield return _poolService
-                .CreatePoolAsync<TestPoolObject>("TestPool", factory)
+                .CreatePoolAsync<TestPoolObject>("TestPool", factory, config)
                 .ToCoroutine(p => pool = p);
             var obj = pool.Get();
             pool.Return(obj);
@@ -625,12 +657,15 @@ namespace Asaki.Tests.Pooling
                 .CreatePoolAsync<TestPoolObject>("Pool2", factory)
                 .ToCoroutine();
 
+            // 在 Dispose 前验证池存在
+            Assert.IsTrue(_poolService.HasPool("Pool1"));
+            Assert.IsTrue(_poolService.HasPool("Pool2"));
+
             // Act
             _poolService.Dispose();
 
-            // Assert
-            Assert.IsFalse(_poolService.HasPool("Pool1"));
-            Assert.IsFalse(_poolService.HasPool("Pool2"));
+            // Assert - 服务释放后访问 HasPool 应该抛出 ObjectDisposedException
+            Assert.Throws<ObjectDisposedException>(() => _poolService.HasPool("Pool1"));
 
             yield return null;
         }
@@ -679,20 +714,23 @@ namespace Asaki.Tests.Pooling
             Assert.Throws<ObjectDisposedException>(() => _poolService.GetStatisticsSummary());
         }
 
-        [Test]
+        [UnityTest]
         [Category("Unit")]
         [Description("测试释放后异步创建池抛出异常")]
-        public void CreatePoolAsync_AfterDispose_ThrowsObjectDisposedException()
+        public IEnumerator CreatePoolAsync_AfterDispose_ThrowsObjectDisposedException()
         {
             // Arrange
             _poolService.Dispose();
             var factory = new TestObjectFactory();
 
-            // Act & Assert
-            Assert.Throws<ObjectDisposedException>(() =>
-            {
-                _poolService.CreatePoolAsync<TestPoolObject>("TestPool", factory).Forget();
-            });
+            // Act & Assert - 使用 ToCoroutine 来捕获异步异常
+            var task = _poolService.CreatePoolAsync<TestPoolObject>("TestPool", factory);
+            Exception capturedException = null;
+
+            yield return task.ToCoroutine(_ => { }, ex => capturedException = ex);
+
+            Assert.IsNotNull(capturedException, "Expected exception was not thrown");
+            Assert.IsInstanceOf<ObjectDisposedException>(capturedException);
         }
 
         #endregion

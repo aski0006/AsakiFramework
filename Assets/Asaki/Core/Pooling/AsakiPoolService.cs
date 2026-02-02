@@ -25,7 +25,8 @@ namespace Asaki.Core.Pooling
 
         public AsakiPoolService(IAsakiSimulationService simulationService)
         {
-            _simulationService = simulationService;
+            _simulationService =
+                simulationService ?? throw new ArgumentNullException(nameof(simulationService));
             _simulationService.Register(this);
         }
 
@@ -43,10 +44,14 @@ namespace Asaki.Core.Pooling
             ThrowIfDisposed();
 
             if (string.IsNullOrEmpty(key))
+            {
                 throw new ArgumentException("Key cannot be null or empty", nameof(key));
+            }
 
             if (factory == null)
+            {
                 throw new ArgumentNullException(nameof(factory));
+            }
 
             if (_pools.ContainsKey(key))
             {
@@ -310,7 +315,9 @@ namespace Asaki.Core.Pooling
         private void ThrowIfDisposed()
         {
             if (_isDisposed)
+            {
                 throw new ObjectDisposedException("AsakiPoolService has been disposed");
+            }
         }
     }
 }
