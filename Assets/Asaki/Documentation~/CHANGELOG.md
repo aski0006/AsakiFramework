@@ -55,7 +55,7 @@
 ### 依赖
 
 #### 必须安装
-- **Unity** 2022.3 LTS+ 
+- **Unity** 2022.3 LTS+
 - **UniTask** 2.9.0+ - 高性能异步任务库
 - **TextMeshPro (TMP)** 3.0.0+ - Unity 官方文本渲染解决方案
 
@@ -66,6 +66,27 @@
 - Burst 1.8.0+
 - Collections 2.1.0+
 - Mathematics 1.2.0+
+
+## [1.1.2] - 2026-02-02
+
+### Fixed
+- 修复 AsakiMono XML 文档注释
+- 优化代码结构
+
+## [1.1.1] - 2026-02-02
+
+### Added
+- 添加 AsakiMono 基类提供 Unity 组件基础功能
+- 添加定时器服务文档并扩展接口功能
+
+### Changed
+- 优化 TimeService 接口功能
+
+## [1.1.0] - 2026-02-02
+
+### Added
+- 新增架构文档
+- 完善框架文档系统
 
 ---
 
