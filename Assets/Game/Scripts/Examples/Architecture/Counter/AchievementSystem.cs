@@ -14,11 +14,13 @@ namespace Game.Scripts.Examples.Architecture.Counter
         private IDisposable _subscription;
         private bool _isUnlocked;
         private int _changedCount;
+
         public AchievementSystem(CounterModel model, IAsakiAudioService audioService)
         {
             _model = model;
             _audioService = audioService;
         }
+
         public void Setup()
         {
             _subscription = _model.count.Subscribe(OnCountChanged);
