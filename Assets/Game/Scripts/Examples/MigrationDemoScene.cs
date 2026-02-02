@@ -92,9 +92,9 @@ namespace Game.Test.Migration
 
             ALog.Info(
                 $"[Demo] Migrated Data (V3): Name={migratedData.CharacterName}, "
-                + $"Level={migratedData.Level}, "
-                + $"Experience={migratedData.Experience}, "
-                + $"Skills Count={migratedData.Skills?.Count ?? 0}"
+                    + $"Level={migratedData.Level}, "
+                    + $"Experience={migratedData.Experience}, "
+                    + $"Skills Count={migratedData.Skills?.Count ?? 0}"
             );
 
             // 验证迁移结果
@@ -108,10 +108,7 @@ namespace Game.Test.Migration
         /// </summary>
         private CharacterDataV1Compat CreateV1CharacterData()
         {
-            return new CharacterDataV1Compat
-            {
-                CharacterName = "Hero", Level = 10
-            };
+            return new CharacterDataV1Compat { CharacterName = "Hero", Level = 10 };
         }
 
         /// <summary>
@@ -139,7 +136,8 @@ namespace Game.Test.Migration
             // 转换V1数据到V3结构（手动复制共同字段）
             var v3Data = new CharacterDataV3
             {
-                CharacterName = v1Data.CharacterName, Level = v1Data.Level,
+                CharacterName = v1Data.CharacterName,
+                Level = v1Data.Level,
             };
 
             // 应用迁移链

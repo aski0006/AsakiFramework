@@ -6,7 +6,7 @@ using Asaki.Core.Simulation;
 
 namespace Asaki.Core.Time
 {
-    public interface IAsakiTimerService :IAsakiService, IAsakiTickable, IDisposable
+    public interface IAsakiTimerService : IAsakiService, IAsakiTickable, IDisposable
     {
         /// <summary>
         /// 注册一个定时器
