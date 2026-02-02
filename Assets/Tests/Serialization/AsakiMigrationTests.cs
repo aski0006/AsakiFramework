@@ -1,10 +1,10 @@
-using NUnit.Framework;
+using System.Collections.Generic;
+using System.IO;
 using Asaki.Core.Serialization;
 using Asaki.Core.Serialization.Migration;
-using System.IO;
-using System.Collections.Generic;
+using NUnit.Framework;
 
-namespace Tests.Serialization
+namespace Asaki.Tests.Serialization
 {
     /// <summary>
     /// 数据版本控制与迁移系统的单元测试

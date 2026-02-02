@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4738960013403623580}
   - component: {fileID: 45745000048266534}
-  - component: {fileID: 3376595807186175560}
+  - component: {fileID: 2523478430081963427}
   m_Layer: 0
   m_Name: AsakiSourceAgent
   m_TagString: Untagged
@@ -130,7 +130,7 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!114 &3376595807186175560
+--- !u!114 &2523478430081963427
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -139,6 +139,6 @@ MonoBehaviour:
   m_GameObject: {fileID: 7104767696421606818}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e04febada675439eb6eed60095f8c38d, type: 3}
+  m_Script: {fileID: 11500000, guid: 8ab1fd91bd784182afb9ea875dfda09f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 

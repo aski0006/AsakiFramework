@@ -166,6 +166,9 @@ Temporary Items
 # 其他
 # ========================
 
+# GitHub Issues 本地同步
+/Issues/
+
 # 日志文件
 *.log
 *.log.meta

@@ -1,7 +1,7 @@
+using System.Collections.Generic;
 using Asaki.Core.Attributes;
 using Asaki.Core.Serialization;
 using Asaki.Core.Serialization.Migration;
-using System.Collections.Generic;
 
 namespace Game.Test.Migration
 {
@@ -22,8 +22,6 @@ namespace Game.Test.Migration
 
         [AsakiSaveMember(Order = 3)]
         public int Experience;
-
-        public int GetDataVersion() => 1;
     }
 
     /// <summary>
@@ -47,8 +45,6 @@ namespace Game.Test.Migration
 
         [AsakiSaveMember(Order = 4)]
         public int Gold; // 新增字段
-
-        public int GetDataVersion() => 2;
     }
 
     /// <summary>
@@ -75,8 +71,6 @@ namespace Game.Test.Migration
 
         [AsakiSaveMember(Order = 5)]
         public List<string> Equipment = new List<string>(); // 新增字段
-
-        public int GetDataVersion() => 3;
     }
 
     /// <summary>

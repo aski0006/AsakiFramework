@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Asaki.Core.Context;
 
 namespace Asaki.Core.Serialization.Migration
 {
@@ -9,7 +10,7 @@ namespace Asaki.Core.Serialization.Migration
     /// 迁移注册表维护了所有类型的所有版本迁移路径。
     /// 它负责查找和执行从一个版本到另一个版本所需的迁移链。
     /// </remarks>
-    public interface IAsakiMigrationRegistry
+    public interface IAsakiMigrationRegistry : IAsakiService
     {
         /// <summary>
         /// 注册一个迁移。

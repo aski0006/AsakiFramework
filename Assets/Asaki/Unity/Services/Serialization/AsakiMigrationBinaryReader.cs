@@ -1,8 +1,8 @@
 using System;
 using System.IO;
+using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Core.Serialization.Migration;
-using Asaki.Core.Logging;
 
 namespace Asaki.Unity.Services.Serialization
 {
@@ -47,15 +47,10 @@ namespace Asaki.Unity.Services.Serialization
             {
                 // 创建临时对象以获取目标版本
                 var tempObj = new T();
-                int targetVersion =
-                    (tempObj as IAsakiVersionedSavable)?.GetDataVersion() ?? 1;
+                int targetVersion = (tempObj as IAsakiVersionedSavable)?.GetDataVersion() ?? 1;
 
                 // 如果版本不匹配且存在迁移注册表，尝试迁移
-                if (
-                    _versionRead
-                    && _readVersion != targetVersion
-                    && _migrationRegistry != null
-                )
+                if (_versionRead && _readVersion != targetVersion && _migrationRegistry != null)
                 {
                     return ReadObjectWithMigration<T>(
                         key,
@@ -92,7 +87,7 @@ namespace Asaki.Unity.Services.Serialization
 
             if (migrationPath == null || migrationPath.Count == 0)
             {
-                ALog.Warning(
+                ALog.Warn(
                     $"[AsakiMigration] No migration path found for {typeName} from v{dataVersion} to v{targetVersion}. "
                         + "Attempting to deserialize directly (may fail or produce incorrect data)."
                 );
@@ -141,40 +136,51 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error(
-                    $"[AsakiMigration] Migration failed for {typeName}: {ex.Message}",
-                    ex
-                );
+                ALog.Error($"[AsakiMigration] Migration failed for {typeName}: {ex.Message}", ex);
                 throw;
             }
         }
 
         // 委托所有其他方法到内部reader
-        public object ReadObject(string key, Type type) =>
-            _innerReader.ReadObject(key, type);
+        public object ReadObject(string key, Type type) => _innerReader.ReadObject(key, type);
+
         public byte ReadByte(string key) => _innerReader.ReadByte(key);
+
         public int ReadInt(string key) => _innerReader.ReadInt(key);
+
         public long ReadLong(string key) => _innerReader.ReadLong(key);
+
         public float ReadFloat(string key) => _innerReader.ReadFloat(key);
+
         public double ReadDouble(string key) => _innerReader.ReadDouble(key);
+
         public string ReadString(string key) => _innerReader.ReadString(key);
+
         public bool ReadBool(string key) => _innerReader.ReadBool(key);
+
         public uint ReadUInt(string key) => _innerReader.ReadUInt(key);
+
         public ulong ReadULong(string key) => _innerReader.ReadULong(key);
+
         public UnityEngine.Vector2Int ReadVector2Int(string key) =>
             _innerReader.ReadVector2Int(key);
+
         public UnityEngine.Vector3Int ReadVector3Int(string key) =>
             _innerReader.ReadVector3Int(key);
-        public UnityEngine.Vector2 ReadVector2(string key) =>
-            _innerReader.ReadVector2(key);
-        public UnityEngine.Vector3 ReadVector3(string key) =>
-            _innerReader.ReadVector3(key);
-        public UnityEngine.Vector4 ReadVector4(string key) =>
-            _innerReader.ReadVector4(key);
+
+        public UnityEngine.Vector2 ReadVector2(string key) => _innerReader.ReadVector2(key);
+
+        public UnityEngine.Vector3 ReadVector3(string key) => _innerReader.ReadVector3(key);
+
+        public UnityEngine.Vector4 ReadVector4(string key) => _innerReader.ReadVector4(key);
+
         public UnityEngine.Bounds ReadBounds(string key) => _innerReader.ReadBounds(key);
+
         public UnityEngine.Quaternion ReadQuaternion(string key) =>
             _innerReader.ReadQuaternion(key);
+
         public int BeginList(string key) => _innerReader.BeginList(key);
+
         public void EndList() => _innerReader.EndList();
     }
 }

@@ -26,7 +26,7 @@ namespace Asaki.Unity.Modules
             _registry = new AsakiMigrationRegistry();
 
             // 注册到全局上下文，使其他服务可以访问
-            AsakiContext.Register<IAsakiMigrationRegistry>(_registry);
+            AsakiContext.Register(_registry);
 
             // 自动发现并注册标记了 [AsakiMigration] 的迁移类
             AutoRegisterMigrations();
@@ -53,11 +53,13 @@ namespace Asaki.Unity.Modules
             // 注：这里可以实现自动发现逻辑，
             // 但由于Unity的反射限制和性能考虑，
             // 建议使用源生成器或手动注册。
-            
+
             // 可选：使用反射查找所有实现了IAsakiMigration的类
             // 并检查是否有[AsakiMigration]特性
-            
-            ALog.Info("[AsakiMigration] Auto-registration completed. Use AsakiContext.Get<IAsakiMigrationRegistry>().RegisterMigration() to manually register migrations.");
+
+            ALog.Info(
+                "[AsakiMigration] Auto-registration completed. Use AsakiContext.Get<IAsakiMigrationRegistry>().RegisterMigration() to manually register migrations."
+            );
         }
     }
 }

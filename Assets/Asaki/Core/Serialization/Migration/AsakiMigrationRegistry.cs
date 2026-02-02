@@ -110,7 +110,7 @@ namespace Asaki.Core.Serialization.Migration
                 }
             }
 
-            ALog.Warning(
+            ALog.Warn(
                 $"[AsakiMigration] No migration path found for {typeName} from v{fromVersion} to v{toVersion}"
             );
             return null; // 找不到路径
