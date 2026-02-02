@@ -29,7 +29,7 @@ namespace Game.Scripts.Examples.Architecture.Counter
             // 简单的测试：每 100 帧打印一次，证明 Tick 在运行
             if (UnityEngine.Time.frameCount % 100 == 0)
             {
-                UnityEngine.Debug.Log($"[System Heartbeat] Count is {_model.count.Value}");
+                ALog.Trace($"[System Heartbeat] Count is {_model.count.Value}");
             }
         }
 

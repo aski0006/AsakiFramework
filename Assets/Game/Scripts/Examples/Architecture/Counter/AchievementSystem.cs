@@ -1,13 +1,9 @@
 ﻿using System;
-using System.Collections;
 using Asaki.Core.Architecture;
 using Asaki.Core.Audio;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
-using Asaki.Generated;
-using Cysharp.Threading.Tasks;
 using Game.Scripts.Examples.Architecture.Counter.Events;
-using UnityEngine;
 
 namespace Game.Scripts.Examples.Architecture.Counter
 {
@@ -16,14 +12,13 @@ namespace Game.Scripts.Examples.Architecture.Counter
         private readonly CounterModel _model;
         private readonly IAsakiAudioService _audioService; // 引用全局音频服务
         private IDisposable _subscription;
-        private bool _isUnlocked = false;
-
+        private bool _isUnlocked;
+        private int _changedCount;
         public AchievementSystem(CounterModel model, IAsakiAudioService audioService)
         {
             _model = model;
             _audioService = audioService;
         }
-
         public void Setup()
         {
             _subscription = _model.count.Subscribe(OnCountChanged);
@@ -33,11 +28,12 @@ namespace Game.Scripts.Examples.Architecture.Counter
         {
             if (!_isUnlocked && count >= 5)
             {
-                Unlock("Click Master").Forget();
+                Unlock("Click Master");
             }
+            _changedCount++;
         }
 
-        private async UniTaskVoid Unlock(string name)
+        private void Unlock(string name)
         {
             _isUnlocked = true;
             ALog.Info($"[AchievementSystem] UNLOCKED: {name}");

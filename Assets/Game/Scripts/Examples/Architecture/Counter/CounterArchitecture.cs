@@ -10,7 +10,7 @@ namespace Game.Scripts.Examples.Architecture.Counter
         protected override void OnSetup()
         {
             Resolver.TryGet(out IAsakiAudioService audioService);
-            var model = new CounterModel();
+            CounterModel model = new CounterModel();
             RegisterModel(model);
             RegisterSystem(new CounterSystem(model));
             RegisterSystem(new AchievementSystem(model, audioService));
