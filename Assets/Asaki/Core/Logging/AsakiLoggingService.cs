@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Asaki.Core.Configs;
 using UnityEngine;
 
@@ -74,8 +74,8 @@ namespace Asaki.Core.Logging
         /// <summary>当前最小日志级别，低于此级别的日志将被静默丢弃</summary>
         private AsakiLogLevel _minLevel = AsakiLogLevel.Debug;
 
-        /// <summary>释放标记，确保 <see cref="Dispose"/> 逻辑仅执行一次</summary>
-        private bool _isDisposed;
+        /// <summary>释放标记，确保 <see cref="Dispose"/> 逻辑仅执行一次。使用volatile确保多线程可见性</summary>
+        private volatile bool _isDisposed;
 
         /// <summary>
         /// 初始化 <see cref="AsakiLoggingService"/> 的新实例，并自动启动日志系统
@@ -257,6 +257,7 @@ namespace Asaki.Core.Logging
             }
 
             _writer?.Dispose();
+            Aggregator.Dispose();
             Aggregator.Clear();
         }
 

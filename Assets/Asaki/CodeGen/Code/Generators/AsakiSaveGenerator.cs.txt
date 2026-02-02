@@ -60,6 +60,9 @@ namespace Asaki.CodeGen.Generators
 			string typeName = symbol.Name;
 			string kind = symbol.IsValueType ? "struct" : "class";
 			
+			// 获取版本号
+			int version = GetVersion(symbol);
+			
 			// 获取所有标记了 [AsakiSaveMember] 的成员
 			var members = GetSaveMembers(symbol);
 
@@ -98,16 +101,23 @@ namespace Asaki.CodeGen.Generators
 				GenerateConfigProtection(sb, typeName);
 			}
 
-			// 2. 生成 Serialize 方法
+			// 2. 生成版本号属性 (如果实现了IAsakiVersionedSavable)
+			bool implementsVersioned = ImplementsIAsakiVersionedSavable(symbol, compilation);
+			if (implementsVersioned)
+			{
+				GenerateVersionMethod(sb, version);
+			}
+
+			// 3. 生成 Serialize 方法
 			GenerateSerializeMethod(sb, typeName, members, isConfigType, compilation);
 
-			// 3. 生成 Deserialize 方法
+			// 4. 生成 Deserialize 方法
 			GenerateDeserializeMethod(sb, members, compilation);
 
-			// 4. [新增] 生成 Clone 方法 (解决 Get 返回引用问题的核心)
+			// 5. [新增] 生成 Clone 方法 (解决 Get 返回引用问题的核心)
 			GenerateCloneMethod(sb, typeName, members, compilation, isConfigType);
 
-			// 5. 生成引用解析 (Config Link)
+			// 6. 生成引用解析 (Config Link)
 			if (members.Any(m => IsConfigReferenceMember(m, compilation)))
 			{
 				GenerateResolveMethod(sb, members, compilation);
@@ -141,6 +151,13 @@ namespace Asaki.CodeGen.Generators
 			sb.AppendLine($"                Debug.LogError($\"[AsakiSave] Security Alert: Invalid permission key '{{permissionKey}}' provided for config '{typeName}'. Serialization remains locked.\");");
 			sb.AppendLine("            }");
 			sb.AppendLine("        }");
+			sb.AppendLine();
+		}
+
+		private static void GenerateVersionMethod(StringBuilder sb, int version)
+		{
+			sb.AppendLine("        // [AsakiVersioned]");
+			sb.AppendLine($"        public int GetDataVersion() => {version};");
 			sb.AppendLine();
 		}
 
@@ -516,6 +533,45 @@ namespace Asaki.CodeGen.Generators
 				                    ad.AttributeClass?.Name == "AsakiSaveMemberAttribute" ||
 				                    ad.AttributeClass?.Name == "AsakiSaveMember"))
 			        .ToList();
+		}
+		
+		private static int GetVersion(INamedTypeSymbol symbol)
+		{
+			var attr = symbol.GetAttributes().FirstOrDefault(ad =>
+				ad.AttributeClass?.Name == "AsakiSaveAttribute" ||
+				ad.AttributeClass?.Name == "AsakiSave");
+			
+			if (attr == null) return 1; // 默认版本1
+			
+			// 检查构造函数参数
+			if (attr.ConstructorArguments.Length > 0)
+			{
+				if (attr.ConstructorArguments[0].Value is int version)
+					return version;
+			}
+			
+			// 检查命名参数
+			foreach (var arg in attr.NamedArguments)
+			{
+				if (string.Equals(arg.Key, "Version", StringComparison.OrdinalIgnoreCase))
+				{
+					if (arg.Value.Value is int v) return v;
+				}
+			}
+			
+			return 1; // 默认版本1
+		}
+		
+		private static bool ImplementsIAsakiVersionedSavable(ITypeSymbol typeSymbol, Compilation compilation)
+		{
+			if (typeSymbol == null) return false;
+			
+			// 查找 IAsakiVersionedSavable 接口符号
+			var versionedInterface = compilation.GetTypeByMetadataName("Asaki.Core.Serialization.IAsakiVersionedSavable");
+			if (versionedInterface == null) return false;
+
+			// 检查接口实现 (包括基类)
+			return typeSymbol.AllInterfaces.Any(i => SymbolEqualityComparer.Default.Equals(i, versionedInterface));
 		}
 		
 		private static string GetWriteMethod(ITypeSymbol t)

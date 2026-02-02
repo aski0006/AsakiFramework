@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using Asaki.Core.Pooling.Interfaces;
 
 namespace Asaki.Core.Pooling
@@ -31,11 +31,10 @@ namespace Asaki.Core.Pooling
         public void IncrementCreated()
         {
             Interlocked.Increment(ref _totalCreated);
-            Interlocked.Increment(ref _inactiveCount);
         }
 
         /// <summary>
-        /// 增加销毁计数
+        /// 增加销毁计数（销毁非活动对象）
         /// 线程安全，确保非活动计数不会低于0
         /// </summary>
         public void IncrementDestroyed()
@@ -54,23 +53,48 @@ namespace Asaki.Core.Pooling
         }
 
         /// <summary>
-        /// 增加获取计数
-        /// 线程安全
+        /// 增加销毁计数（销毁活动对象，如池满时）
+        /// 线程安全，确保活动计数不会低于0
         /// </summary>
-        public void IncrementGet()
+        public void IncrementDestroyedFromActive()
         {
-            Interlocked.Increment(ref _getCallCount);
-            Interlocked.Increment(ref _activeCount);
-            // 使用循环确保非活动计数不会低于0
+            Interlocked.Increment(ref _totalDestroyed);
+            // 使用循环确保活动计数不会低于0
             int current;
             do
             {
-                current = _inactiveCount;
+                current = _activeCount;
                 if (current <= 0)
                     break;
             } while (
-                Interlocked.CompareExchange(ref _inactiveCount, current - 1, current) != current
+                Interlocked.CompareExchange(ref _activeCount, current - 1, current) != current
             );
+        }
+
+        /// <summary>
+        /// 增加获取计数
+        /// 线程安全
+        /// </summary>
+        /// <param name="fromPool">是否从池中获取（true=从池获取，false=新创建）</param>
+        public void IncrementGet(bool fromPool)
+        {
+            Interlocked.Increment(ref _getCallCount);
+            Interlocked.Increment(ref _activeCount);
+
+            // 只有从池中获取时才减少非活动计数
+            if (fromPool)
+            {
+                // 使用循环确保非活动计数不会低于0
+                int current;
+                do
+                {
+                    current = _inactiveCount;
+                    if (current <= 0)
+                        break;
+                } while (
+                    Interlocked.CompareExchange(ref _inactiveCount, current - 1, current) != current
+                );
+            }
         }
 
         /// <summary>

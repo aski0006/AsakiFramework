@@ -23,6 +23,9 @@
 # 日志文件夹
 /[Ll]ogs/
 
+# 测试结果文件夹
+/[Tt]est[Rr]esults/
+
 # 用户设置文件夹
 /[Uu]ser[Ss]ettings/
 

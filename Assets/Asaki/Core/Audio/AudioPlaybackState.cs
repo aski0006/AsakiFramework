@@ -28,6 +28,6 @@
         Stopped = 6,
 
         /// <summary>发生错误</summary>
-        Error = 7
+        Error = 7,
     }
 }

@@ -25,13 +25,14 @@
         public int ErrorCount;
 
         /// <summary>总活跃音频数量</summary>
-        public int TotalActive => LoadingCount + ReadyCount + PlayingCount + PausedCount + FadingOutCount + ErrorCount;
+        public int TotalActive =>
+            LoadingCount + ReadyCount + PlayingCount + PausedCount + FadingOutCount + ErrorCount;
 
         /// <summary>获取统计信息的字符串表示</summary>
         public override string ToString()
         {
-            return $"Audio States: [Loading: {LoadingCount}, Ready: {ReadyCount}, Playing: {PlayingCount}, " +
-                   $"Paused: {PausedCount}, FadingOut: {FadingOutCount}, Error: {ErrorCount}, Total: {TotalActive}]";
+            return $"Audio States: [Loading: {LoadingCount}, Ready: {ReadyCount}, Playing: {PlayingCount}, "
+                + $"Paused: {PausedCount}, FadingOut: {FadingOutCount}, Error: {ErrorCount}, Total: {TotalActive}]";
         }
     }
 }
