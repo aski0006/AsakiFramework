@@ -4,7 +4,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Core.Serialization.Migration;
-using Asaki.Unity.Services.Async;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Game.Test.Migration
@@ -25,7 +25,7 @@ namespace Game.Test.Migration
             RunMigrationDemo().Forget();
         }
 
-        private async AsakiTaskVoid RunMigrationDemo()
+        private async UniTaskVoid RunMigrationDemo()
         {
             ALog.Info("=== Asaki Migration Demo Started ===");
 
@@ -57,7 +57,7 @@ namespace Game.Test.Migration
         /// <summary>
         /// 演示版本升级流程
         /// </summary>
-        private async AsakiTaskVoid DemoVersionUpgrade()
+        private async UniTaskVoid DemoVersionUpgrade()
         {
             ALog.Info("\n[Demo] Starting version upgrade demonstration...");
 
@@ -112,7 +112,7 @@ namespace Game.Test.Migration
         /// <summary>
         /// 模拟迁移链的执行
         /// </summary>
-        private async AsakiTaskVoid<CharacterDataV3> SimulateMigrationChain(
+        private async UniTask<CharacterDataV3> SimulateMigrationChain(
             CharacterDataV1Compat v1Data
         )
         {
@@ -155,7 +155,7 @@ namespace Game.Test.Migration
                 }
             }
 
-            await AsakiTaskVoid.Yield();
+            await UniTask.Yield();
             return v3Data;
         }
 

@@ -5,7 +5,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Context;
 using Asaki.Core.Reactive;
 using Asaki.Core.Serialization;
-using Asaki.Unity.Services.Async;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 namespace Game.Test
@@ -46,7 +46,7 @@ namespace Game.Test
             TestSave().Forget();
         }
 
-        private async AsakiTaskVoid TestSave()
+        private async UniTaskVoid TestSave()
         {
             asakiSaveExampleModel = new AsakiSaveExampleModel();
             meta = new GameSlotMeta();
