@@ -25,6 +25,7 @@ namespace Asaki.Unity.Modules
         {
             _asakiTimerService = new AsakiTimerService();
             _simulation.Register(_asakiTimerService);
+            AsakiContext.Register<IAsakiTimerService>(_asakiTimerService);
         }
 
         public UniTask OnInitAsync()
