@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Asaki.Core.Broker;
 using Asaki.Core.Configs;
 using Asaki.Core.Context;
@@ -12,7 +11,7 @@ using AsakiBroker = Asaki.Core.Broker.AsakiBroker;
 
 namespace Asaki.Unity.Bootstrapper
 {
-    public struct FrameworkReadyEvent : IAsakiEvent { }
+    public struct OnAsakiFrameworkReadyEvent : IAsakiEvent { }
 
     [DefaultExecutionOrder(-9999)]
     public class AsakiBootstrapper : MonoBehaviour
@@ -102,7 +101,7 @@ namespace Asaki.Unity.Bootstrapper
                 InjectCurrentScene();
 
                 ALog.Info("Broadcasting ready event...");
-                AsakiBroker.Publish(new FrameworkReadyEvent());
+                AsakiBroker.Publish(new OnAsakiFrameworkReadyEvent());
 
                 ALog.Info("=======================================");
                 ALog.Info("== ASAKI FRAMEWORK READY ==");

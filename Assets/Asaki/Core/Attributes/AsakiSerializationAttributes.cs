@@ -9,7 +9,7 @@ namespace Asaki.Core.Attributes
     public class AsakiSaveAttribute : Attribute
     {
         // 用于版本控制，防止坏档
-        public int Version { get; }
+        public int Version { get; set; }
 
         public AsakiSaveAttribute(int version = 1)
         {

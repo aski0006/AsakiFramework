@@ -60,7 +60,8 @@ namespace Asaki.Tests.Pooling
             CreateCallCount++;
             var obj = new TestPoolObject
             {
-                Id = Interlocked.Increment(ref _counter), Name = $"Object_{_counter}",
+                Id = Interlocked.Increment(ref _counter),
+                Name = $"Object_{_counter}",
             };
             return UniTask.FromResult(obj);
         }
@@ -75,7 +76,8 @@ namespace Asaki.Tests.Pooling
             CreateCallCount++;
             return new TestPoolObject
             {
-                Id = Interlocked.Increment(ref _counter), Name = $"Object_{_counter}",
+                Id = Interlocked.Increment(ref _counter),
+                Name = $"Object_{_counter}",
             };
         }
 
@@ -438,10 +440,7 @@ namespace Asaki.Tests.Pooling
         {
             // Arrange
             var pool = new AsakiGenericPool<TestPoolObject>("TestPool", _factory, _config);
-            TestPoolObject externalObj = new TestPoolObject
-            {
-                Id = 999
-            };
+            TestPoolObject externalObj = new TestPoolObject { Id = 999 };
 
             // Act
             bool result = pool.Return(externalObj);

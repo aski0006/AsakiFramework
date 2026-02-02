@@ -54,7 +54,11 @@ namespace Asaki.Tests.Pooling
 
             // Assert
             Assert.AreEqual(1, _statistics.TotalCreated, "总创建数应为1");
-            Assert.AreEqual(0, _statistics.InactiveCount, "非活动对象数应保持0（需单独调用AdjustInactive）");
+            Assert.AreEqual(
+                0,
+                _statistics.InactiveCount,
+                "非活动对象数应保持0（需单独调用AdjustInactive）"
+            );
             Assert.AreEqual(0, _statistics.ActiveCount, "活动对象数应保持0");
 
             yield return null;
@@ -73,7 +77,11 @@ namespace Asaki.Tests.Pooling
 
             // Assert
             Assert.AreEqual(10, _statistics.TotalCreated, "总创建数应为10");
-            Assert.AreEqual(0, _statistics.InactiveCount, "非活动对象数应保持0（需单独调用AdjustInactive）");
+            Assert.AreEqual(
+                0,
+                _statistics.InactiveCount,
+                "非活动对象数应保持0（需单独调用AdjustInactive）"
+            );
 
             yield return null;
         }
