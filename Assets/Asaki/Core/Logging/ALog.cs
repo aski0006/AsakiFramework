@@ -60,8 +60,12 @@ namespace Asaki.Core.Logging
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (_cachedService != null || AsakiContext.TryGet(out _cachedService))
-                    return _cachedService;
+                IAsakiLoggingService cached = _cachedService;
+                if (cached != null || AsakiContext.TryGet(out cached))
+                {
+                    _cachedService = cached;
+                    return cached;
+                }
 
                 return null;
             }

@@ -242,7 +242,9 @@ namespace Asaki.Unity.Services.SafeCoroutine
         private readonly List<string> _completedCoroutines = new List<string>();
         private SafeCoroutineExceptionHandler _globalExceptionHandler;
         private int _coroutineIdCounter = 0;
+#pragma warning disable CS0414
         private bool _isQuitting = false;
+#pragma warning restore CS0414
 
         /// <summary>
         /// 获取实例 - 从AsakiContext获取（由Bootstrapper注册）

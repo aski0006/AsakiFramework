@@ -37,7 +37,9 @@ namespace Asaki.Unity.Bootstrapper
         [Header("Performance")]
         [Tooltip("每帧最大注入数量，0表示无限制")]
         [SerializeField]
+#pragma warning disable CS0414
         private int _maxInjectionsPerFrame = 0;
+#pragma warning restore CS0414
 
         private static AsakiBootstrapper _instance;
         private IAsakiLoggingService _logService;
