@@ -67,6 +67,29 @@
 - Collections 2.1.0+
 - Mathematics 1.2.0+
 
+## [1.2.0] - 2026-02-04
+
+### Added
+- **实体组件系统 (ECS)** - 基于魔法容器的高性能实体组件系统
+  - `EntityWorld` - 实体世界管理器，管理所有实体生命周期
+  - `Entity` - 实体基础实现，支持组件的动态添加/移除
+  - `IEntityComponent` - 组件接口，所有组件需实现此接口
+  - `EntityId` - 实体唯一标识符，支持空值检查
+  - `MagicContainer<T>` - 高性能魔法容器数据结构，O(1) 读写性能
+  - 完整的命令模式集成：
+    - `CreateEntityCommand` - 创建实体命令
+    - `DestroyEntityCommand` - 销毁实体命令
+    - `AddComponentCommand` - 添加组件命令
+    - `RemoveComponentCommand` - 移除组件命令
+  - 实体事件系统：`EntityCreatedEvent`, `EntityDestroyedEvent`, `ComponentAddedEvent`, `ComponentRemovedEvent`
+  - 与响应式架构的深度集成：`EntityArchitectureExtensions`
+  - 完整的单元测试覆盖（7个测试类，全面覆盖核心功能）
+- 实体系统示例代码和详细文档
+
+### Changed
+- 优化架构系统性能
+- 改进模块生命周期管理
+
 ## [1.1.2] - 2026-02-02
 
 ### Fixed
