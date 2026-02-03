@@ -76,7 +76,7 @@ namespace Game.Scripts.Examples
             {
                 ALog.Trace($"高频追踪消息 #{i}", new { Index = i, Time = Time.time });
             }
-            
+
             ALog.Info("已发送 100 条高频追踪消息，检查 Unity 控制台和 Dashboard");
         }
 
@@ -87,17 +87,17 @@ namespace Game.Scripts.Examples
             GUILayout.Label("请查看 Unity Console (Ctrl+Shift+C)");
             GUILayout.Label("双击日志行可跳转到代码位置");
             GUILayout.Space(10);
-            
+
             if (GUILayout.Button("触发异常测试"))
             {
                 TestException();
             }
-            
+
             if (GUILayout.Button("触发高频日志测试"))
             {
                 TestHighFrequency();
             }
-            
+
             GUILayout.EndArea();
         }
     }

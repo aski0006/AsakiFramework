@@ -97,11 +97,13 @@ namespace Asaki.Tests.Timer
             // Act - 创建一批计时器
             for (int i = 0; i < 10; i++)
             {
-                handles.Add(TimerService.Register(
-                    1.0f,
-                    tracker.GetCompleteAction(i),
-                    tag: i % 2 == 0 ? "Even" : "Odd"
-                ));
+                handles.Add(
+                    TimerService.Register(
+                        1.0f,
+                        tracker.GetCompleteAction(i),
+                        tag: i % 2 == 0 ? "Even" : "Odd"
+                    )
+                );
             }
 
             // 混合操作
@@ -130,12 +132,15 @@ namespace Asaki.Tests.Timer
             bool firstCompleted = false;
             bool secondCompleted = false;
 
-            AsakiTimerHandle handle1 = TimerService.Register(0.3f, () =>
-            {
-                firstCompleted = true;
-                // 在回调中创建新计时器
-                TimerService.Register(0.3f, () => secondCompleted = true);
-            });
+            AsakiTimerHandle handle1 = TimerService.Register(
+                0.3f,
+                () =>
+                {
+                    firstCompleted = true;
+                    // 在回调中创建新计时器
+                    TimerService.Register(0.3f, () => secondCompleted = true);
+                }
+            );
 
             // Act
             yield return WaitForSeconds(0.4f);
@@ -173,7 +178,11 @@ namespace Asaki.Tests.Timer
             // Assert
             foreach (var tag in tags)
             {
-                Assert.AreEqual(timersPerTag, TimerService.GetTimerCountByTag(tag), $"{tag}标签应有{timersPerTag}个计时器");
+                Assert.AreEqual(
+                    timersPerTag,
+                    TimerService.GetTimerCountByTag(tag),
+                    $"{tag}标签应有{timersPerTag}个计时器"
+                );
             }
             Assert.AreEqual(tags.Length * timersPerTag, TimerService.GetActiveTimerCount());
         }
@@ -228,7 +237,11 @@ namespace Asaki.Tests.Timer
             stopwatch.Stop();
 
             // Assert - 100帧应在1秒内完成
-            Assert.Less(stopwatch.ElapsedMilliseconds, 1000, $"处理{count}个计时器的100帧应在1秒内完成");
+            Assert.Less(
+                stopwatch.ElapsedMilliseconds,
+                1000,
+                $"处理{count}个计时器的100帧应在1秒内完成"
+            );
         }
 
         [Test]
@@ -284,7 +297,10 @@ namespace Asaki.Tests.Timer
             // Arrange
             var handles = new List<AsakiTimerHandle>();
             bool firstCompleted = false;
+
+#pragma warning disable CS0219 // 变量已被赋值，但从未使用过它的值
             bool othersCancelled = true;
+#pragma warning restore CS0219 // 变量已被赋值，但从未使用过它的值
 
             // 创建多个计时器
             for (int i = 0; i < 5; i++)
@@ -294,14 +310,17 @@ namespace Asaki.Tests.Timer
 
             // 第一个计时器完成后取消其他
             TimerService.Cancel(handles[0]);
-            handles[0] = TimerService.Register(0.3f, () =>
-            {
-                firstCompleted = true;
-                for (int i = 1; i < handles.Count; i++)
+            handles[0] = TimerService.Register(
+                0.3f,
+                () =>
                 {
-                    TimerService.Cancel(handles[i]);
+                    firstCompleted = true;
+                    for (int i = 1; i < handles.Count; i++)
+                    {
+                        TimerService.Cancel(handles[i]);
+                    }
                 }
-            });
+            );
 
             // Act
             yield return WaitForSeconds(0.6f);

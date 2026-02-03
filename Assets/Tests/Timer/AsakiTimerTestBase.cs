@@ -70,7 +70,11 @@ namespace Asaki.Tests.Timer
         protected void AssertValidHandle(AsakiTimerHandle handle)
         {
             Assert.AreNotEqual(0, handle.Id, "Timer handle ID should not be zero");
-            Assert.AreNotEqual(AsakiTimerHandle.Invalid, handle, "Timer handle should not be invalid");
+            Assert.AreNotEqual(
+                AsakiTimerHandle.Invalid,
+                handle,
+                "Timer handle should not be invalid"
+            );
         }
 
         /// <summary>
@@ -119,6 +123,7 @@ namespace Asaki.Tests.Timer
         }
 
         public Action GetCompleteAction() => OnComplete;
+
         public Action<float> GetUpdateAction() => OnUpdate;
     }
 

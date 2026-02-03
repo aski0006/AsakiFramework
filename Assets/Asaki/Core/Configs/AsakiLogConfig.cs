@@ -39,7 +39,7 @@ namespace Asaki.Core.Configs
         [Tooltip("日志文件名前缀")]
         public string FilePrefix = "GameLog";
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         [Header("Editor Settings")]
         /// <summary>
         /// [仅编辑器] 是否同时输出到 Unity 控制台，默认值为 true。
@@ -55,6 +55,6 @@ namespace Asaki.Core.Configs
         [Tooltip("LogDashboard 刷新间隔 (秒)")]
         [Range(0.016f, 1f)]
         public float DashboardRefreshInterval = 0.05f;
-        #endif
+#endif
     }
 }

@@ -78,12 +78,21 @@ namespace Asaki.Editor.Debugging
                 RefreshTimerData();
             }
 
-            _autoRefresh = GUILayout.Toggle(_autoRefresh, "Auto Refresh", EditorStyles.toolbarButton, GUILayout.Width(80));
+            _autoRefresh = GUILayout.Toggle(
+                _autoRefresh,
+                "Auto Refresh",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(80)
+            );
 
             GUILayout.Space(10);
 
             EditorGUI.BeginChangeCheck();
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(150));
+            _searchFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                EditorStyles.toolbarSearchField,
+                GUILayout.Width(150)
+            );
             if (EditorGUI.EndChangeCheck())
             {
                 RefreshTimerData();
@@ -91,7 +100,11 @@ namespace Asaki.Editor.Debugging
 
             GUILayout.FlexibleSpace();
 
-            EditorGUILayout.LabelField($"Active: {_timerInfos.Count}", EditorStyles.toolbar, GUILayout.Width(80));
+            EditorGUILayout.LabelField(
+                $"Active: {_timerInfos.Count}",
+                EditorStyles.toolbar,
+                GUILayout.Width(80)
+            );
 
             EditorGUILayout.EndHorizontal();
         }
@@ -106,22 +119,35 @@ namespace Asaki.Editor.Debugging
 
             // 服务状态
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Timer Service Status:", EditorStyles.boldLabel, GUILayout.Width(130));
+            EditorGUILayout.LabelField(
+                "Timer Service Status:",
+                EditorStyles.boldLabel,
+                GUILayout.Width(130)
+            );
 
             if (_timerService == null)
             {
                 if (AsakiContext.TryGet(out _timerService))
                 {
-                    EditorGUILayout.LabelField("✅ Connected", new GUIStyle(EditorStyles.label) { normal = { textColor = Color.green } });
+                    EditorGUILayout.LabelField(
+                        "✅ Connected",
+                        new GUIStyle(EditorStyles.label) { normal = { textColor = Color.green } }
+                    );
                 }
                 else
                 {
-                    EditorGUILayout.LabelField("❌ Not Available", new GUIStyle(EditorStyles.label) { normal = { textColor = Color.red } });
+                    EditorGUILayout.LabelField(
+                        "❌ Not Available",
+                        new GUIStyle(EditorStyles.label) { normal = { textColor = Color.red } }
+                    );
                 }
             }
             else
             {
-                EditorGUILayout.LabelField("✅ Connected", new GUIStyle(EditorStyles.label) { normal = { textColor = Color.green } });
+                EditorGUILayout.LabelField(
+                    "✅ Connected",
+                    new GUIStyle(EditorStyles.label) { normal = { textColor = Color.green } }
+                );
             }
             EditorGUILayout.EndHorizontal();
 
@@ -147,7 +173,9 @@ namespace Asaki.Editor.Debugging
             GUI.backgroundColor = new Color(0.9f, 0.5f, 0.2f);
             if (GUILayout.Button("Cancel All", GUILayout.Width(80)))
             {
-                if (EditorUtility.DisplayDialog("Confirm", "Cancel all active timers?", "Yes", "No"))
+                if (
+                    EditorUtility.DisplayDialog("Confirm", "Cancel all active timers?", "Yes", "No")
+                )
                 {
                     _timerService?.CancelAll();
                 }
@@ -171,8 +199,16 @@ namespace Asaki.Editor.Debugging
 
             // 过滤器
             EditorGUILayout.BeginHorizontal();
-            _showPausedTimers = GUILayout.Toggle(_showPausedTimers, "Show Paused", GUILayout.Width(90));
-            _showCompletedTimers = GUILayout.Toggle(_showCompletedTimers, "Show Completed", GUILayout.Width(110));
+            _showPausedTimers = GUILayout.Toggle(
+                _showPausedTimers,
+                "Show Paused",
+                GUILayout.Width(90)
+            );
+            _showCompletedTimers = GUILayout.Toggle(
+                _showCompletedTimers,
+                "Show Completed",
+                GUILayout.Width(110)
+            );
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.EndVertical();
@@ -186,7 +222,10 @@ namespace Asaki.Editor.Debugging
         {
             if (_timerService == null)
             {
-                EditorGUILayout.HelpBox("Timer Service not available. Make sure the game is running and Bootstrapper has initialized.", MessageType.Warning);
+                EditorGUILayout.HelpBox(
+                    "Timer Service not available. Make sure the game is running and Bootstrapper has initialized.",
+                    MessageType.Warning
+                );
                 return;
             }
 
@@ -205,7 +244,10 @@ namespace Asaki.Editor.Debugging
 
             if (!groupedTimers.Any())
             {
-                EditorGUILayout.HelpBox("No active timers matching the current filters.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "No active timers matching the current filters.",
+                    MessageType.Info
+                );
             }
 
             EditorGUILayout.EndScrollView();
@@ -223,7 +265,12 @@ namespace Asaki.Editor.Debugging
             // 标签头部
             EditorGUILayout.BeginHorizontal();
 
-            _tagFoldouts[tag] = EditorGUILayout.Foldout(_tagFoldouts[tag], $"{tag} ({timers.Count})", true, EditorStyles.boldLabel);
+            _tagFoldouts[tag] = EditorGUILayout.Foldout(
+                _tagFoldouts[tag],
+                $"{tag} ({timers.Count})",
+                true,
+                EditorStyles.boldLabel
+            );
 
             GUILayout.FlexibleSpace();
 
@@ -265,7 +312,9 @@ namespace Asaki.Editor.Debugging
 
             // 状态指示器
             Rect statusRect = GUILayoutUtility.GetRect(12, 12, GUILayout.Width(12));
-            Color statusColor = timer.IsPaused ? Color.yellow : (timer.IsCompleted ? Color.green : Color.cyan);
+            Color statusColor = timer.IsPaused
+                ? Color.yellow
+                : (timer.IsCompleted ? Color.green : Color.cyan);
             EditorGUI.DrawRect(statusRect, statusColor);
 
             GUILayout.Space(5);
@@ -279,24 +328,37 @@ namespace Asaki.Editor.Debugging
             EditorGUI.ProgressBar(progressRect, timer.Progress, $"{timer.Progress * 100:F0}%");
 
             // 时间信息
-            EditorGUILayout.LabelField($"{timer.Elapsed:F2}s / {timer.Duration:F2}s", GUILayout.Width(100));
+            EditorGUILayout.LabelField(
+                $"{timer.Elapsed:F2}s / {timer.Duration:F2}s",
+                GUILayout.Width(100)
+            );
 
             // 属性标签
             if (timer.IsLooped)
             {
-                EditorGUILayout.LabelField("[Loop]", new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.green } }, GUILayout.Width(40));
+                EditorGUILayout.LabelField(
+                    "[Loop]",
+                    new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.green } },
+                    GUILayout.Width(40)
+                );
             }
             if (timer.UseUnscaledTime)
             {
-                EditorGUILayout.LabelField("[Unscaled]", new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.cyan } }, GUILayout.Width(55));
+                EditorGUILayout.LabelField(
+                    "[Unscaled]",
+                    new GUIStyle(EditorStyles.miniLabel) { normal = { textColor = Color.cyan } },
+                    GUILayout.Width(55)
+                );
             }
 
             GUILayout.FlexibleSpace();
 
             // 回调信息
             string callbackInfo = "";
-            if (timer.HasCompleteCallback) callbackInfo += "C";
-            if (timer.HasUpdateCallback) callbackInfo += "U";
+            if (timer.HasCompleteCallback)
+                callbackInfo += "C";
+            if (timer.HasUpdateCallback)
+                callbackInfo += "U";
             if (!string.IsNullOrEmpty(callbackInfo))
             {
                 EditorGUILayout.LabelField($"[{callbackInfo}]", GUILayout.Width(30));
@@ -354,9 +416,11 @@ namespace Asaki.Editor.Debugging
             if (!string.IsNullOrEmpty(_searchFilter))
             {
                 string search = _searchFilter.ToLower();
-                if (!timer.Tag.ToLower().Contains(search) &&
-                    !timer.Id.ToString().Contains(search) &&
-                    !timer.CallbackTargetType.ToLower().Contains(search))
+                if (
+                    !timer.Tag.ToLower().Contains(search)
+                    && !timer.Id.ToString().Contains(search)
+                    && !timer.CallbackTargetType.ToLower().Contains(search)
+                )
                 {
                     return false;
                 }

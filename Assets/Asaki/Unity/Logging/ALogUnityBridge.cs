@@ -61,7 +61,7 @@ namespace Asaki.Unity.Logging
             set => _isEnabled = value;
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         /// <summary>
         /// 编辑器下初始化并注册桥接器
         /// </summary>
@@ -71,7 +71,7 @@ namespace Asaki.Unity.Logging
             _instance = new ALogUnityBridge();
             ALogBridgeManager.RegisterBridge(_instance);
         }
-        #endif
+#endif
 
         /// <summary>
         /// 将日志转发到 Unity 控制台

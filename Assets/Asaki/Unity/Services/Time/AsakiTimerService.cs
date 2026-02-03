@@ -41,7 +41,6 @@ namespace Asaki.Unity.Services.Time
         private int _idCounter = 0;
         private bool _isDisposed = false;
         private bool _isTicking = false; // 标记是否正在 Tick 中
-
 #if UNITY_EDITOR
         private float _globalTimeScale = 1f;
 #endif
@@ -240,7 +239,8 @@ namespace Asaki.Unity.Services.Time
             Action<float> onUpdate = null,
             bool isLooped = false,
             bool useUnscaledTime = false,
-            string tag = "")
+            string tag = ""
+        )
         {
             if (_isDisposed)
                 return default(AsakiTimerHandle);
@@ -463,7 +463,10 @@ namespace Asaki.Unity.Services.Time
             _timers.RemoveAt(lastIndex);
 
             // 更新被删除计时器的标签索引
-            if (!string.IsNullOrEmpty(removed.Tag) && _taggedTimers.TryGetValue(removed.Tag, out var removedList))
+            if (
+                !string.IsNullOrEmpty(removed.Tag)
+                && _taggedTimers.TryGetValue(removed.Tag, out var removedList)
+            )
             {
                 removedList.Remove(index);
                 if (removedList.Count == 0)
@@ -500,21 +503,23 @@ namespace Asaki.Unity.Services.Time
             for (int i = 0; i < _timers.Count; i++)
             {
                 TimerData t = _timers[i];
-                infos.Add(new AsakiTimerDebugInfo
-                {
-                    Id = t.Id,
-                    Version = t.Version,
-                    Tag = t.Tag,
-                    Duration = t.Duration,
-                    Elapsed = t.Elapsed,
-                    Progress = t.Duration <= 0 ? 1f : Mathf.Clamp01(t.Elapsed / t.Duration),
-                    IsPaused = t.IsPaused,
-                    IsLooped = t.IsLooped,
-                    UseUnscaledTime = t.UseUnscaledTime,
-                    HasCompleteCallback = t.OnComplete != null,
-                    HasUpdateCallback = t.OnUpdate != null,
-                    CallbackTargetType = t.OnComplete?.Target?.GetType().Name ?? "None"
-                });
+                infos.Add(
+                    new AsakiTimerDebugInfo
+                    {
+                        Id = t.Id,
+                        Version = t.Version,
+                        Tag = t.Tag,
+                        Duration = t.Duration,
+                        Elapsed = t.Elapsed,
+                        Progress = t.Duration <= 0 ? 1f : Mathf.Clamp01(t.Elapsed / t.Duration),
+                        IsPaused = t.IsPaused,
+                        IsLooped = t.IsLooped,
+                        UseUnscaledTime = t.UseUnscaledTime,
+                        HasCompleteCallback = t.OnComplete != null,
+                        HasUpdateCallback = t.OnUpdate != null,
+                        CallbackTargetType = t.OnComplete?.Target?.GetType().Name ?? "None",
+                    }
+                );
             }
 
             return infos;

@@ -151,10 +151,12 @@ namespace Asaki.Core.Logging
         )
         {
             string pJson = FormatPayload(payload);
-            
+
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Debug, message, pJson, file, line);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Debug, message, pJson, file, line);
 #endif
 
             IAsakiLoggingService s = Service;
@@ -189,10 +191,12 @@ namespace Asaki.Core.Logging
         )
         {
             string pJson = FormatPayload(payload);
-            
+
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Info, message, pJson, file, line);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Info, message, pJson, file, line);
 #endif
 
             IAsakiLoggingService s = Service;
@@ -221,10 +225,12 @@ namespace Asaki.Core.Logging
         )
         {
             string pJson = FormatPayload(payload);
-            
+
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Warning, message, pJson, file, line);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Warning, message, pJson, file, line);
 #endif
 
             IAsakiLoggingService s = Service;
@@ -258,7 +264,9 @@ namespace Asaki.Core.Logging
         {
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Error, message, null, file, line, ex);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Error, message, null, file, line, ex);
 #endif
 
             IAsakiLoggingService s = Service;
@@ -295,10 +303,12 @@ namespace Asaki.Core.Logging
         )
         {
             string pJson = FormatPayload(payload);
-            
+
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Error, message, pJson, file, line);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Error, message, pJson, file, line);
 #endif
 
             IAsakiLoggingService s = Service;
@@ -330,7 +340,9 @@ namespace Asaki.Core.Logging
         {
 #if UNITY_EDITOR
             // 实时输出到 Unity 控制台，获得原生堆栈跳转
-            ALogBridgeManager.GetBridge()?.ForwardToUnityConsole(AsakiLogLevel.Fatal, message, null, file, line, ex);
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Fatal, message, null, file, line, ex);
 #endif
 
             IAsakiLoggingService s = Service;
