@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Asaki.Core.Blackboard;
@@ -25,7 +25,7 @@ namespace Asaki.Editor.GraphEditors
         private List<Type> _availableTypes;
         private List<string> _availableTypeNames;
 
-        [MenuItem("Asaki/Global Blackboard Editor")]
+        [MenuItem("Asaki/Window/Global Blackboard", false, 30)]
         public static void ShowWindow()
         {
             GlobalBlackboardWindow window = GetWindow<GlobalBlackboardWindow>("Global Blackboard");

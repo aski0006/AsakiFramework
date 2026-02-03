@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +14,7 @@ namespace Asaki.Editor.Utilities.Tools.DuplicateFinder
         private static readonly Color HighlightColor = new Color(1f, 0.2f, 0.2f, 1f); // 红色高亮
         private static readonly Color FillColor = new Color(1f, 0.2f, 0.2f, 0.1f);
 
-        [MenuItem("Asaki/Tools/Duplicate Finder")]
+        [MenuItem("Asaki/Tools/Duplicate Finder", false, 12)]
         public static void Open()
         {
             AsakiDuplicateFinderWindow win = GetWindow<AsakiDuplicateFinderWindow>(

@@ -16,7 +16,7 @@ namespace Asaki.Editor.ModuleSystem
 {
     public class AsakiModuleDashboard : EditorWindow
     {
-        [MenuItem("Asaki/Module Dashboard")]
+        [MenuItem("Asaki/Window/Module Dashboard", false, 20)]
         public static void ShowWindow()
         {
             GetWindow<AsakiModuleDashboard>("Asaki Modules");

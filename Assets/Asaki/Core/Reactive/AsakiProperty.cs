@@ -355,6 +355,9 @@ namespace Asaki.Core.Reactive
             if (value is not T typedValue)
                 return;
 
+            // 更新内部值，确保属性与数据源同步
+            _value = typedValue;
+
             // 创建委托快照
             var actionSnapshot = _onValueChangedAction;
             actionSnapshot?.Invoke(typedValue);

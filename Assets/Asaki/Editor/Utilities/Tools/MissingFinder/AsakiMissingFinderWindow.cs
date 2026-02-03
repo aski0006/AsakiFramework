@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -22,7 +22,7 @@ namespace Asaki.Editor.Utilities.Tools.MissingFinder
         [SerializeField]
         private bool _includeProject; // 是否扫描 Project (耗时操作)
 
-        [MenuItem("Asaki/Tools/Missing References Finder")]
+        [MenuItem("Asaki/Tools/Missing Finder", false, 13)]
         public static void ShowWindow()
         {
             AsakiMissingFinderWindow wnd = GetWindow<AsakiMissingFinderWindow>("Missing Finder");

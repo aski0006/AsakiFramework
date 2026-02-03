@@ -63,7 +63,7 @@ namespace Asaki.Editor.UI
         private Vector2 _scrollPos;
         private bool _hasGlobalConflict = false;
 
-        [MenuItem("Asaki/Asset ID Generator/UI Generator Window")]
+        [MenuItem("Asaki/Window/UI Asset Generator", false, 41)]
         public static void OpenWindow()
         {
             AsakiUIGeneratorWindow window = GetWindow<AsakiUIGeneratorWindow>("Asaki UI Gen");

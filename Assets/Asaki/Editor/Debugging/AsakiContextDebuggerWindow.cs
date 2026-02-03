@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Asaki.Core.Context;
@@ -34,7 +34,7 @@ namespace Asaki.Editor.Debugging
         private double _lastUpdateTime;
         private const double RefreshInterval = 0.5f; // 每0.5秒刷新一次数据
 
-        [MenuItem("Asaki/Debugger/Context Debugger", false, 50)]
+        [MenuItem("Asaki/Diagnostics/Context Debugger", false, 50)]
         public static void OpenWindow()
         {
             AsakiContextDebuggerWindow window = GetWindow<AsakiContextDebuggerWindow>(

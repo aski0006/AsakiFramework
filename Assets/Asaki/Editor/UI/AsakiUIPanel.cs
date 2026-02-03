@@ -1,11 +1,11 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Asaki.Editor.UI
 {
     public class AsakiUIPanel : EditorWindow
     {
-        [MenuItem("Asaki/Tools/Layout Panel", false, 1)]
+        [MenuItem("Asaki/UI/UI Layout Panel", false, 13)]
         public static void ShowWindow()
         {
             AsakiUIPanel win = GetWindow<AsakiUIPanel>("UI Ops");

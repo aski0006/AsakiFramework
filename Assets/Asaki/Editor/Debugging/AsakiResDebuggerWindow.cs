@@ -60,7 +60,7 @@ namespace Asaki.Editor.Debugging
         private const float MIN_LEFT_WIDTH = 200f;
         private const float MIN_RIGHT_WIDTH = 300f;
 
-        [MenuItem("Asaki/Debugger/Resources Debugger")]
+        [MenuItem("Asaki/Diagnostics/Resources Debugger", false, 52)]
         public static void ShowWindow()
         {
             AsakiResDebuggerWindow window = GetWindow<AsakiResDebuggerWindow>("Resources Debugger");

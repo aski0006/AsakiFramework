@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Jobs;
@@ -50,7 +50,7 @@ namespace Asaki.Editor.Utilities.Tools
 
         // ==================== 窗口入口 ====================
 
-        [MenuItem("Asaki/Tools/Quick Layout %&l")] // Ctrl+Alt+L
+        [MenuItem("Asaki/Tools/Quick Layout %&l", false, 15)] // Ctrl+Alt+L
         public static void ShowWindow()
         {
             AsakiQuickLayoutWindow window = GetWindow<AsakiQuickLayoutWindow>("Quick Layout");

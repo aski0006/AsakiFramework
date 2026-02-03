@@ -16,7 +16,7 @@ namespace Asaki.Editor.Debugging
 {
     public class AsakiEventDebuggerWindow : EditorWindow
     {
-        [MenuItem("Asaki/Debugger/Event Inspector &F8")]
+        [MenuItem("Asaki/Diagnostics/Event Debugger &F8", false, 51)]
         public static void ShowWindow()
         {
             AsakiEventDebuggerWindow wnd = GetWindow<AsakiEventDebuggerWindow>();

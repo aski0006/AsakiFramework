@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Asaki.Core.Logging;
 using UnityEngine;
 
@@ -38,5 +38,23 @@ namespace Asaki.Core.Configs
         /// </summary>
         [Tooltip("日志文件名前缀")]
         public string FilePrefix = "GameLog";
+
+#if UNITY_EDITOR
+        [Header("Editor Settings")]
+        /// <summary>
+        /// [仅编辑器] 是否同时输出到 Unity 控制台，默认值为 true。
+        /// 启用后，ALog 日志会实时显示在 Unity 控制台，支持双击跳转到源代码。
+        /// </summary>
+        [Tooltip("同时输出到 Unity 控制台 (支持双击跳转)")]
+        public bool OutputToUnityConsole = true;
+
+        /// <summary>
+        /// [仅编辑器] LogDashboard 的刷新间隔（秒），默认值为 0.05（20fps）。
+        /// 值越小越流畅，但消耗更多 CPU。
+        /// </summary>
+        [Tooltip("LogDashboard 刷新间隔 (秒)")]
+        [Range(0.016f, 1f)]
+        public float DashboardRefreshInterval = 0.05f;
+#endif
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Asaki.Core.Configs;
@@ -29,7 +29,7 @@ namespace Asaki.Editor.Utilities.Tools
         private AudioItem _currentPlayingItem;
         private bool _isPaused;
 
-        [MenuItem("Asaki/Audio/Audio Dashboard")]
+        [MenuItem("Asaki/Window/Audio Dashboard", false, 40)]
         public static void ShowWindow()
         {
             AsakiAudioDashboard wnd = GetWindow<AsakiAudioDashboard>("Audio Dashboard");

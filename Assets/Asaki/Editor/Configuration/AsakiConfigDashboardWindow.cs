@@ -16,7 +16,7 @@ namespace Asaki.Editor.Configuration
 {
     public class AsakiConfigDashboardWindow : EditorWindow
     {
-        [MenuItem("Asaki/Configuration/Dashboard (Editor)")]
+        [MenuItem("Asaki/Configuration/Config Dashboard", false, 101)]
         public static void ShowWindow()
         {
             AsakiConfigDashboardWindow wnd = GetWindow<AsakiConfigDashboardWindow>(

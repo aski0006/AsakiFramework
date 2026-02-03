@@ -60,8 +60,12 @@ namespace Asaki.Core.Logging
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get
             {
-                if (_cachedService != null || AsakiContext.TryGet(out _cachedService))
-                    return _cachedService;
+                IAsakiLoggingService cached = _cachedService;
+                if (cached != null || AsakiContext.TryGet(out cached))
+                {
+                    _cachedService = cached;
+                    return cached;
+                }
 
                 return null;
             }
@@ -146,16 +150,21 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+            string pJson = FormatPayload(payload);
+
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Debug, message, pJson, file, line);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Debug, message, payload, file, line);
-#endif
                 return;
             }
 
-            string pJson = FormatPayload(payload);
             s.LogTrace(AsakiLogLevel.Debug, message, pJson, file, line);
         }
 
@@ -181,16 +190,21 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+            string pJson = FormatPayload(payload);
+
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Info, message, pJson, file, line);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Info, message, payload, file, line);
-#endif
                 return;
             }
 
-            string pJson = FormatPayload(payload);
             s.LogTrace(AsakiLogLevel.Info, message, pJson, file, line);
         }
 
@@ -210,16 +224,21 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+            string pJson = FormatPayload(payload);
+
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Warning, message, pJson, file, line);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Warning, message, payload, file, line);
-#endif
                 return;
             }
 
-            string pJson = FormatPayload(payload);
             s.LogTrace(AsakiLogLevel.Warning, message, pJson, file, line);
         }
 
@@ -243,12 +262,16 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Error, message, null, file, line, ex);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Error, message, null, file, line, ex);
-#endif
                 return;
             }
 
@@ -279,17 +302,23 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+            string pJson = FormatPayload(payload);
+
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Error, message, pJson, file, line);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Error, message, payload, file, line);
-#endif
                 return;
             }
 
             // 走 Trace 通道，但级别为 Error
-            s.LogTrace(AsakiLogLevel.Error, message, FormatPayload(payload), file, line);
+            s.LogTrace(AsakiLogLevel.Error, message, pJson, file, line);
         }
 
         /// <summary>
@@ -309,12 +338,16 @@ namespace Asaki.Core.Logging
             [CallerLineNumber] int line = 0
         )
         {
+#if UNITY_EDITOR
+            // 实时输出到 Unity 控制台，获得原生堆栈跳转
+            ALogBridgeManager
+                .GetBridge()
+                ?.ForwardToUnityConsole(AsakiLogLevel.Fatal, message, null, file, line, ex);
+#endif
+
             IAsakiLoggingService s = Service;
             if (s == null)
             {
-#if UNITY_EDITOR
-                FallbackToUnityDebug(AsakiLogLevel.Fatal, message, null, file, line, ex);
-#endif
                 return;
             }
 

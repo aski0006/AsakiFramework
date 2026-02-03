@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Asaki.Editor.Utilities.Tools.GroundAligner
@@ -24,7 +24,7 @@ namespace Asaki.Editor.Utilities.Tools.GroundAligner
         // 必须定义为 public 字段才能被 SerializedObject 找到
         public LayerMask GroundLayers = -1;
 
-        [MenuItem("Asaki/Tools/Ground Aligner")]
+        [MenuItem("Asaki/Tools/Ground Aligner", false, 14)]
         public static void Open()
         {
             AsakiGroundAlignerWindow win = GetWindow<AsakiGroundAlignerWindow>("Ground Aligner");
