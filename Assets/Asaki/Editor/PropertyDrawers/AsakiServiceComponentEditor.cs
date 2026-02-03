@@ -1,4 +1,4 @@
-﻿// File: Assets/Asaki/Editor/Component/AsakiServiceComponentEditor.cs
+// File: Assets/Asaki/Editor/Component/AsakiServiceComponentEditor.cs
 
 using System;
 using System.Collections.Generic;
@@ -486,7 +486,7 @@ namespace Asaki.Editor.PropertyDrawers
         /// <summary>
         /// 清除依赖缓存（用于调试）
         /// </summary>
-        [MenuItem("Asaki/Tools/Clear Dependency Cache")]
+        [MenuItem("Asaki/Cache/Clear Dependency Cache", false, 201)]
         private static void ClearDependencyCache()
         {
             _dependencyCache.Clear();

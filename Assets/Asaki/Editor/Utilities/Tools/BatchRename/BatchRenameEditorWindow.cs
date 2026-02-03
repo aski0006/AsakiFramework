@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Asaki.Editor.Utilities.Tools.BatchRename;
@@ -113,7 +113,7 @@ namespace Asaki.Editor.UI
 
         // ==================== 窗口入口 ====================
 
-        [MenuItem("Asaki/Tools/Batch Rename Pro &F2")]
+        [MenuItem("Asaki/Tools/Batch Rename &F2", false, 11)]
         public static void ShowWindow()
         {
             BatchRenameEditorWindow window = GetWindow<BatchRenameEditorWindow>("Batch Rename Pro");

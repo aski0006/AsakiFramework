@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace Asaki.Editor.Debugging
 {
     public class AsakiSmartPoolDebuggerWindow : EditorWindow
     {
-        [MenuItem("Asaki/Debugger/Smart Pool Inspector")]
+        [MenuItem("Asaki/Diagnostics/Pool Debugger", false, 54)]
         public static void ShowWindow()
         {
             AsakiSmartPoolDebuggerWindow wnd = GetWindow<AsakiSmartPoolDebuggerWindow>();

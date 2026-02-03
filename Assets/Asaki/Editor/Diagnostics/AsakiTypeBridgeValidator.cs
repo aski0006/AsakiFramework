@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using Asaki.Core.Attributes;
 using Asaki.Core.Blackboard;
 using System;
@@ -12,8 +12,8 @@ namespace Asaki.Editor.Diagnostics
 {
     public static class AsakiTypeBridgeValidator
     {
-        [MenuItem("Asaki/Diagnostics/Validate Type Registry")]
-        public static void ValidateRegistry()
+        [MenuItem("Asaki/Diagnostics/Validate Type Registry", false, 56)]
+        public static void ValidateTypeRegistry()
         {
             var allTypes = TypeCache
                 .GetTypesDerivedFrom<AsakiValueBase>()
@@ -36,8 +36,8 @@ namespace Asaki.Editor.Diagnostics
             }
         }
 
-        [MenuItem("Asaki/Diagnostics/Test Type Registration")]
-        public static void TestRegistration()
+        [MenuItem("Asaki/Diagnostics/Test Type Registration", false, 57)]
+        public static void TestTypeRegistration()
         {
             AsakiBlackboard testBB = new AsakiBlackboard();
             AsakiBlackboardKey key = new AsakiBlackboardKey("Test");

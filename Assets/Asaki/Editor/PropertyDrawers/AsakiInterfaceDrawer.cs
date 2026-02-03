@@ -1,4 +1,4 @@
-﻿// File: Assets/Asaki/Editor/PropertyDrawers/AsakiInterfaceDrawer.cs
+// File: Assets/Asaki/Editor/PropertyDrawers/AsakiInterfaceDrawer.cs
 
 using System;
 using System.Collections.Generic;
@@ -215,7 +215,7 @@ namespace Asaki.Editor.PropertyDrawers
         /// <summary>
         /// 清除类型缓存（用于调试）
         /// </summary>
-        [MenuItem("Asaki/Tools/Clear Type Cache")]
+        [MenuItem("Asaki/Cache/Clear Type Cache", false, 200)]
         private static void ClearTypeCache()
         {
             _typeCache.Clear();

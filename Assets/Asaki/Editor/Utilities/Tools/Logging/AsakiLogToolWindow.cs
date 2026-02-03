@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -14,7 +14,7 @@ namespace Asaki.Editor.Utilities.Tools.Logging
             .OutputFormat
             .PlainText;
 
-        [MenuItem("Asaki/Tools/Log Optimizer", false, 101)]
+        [MenuItem("Asaki/Tools/Log Optimizer", false, 18)]
         public static void ShowWindow()
         {
             GetWindow<AsakiLogToolWindow>("Log Optimizer").Show();

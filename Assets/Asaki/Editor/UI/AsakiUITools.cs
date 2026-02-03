@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 namespace Asaki.Editor.UI
@@ -16,7 +16,7 @@ namespace Asaki.Editor.UI
         // 快捷键：Alt + Shift + A
         // =========================================================
 
-        [MenuItem("Asaki/Tools/Snap Anchors to Corners &#a")] // & = Alt, # = Shift
+        [MenuItem("Asaki/UI/Snap Anchors to Corners &#a", false, 10)] // & = Alt, # = Shift
         public static void SnapAnchors()
         {
             foreach (GameObject go in Selection.gameObjects)

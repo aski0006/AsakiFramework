@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // 主命名空间：Unity编辑器工具集
 // ============================================================================
 
@@ -63,7 +63,7 @@ namespace Asaki.Editor.Utilities.Tools.AssetsExplore
         private Dictionary<AssetCategory, int> _cachedCategoryCounts;
         private float _lastCategoryCountUpdate;
 
-        [MenuItem("Asaki/Tools/Asset Explorer Pro %&a")]
+        [MenuItem("Asaki/Tools/Asset Explorer %&a", false, 10)]
         public static void ShowWindow()
         {
             AssetExplorerWindow window = GetWindow<AssetExplorerWindow>(WINDOW_TITLE);

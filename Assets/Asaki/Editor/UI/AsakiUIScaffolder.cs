@@ -66,7 +66,7 @@ namespace Asaki.Editor.UI
         // =========================================================
         // 入口 2: 从 Hierarchy 中选中的 GameObject 生成 (旧功能)
         // =========================================================
-        [MenuItem("Asaki/UI/Scaffold UI from GameObject", false, 20)]
+        [MenuItem("Asaki/UI/Scaffold UI", false, 12)]
         public static void ScaffoldFromScene()
         {
             GameObject root = Selection.activeGameObject;

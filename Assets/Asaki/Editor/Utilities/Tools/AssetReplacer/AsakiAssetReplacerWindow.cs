@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,7 +13,7 @@ namespace Asaki.Editor.Utilities.Tools.AssetReplacer
         private List<AsakiAssetReplacerLogic.ReplaceEntry> _entries;
         private Vector2 _scrollPos;
 
-        [MenuItem("Asaki/Tools/Asset Replacer")]
+        [MenuItem("Asaki/Tools/Asset Replacer", false, 17)]
         public static void Open()
         {
             GetWindow<AsakiAssetReplacerWindow>("Asset Replacer").Show();

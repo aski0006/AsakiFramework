@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -26,7 +26,7 @@ namespace Asaki.Editor.Debugging
         // 存储的是目录信息，而非单个文件 - 使用新版本的数据模型
         private List<DirectoryInfo> _slots = new List<DirectoryInfo>();
 
-        [MenuItem("Asaki/Debugger/Save Inspector", false, 100)]
+        [MenuItem("Asaki/Diagnostics/Save Inspector", false, 53)]
         public static void ShowWindow()
         {
             AsakiSaveInspector wnd = GetWindow<AsakiSaveInspector>();

@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -30,7 +30,7 @@ namespace Asaki.Editor.Utilities.Tools
         private int _statsFileCount;
         private long _statsTotalSize;
 
-        [MenuItem("Asaki/Tools/File Tree Generator")]
+        [MenuItem("Asaki/Tools/File Tree Generator", false, 16)]
         public static void ShowWindow()
         {
             AsakiFileTreeGenerator window = GetWindow<AsakiFileTreeGenerator>("File Tree Gen");

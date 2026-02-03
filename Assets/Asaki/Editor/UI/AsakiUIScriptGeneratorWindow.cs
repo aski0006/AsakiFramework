@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,7 +17,7 @@ namespace Asaki.Editor.UI
 
         // ========================= 主入口 =========================
 
-        [MenuItem("Asaki/UI/Generate Script from Scene Object &#g")] // Alt+Shift+G
+        [MenuItem("Asaki/UI/Generate UI Script &#g", false, 11)] // Alt+Shift+G
         public static void GenerateScript()
         {
             GameObject selected = Selection.activeGameObject;

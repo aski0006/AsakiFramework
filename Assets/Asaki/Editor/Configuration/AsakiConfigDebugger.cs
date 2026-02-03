@@ -17,7 +17,7 @@ namespace Asaki.Editor.Configuration
 {
     public class AsakiConfigRuntimeEditor : EditorWindow
     {
-        [MenuItem("Asaki/Configuration/Runtime Editor (Table)")]
+        [MenuItem("Asaki/Configuration/Runtime Editor", false, 102)]
         public static void ShowWindow()
         {
             AsakiConfigRuntimeEditor wnd = GetWindow<AsakiConfigRuntimeEditor>(

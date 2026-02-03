@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR
+#if UNITY_EDITOR
 using Asaki.Core.Blackboard;
 using System.Linq;
 using UnityEditor;
@@ -11,7 +11,7 @@ namespace Asaki.Editor.Profiler
         private Vector2 _scrollPos;
         private bool _isRecording = false;
 
-        [MenuItem("Asaki/Diagnostics/Blackboard Profiler")]
+        [MenuItem("Asaki/Diagnostics/Blackboard Profiler", false, 55)]
         public static void ShowWindow()
         {
             GetWindow<BlackboardProfilerWindow>("BB Profiler");

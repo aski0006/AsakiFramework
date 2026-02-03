@@ -43,7 +43,7 @@ namespace Asaki.Editor.Debugging
         private double _lastRefreshTime;
         private double _refreshInterval = 0.05f; // 默认 20fps，可从配置读取
 
-        [MenuItem("Asaki/Log Dashboard V3", false, 0)]
+        [MenuItem("Asaki/Window/Log Dashboard", false, 11)]
         public static void ShowWindow()
         {
             AsakiLogDashboard w = GetWindow<AsakiLogDashboard>("Asaki Logs");

@@ -84,7 +84,7 @@ namespace Asaki.Editor.Debugging
         /// <summary>
         /// 快捷工具栏按钮：打开 LogDashboard
         /// </summary>
-        [MenuItem("Asaki/Open Log Dashboard %&L", false, 0)]
+        [MenuItem("Asaki/Window/Open Log Dashboard %&L", false, 9)]
         public static void OpenDashboardShortcut()
         {
             AsakiLogDashboard.ShowWindow();

@@ -8,7 +8,7 @@ namespace Asaki.Editor.Configuration
 {
     public static class AsakiConfigBaker
     {
-        [MenuItem("Asaki/Configuration/Bake All Configs to Binary")]
+        [MenuItem("Asaki/Configuration/Bake Configs", false, 100)]
         public static async void BakeAllConfigs()
         {
             // 1. 准备路径
