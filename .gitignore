@@ -177,3 +177,6 @@ Temporary Items
 *.swp.meta
 *.swo
 *.swo.meta
+
+# AI Agent 文档
+AGENTS.md

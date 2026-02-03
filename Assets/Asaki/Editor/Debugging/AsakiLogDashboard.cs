@@ -1,6 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Editor.Utilities.Extensions;
@@ -40,7 +41,7 @@ namespace Asaki.Editor.Debugging
 
         // Logic
         private double _lastRefreshTime;
-        private const double REFRESH_INTERVAL = 0.1f;
+        private double _refreshInterval = 0.05f; // 默认 20fps，可从配置读取
 
         [MenuItem("Asaki/Log Dashboard V3", false, 0)]
         public static void ShowWindow()
@@ -604,34 +605,70 @@ namespace Asaki.Editor.Debugging
 
         private void OnEditorUpdate()
         {
+            // 从配置读取刷新间隔
+            UpdateRefreshIntervalFromConfig();
+
             if (_mode == DashboardMode.Local)
                 return;
 
+            // 尝试连接聚合器
             if (_liveAggregator == null)
             {
-                AsakiLoggingService s =
-                    AsakiContext.Get<IAsakiLoggingService>() as AsakiLoggingService;
-                if (s != null)
+                TryConnectAggregator();
+            }
+
+            // 按配置间隔刷新 UI
+            if (EditorApplication.timeSinceStartup - _lastRefreshTime > _refreshInterval)
+            {
+                _lastRefreshTime = EditorApplication.timeSinceStartup;
+                RefreshLogList();
+            }
+        }
+
+        /// <summary>
+        /// 从配置读取刷新间隔
+        /// </summary>
+        private void UpdateRefreshIntervalFromConfig()
+        {
+            if (AsakiContext.TryGet(out AsakiConfig config) && config.LogConfig != null)
+            {
+                _refreshInterval = config.LogConfig.DashboardRefreshInterval;
+            }
+        }
+
+        /// <summary>
+        /// 尝试连接到日志聚合器
+        /// </summary>
+        private void TryConnectAggregator()
+        {
+            if (!AsakiContext.TryGet(out IAsakiLoggingService service))
+                return;
+
+            if (service is AsakiLoggingService s)
+            {
+                _liveAggregator = s.Aggregator;
+                if (_liveAggregator != null)
                 {
-                    _liveAggregator = s.Aggregator;
                     _listView.itemsSource = _liveAggregator.GetSnapshot();
                     _listView.Rebuild();
-                    _statusLabel.text = "● Live";
+                    _statusLabel.text = $"● Live ({(int)(1f / _refreshInterval)}fps)";
                     _statusLabel.style.color = new Color(0.4f, 1f, 0.4f);
                 }
             }
+        }
 
-            if (EditorApplication.timeSinceStartup - _lastRefreshTime > REFRESH_INTERVAL)
+        /// <summary>
+        /// 刷新日志列表
+        /// </summary>
+        private void RefreshLogList()
+        {
+            if (_listView == null || _liveAggregator == null)
+                return;
+
+            var snapshot = _liveAggregator.GetSnapshot();
+            if (snapshot.Count > 0)
             {
-                _lastRefreshTime = EditorApplication.timeSinceStartup;
-                if (
-                    _listView != null
-                    && _liveAggregator != null
-                    && _liveAggregator.GetSnapshot().Count > 0
-                )
-                {
-                    _listView.RefreshItems();
-                }
+                _listView.RefreshItems();
             }
         }
 
