@@ -18,7 +18,6 @@ namespace Asaki.Core.Architecture.Entities
 
         // 组件类型注册
         private readonly Dictionary<Type, int> _componentTypeIds = new();
-        private int _nextComponentTypeId = 0;
 
         /// <summary>
         /// 实体数量
@@ -241,6 +240,16 @@ namespace Asaki.Core.Architecture.Entities
             // 清理容器
             _entities.Clear();
             _generations.Clear();
+        }
+
+        /// <summary>
+        /// 通过索引获取实体（用于高性能遍历）
+        /// </summary>
+        /// <param name="index">数组索引</param>
+        /// <returns>实体实例</returns>
+        public IEntity GetEntityAt(int index)
+        {
+            return _entities.GetAt(index);
         }
 
         /// <summary>
