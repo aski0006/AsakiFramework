@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
@@ -121,6 +121,17 @@ namespace Asaki.Unity.Services.Serialization
         private IAsakiEventService _eventService;
 
         /// <summary>
+        /// 默认最大支持的存档槽位数
+        /// </summary>
+        public const int DEFAULT_MAX_SLOTS = 999;
+
+        /// <inheritdoc />
+        public string SaveDirectoryPath => _rootPath;
+
+        /// <inheritdoc />
+        public int MaxSupportedSlots => DEFAULT_MAX_SLOTS;
+
+        /// <summary>
         /// 构造函数，通过依赖注入获取事件服务实例。
         /// 遵循依赖倒置原则，确保服务可测试和解耦。
         /// </summary>
@@ -144,11 +155,14 @@ namespace Asaki.Unity.Services.Serialization
         /// </summary>
         public void OnInit()
         {
-            // 使用Unity的persistentDataPath确保跨平台兼容性
-            _rootPath = Path.Combine(Application.persistentDataPath, "Saves");
+            // 使用Unity的persistentDataPath确保跨平台兼容性（仅在未设置时）
+            if (string.IsNullOrEmpty(_rootPath))
+            {
+                _rootPath = Path.Combine(Application.persistentDataPath, "Saves");
+            }
 
             // 编辑器或Debug构建时启用详细日志和元数据保存
-            _isDebug = Application.isEditor || Debug.isDebugBuild;
+            _isDebug = Application.isEditor || UnityEngine.Debug.isDebugBuild;
 
             // 惰性创建根目录，避免不必要的IO操作
             if (!Directory.Exists(_rootPath))
@@ -249,7 +263,7 @@ namespace Asaki.Unity.Services.Serialization
         /// <param name="slotId">目标存档槽位ID</param>
         /// <param name="meta">存档元数据（自动填充SlotId和LastSaveTime）</param>
         /// <param name="data">要保存的游戏数据</param>
-        /// <param name="cancellationToken">取消保存操作的取消令牌</param>
+        /// <param name="cancellationToken">取消令牌</param>
         /// <returns>表示异步保存操作的Task</returns>
         /// <exception cref="IOException">磁盘空间不足或路径非法时抛出</exception>
         /// <exception cref="UnauthorizedAccessException">无写入权限时抛出</exception>
@@ -257,13 +271,32 @@ namespace Asaki.Unity.Services.Serialization
             int slotId,
             TMeta meta,
             TData data,
-            CancellationToken token = default(CancellationToken)
+            CancellationToken cancellationToken = default
         )
             where TMeta : IAsakiSlotMeta
             where TData : IAsakiSavable
         {
+            var result = await SaveSlotWithResultAsync(slotId, meta, data, cancellationToken);
+            if (!result.Success)
+            {
+                throw new IOException(result.ErrorMessage);
+            }
+        }
+
+        /// <inheritdoc />
+        public async UniTask<AsakiSaveResult> SaveSlotWithResultAsync<TMeta, TData>(
+            int slotId,
+            TMeta meta,
+            TData data,
+            CancellationToken cancellationToken = default
+        )
+            where TMeta : IAsakiSlotMeta
+            where TData : IAsakiSavable
+        {
+            var stopwatch = Stopwatch.StartNew();
+
             // 早期取消检查：避免不必要的目录创建
-            token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             string dir = GetSlotDir(slotId);
             string dataPath = GetDataPath(slotId);
@@ -275,7 +308,7 @@ namespace Asaki.Unity.Services.Serialization
 
             // 预设元数据（必须在主线程执行）
             meta.SlotId = slotId;
-            meta.LastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            meta.LastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
 
             // 发布保存开始事件
             string filename = $"Slot_{slotId}";
@@ -293,7 +326,7 @@ namespace Asaki.Unity.Services.Serialization
                 }
 
                 // 序列化后检查：避免不必要的IO切换
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // ===== 步骤2：后台线程异步IO =====
 #if ASAKI_USE_UNITASK
@@ -301,16 +334,16 @@ namespace Asaki.Unity.Services.Serialization
 #endif
 
                 // 线程切换后检查：及时响应取消
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 异步写入二进制数据（支持取消）
-                await File.WriteAllBytesAsync(dataPath, dataBuffer, token);
+                await File.WriteAllBytesAsync(dataPath, dataBuffer, cancellationToken);
 
                 // 仅在调试模式下生成JSON元数据
                 if (_isDebug)
                 {
                     // 取消检查：避免不必要的字符串操作
-                    token.ThrowIfCancellationRequested();
+                    cancellationToken.ThrowIfCancellationRequested();
 
                     StringBuilder sb = AsakiStringBuilderPool.Rent();
                     try
@@ -318,7 +351,11 @@ namespace Asaki.Unity.Services.Serialization
                         AsakiJsonWriter jsonWriter = new AsakiJsonWriter(sb);
                         meta.Serialize(jsonWriter);
                         // 传递取消令牌给异步IO
-                        await File.WriteAllTextAsync(metaPath, jsonWriter.GetResult(), token);
+                        await File.WriteAllTextAsync(
+                            metaPath,
+                            jsonWriter.GetResult(),
+                            cancellationToken
+                        );
                     }
                     finally
                     {
@@ -332,9 +369,21 @@ namespace Asaki.Unity.Services.Serialization
 #endif
 
                 // 最终取消检查：防止事件处理器在取消状态下执行
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 _eventService.Publish(new AsakiSaveSuccessEvent { Filename = filename });
+
+                stopwatch.Stop();
+
+                ALog.Info(
+                    $"[AsakiSave] Slot {slotId} saved successfully in {stopwatch.ElapsedMilliseconds}ms"
+                );
+
+                return AsakiSaveResult.Successful(
+                    slotId,
+                    dataBuffer.Length,
+                    stopwatch.ElapsedMilliseconds
+                );
             }
             catch (OperationCanceledException)
             {
@@ -369,6 +418,8 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
+
                 // 记录详细错误日志
                 ALog.Error($"[AsakiSave] Slot {slotId} Save Failed: {ex.Message}", ex);
 
@@ -377,7 +428,7 @@ namespace Asaki.Unity.Services.Serialization
                     new AsakiSaveFailedEvent { Filename = filename, ErrorMessage = ex.Message }
                 );
 
-                throw;
+                return AsakiSaveResult.Failed(ex.Message, slotId);
             }
         }
 
@@ -407,16 +458,36 @@ namespace Asaki.Unity.Services.Serialization
         /// <exception cref="SerializationException">数据格式不兼容或损坏时抛出</exception>
         public async UniTask<(TMeta Meta, TData Data)> LoadSlotAsync<TMeta, TData>(
             int slotId,
-            CancellationToken token = default(CancellationToken)
+            CancellationToken cancellationToken = default
         )
             where TMeta : IAsakiSlotMeta, new()
             where TData : IAsakiSavable, new()
         {
+            var result = await LoadSlotWithResultAsync<TMeta, TData>(slotId, cancellationToken);
+            if (!result.Success)
+            {
+                throw new FileNotFoundException(result.ErrorMessage);
+            }
+            return (result.Meta, result.Data);
+        }
+
+        /// <inheritdoc />
+        public async UniTask<AsakiLoadResult<TMeta, TData>> LoadSlotWithResultAsync<TMeta, TData>(
+            int slotId,
+            CancellationToken cancellationToken = default
+        )
+            where TMeta : IAsakiSlotMeta, new()
+            where TData : IAsakiSavable, new()
+        {
+            var stopwatch = Stopwatch.StartNew();
+
             // 早期取消检查
-            token.ThrowIfCancellationRequested();
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (!SlotExists(slotId))
-                throw new FileNotFoundException($"Slot {slotId} not found.");
+            {
+                return AsakiLoadResult<TMeta, TData>.Failed($"Slot {slotId} not found");
+            }
 
             try
             {
@@ -426,25 +497,25 @@ namespace Asaki.Unity.Services.Serialization
 #endif
 
                 // 线程切换后检查
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 启动两个独立的读取任务（均支持取消）
-                var dataTask = File.ReadAllBytesAsync(GetDataPath(slotId), token)
+                var dataTask = File.ReadAllBytesAsync(GetDataPath(slotId), cancellationToken)
                     .AsUniTask()
-                    .AttachExternalCancellation(token);
-                var metaTask = File.ReadAllTextAsync(GetMetaPath(slotId), token)
+                    .AttachExternalCancellation(cancellationToken);
+                var metaTask = File.ReadAllTextAsync(GetMetaPath(slotId), cancellationToken)
                     .AsUniTask()
-                    .AttachExternalCancellation(token);
+                    .AttachExternalCancellation(cancellationToken);
 
                 // 等待两个任务都完成，支持取消并获取结果
                 (byte[] dataBytes, string metaText) = await UniTask.WhenAll(dataTask, metaTask);
 
                 // IO完成后检查：避免不必要的反序列化
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 await UniTask.SwitchToMainThread();
                 // 反序列化前检查
-                token.ThrowIfCancellationRequested();
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // 反序列化二进制游戏数据
                 TData data = new TData();
@@ -459,7 +530,17 @@ namespace Asaki.Unity.Services.Serialization
                 AsakiJsonReader jsonReader = AsakiJsonReader.FromJson(metaText);
                 meta.Deserialize(jsonReader);
 
-                return (meta, data);
+                stopwatch.Stop();
+
+                ALog.Info(
+                    $"[AsakiSave] Slot {slotId} loaded successfully in {stopwatch.ElapsedMilliseconds}ms"
+                );
+
+                return AsakiLoadResult<TMeta, TData>.Successful(
+                    meta,
+                    data,
+                    stopwatch.ElapsedMilliseconds
+                );
             }
             catch (OperationCanceledException)
             {
@@ -469,8 +550,33 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
+                stopwatch.Stop();
                 ALog.Error($"[AsakiSave] Slot {slotId} Load Failed: {ex.Message}", ex);
-                throw;
+                return AsakiLoadResult<TMeta, TData>.Failed(ex.Message);
+            }
+        }
+
+        /// <inheritdoc />
+        public async UniTask<(TMeta Meta, TData Data)?> TryLoadSlotAsync<TMeta, TData>(
+            int slotId,
+            CancellationToken cancellationToken = default
+        )
+            where TMeta : IAsakiSlotMeta, new()
+            where TData : IAsakiSavable, new()
+        {
+            if (!SlotExists(slotId))
+                return null;
+
+            try
+            {
+                var result = await LoadSlotWithResultAsync<TMeta, TData>(slotId, cancellationToken);
+                if (result.Success)
+                    return (result.Meta, result.Data);
+                return null;
+            }
+            catch
+            {
+                return null;
             }
         }
 
@@ -500,7 +606,9 @@ namespace Asaki.Unity.Services.Serialization
         {
             // 防御性检查，防止根目录被意外删除导致异常
             if (!Directory.Exists(_rootPath))
+            {
                 return new List<int>();
+            }
 
             return Directory
                 .GetDirectories(_rootPath, "Slot_*")
@@ -512,20 +620,51 @@ namespace Asaki.Unity.Services.Serialization
                 .ToList();
         }
 
-        /// <summary>
-        /// 检查指定槽位是否存在。
-        /// <para>
-        /// <b>实现细节：</b>
-        /// 通过检查二进制数据文件(data.bin)是否存在来判断，而非仅检查目录。
-        /// 这样可以确保即使目录存在但数据文件损坏/丢失时也能正确返回false。
-        /// </para>
-        /// </summary>
-        /// <param name="slotId">要检查的槽位ID</param>
-        /// <returns>true表示槽位有效存在，false表示不存在或数据不完整</returns>
-        public bool SlotExists(int slotId)
+        /// <inheritdoc />
+        public IReadOnlyList<AsakiSaveSlotInfo> GetAllSlotInfos()
         {
-            // 以data.bin存在为准，避免空目录被误认为有效槽位
-            return File.Exists(GetDataPath(slotId));
+            var result = new List<AsakiSaveSlotInfo>();
+            var usedSlots = GetUsedSlots();
+
+            foreach (var slotId in usedSlots)
+            {
+                var info = new AsakiSaveSlotInfo
+                {
+                    SlotId = slotId,
+                    Exists = true,
+                    FileSize = GetSlotFileSize(slotId),
+                    LastSaveTime = GetSlotLastModifiedTime(slotId),
+                };
+
+                // 尝试读取存档名称
+                try
+                {
+                    var metaPath = GetMetaPath(slotId);
+                    if (File.Exists(metaPath))
+                    {
+                        var metaText = File.ReadAllText(metaPath);
+                        // 简单解析 JSON 获取 saveName
+                        var match = System.Text.RegularExpressions.Regex.Match(
+                            metaText,
+                            "\"SaveName\"\\s*:\\s*\"([^\"]*)\""
+                        );
+                        if (match.Success)
+                        {
+                            info.SaveName = match.Groups[1].Value;
+                        }
+                    }
+                }
+                catch { }
+
+                if (string.IsNullOrEmpty(info.SaveName))
+                {
+                    info.SaveName = $"存档 {slotId + 1}";
+                }
+
+                result.Add(info);
+            }
+
+            return result.OrderByDescending(s => s.LastSaveTime).ToList();
         }
 
         /// <summary>
@@ -549,10 +688,180 @@ namespace Asaki.Unity.Services.Serialization
             string dir = GetSlotDir(slotId);
             if (Directory.Exists(dir))
             {
-                Directory.Delete(dir, true); // recursive=true删除目录及所有内容
-                return true;
+                try
+                {
+                    Directory.Delete(dir, true); // recursive=true删除目录及所有内容
+                    ALog.Info($"[AsakiSave] Deleted slot {slotId}");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    ALog.Error($"[AsakiSave] Failed to delete slot {slotId}: {ex.Message}");
+                    return false;
+                }
             }
             return false;
+        }
+
+        /// <inheritdoc />
+        public int DeleteSlots(IEnumerable<int> slotIds)
+        {
+            int count = 0;
+            foreach (var slotId in slotIds)
+            {
+                if (DeleteSlot(slotId))
+                    count++;
+            }
+            return count;
+        }
+
+        /// <summary>
+        /// 检查指定槽位是否存在。
+        /// <para>
+        /// <b>实现细节：</b>
+        /// 通过检查二进制数据文件(data.bin)是否存在来判断，而非仅检查目录。
+        /// 这样可以确保即使目录存在但数据文件损坏/丢失时也能正确返回false。
+        /// </para>
+        /// </summary>
+        /// <param name="slotId">要检查的槽位ID</param>
+        /// <returns>true表示槽位有效存在，false表示不存在或数据不完整</returns>
+        public bool SlotExists(int slotId)
+        {
+            // 以data.bin存在为准，避免空目录被误认为有效槽位
+            return File.Exists(GetDataPath(slotId));
+        }
+
+        /// <inheritdoc />
+        public long GetSlotFileSize(int slotId)
+        {
+            var dataPath = GetDataPath(slotId);
+            if (File.Exists(dataPath))
+            {
+                return new FileInfo(dataPath).Length;
+            }
+            return 0;
+        }
+
+        /// <inheritdoc />
+        public long GetSlotLastModifiedTime(int slotId)
+        {
+            var dataPath = GetDataPath(slotId);
+            if (File.Exists(dataPath))
+            {
+                return new FileInfo(dataPath).LastWriteTimeUtc.ToFileTime();
+            }
+            return 0;
+        }
+
+        /// <inheritdoc />
+        public UniTask<bool> CopySlotAsync(
+            int sourceSlotId,
+            int targetSlotId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (!SlotExists(sourceSlotId))
+                return UniTask.FromResult(false);
+
+            if (sourceSlotId == targetSlotId)
+                return UniTask.FromResult(false);
+
+            var sourceDir = GetSlotDir(sourceSlotId);
+            var targetDir = GetSlotDir(targetSlotId);
+
+            try
+            {
+                if (!Directory.Exists(targetDir))
+                    Directory.CreateDirectory(targetDir);
+
+                // 复制所有文件
+                foreach (var file in Directory.GetFiles(sourceDir))
+                {
+                    var destFile = Path.Combine(targetDir, Path.GetFileName(file));
+                    File.Copy(file, destFile, true);
+                }
+
+                ALog.Info($"[AsakiSave] Copied slot {sourceSlotId} to {targetSlotId}");
+                return UniTask.FromResult(true);
+            }
+            catch (Exception ex)
+            {
+                ALog.Error(
+                    $"[AsakiSave] Failed to copy slot {sourceSlotId} to {targetSlotId}: {ex.Message}"
+                );
+                return UniTask.FromResult(false);
+            }
+        }
+
+        /// <inheritdoc />
+        public async UniTask<bool> ExportSlotAsync(
+            int slotId,
+            string exportPath,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (!SlotExists(slotId))
+                return false;
+
+            var sourceDir = GetSlotDir(slotId);
+
+            try
+            {
+                // 创建导出目录
+                if (Directory.Exists(exportPath))
+                    Directory.Delete(exportPath, true);
+                Directory.CreateDirectory(exportPath);
+
+                // 复制所有文件
+                foreach (var file in Directory.GetFiles(sourceDir))
+                {
+                    var destFile = Path.Combine(exportPath, Path.GetFileName(file));
+                    await UniTask.RunOnThreadPool(() => File.Copy(file, destFile, true));
+                }
+
+                ALog.Info($"[AsakiSave] Exported slot {slotId} to {exportPath}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[AsakiSave] Failed to export slot {slotId}: {ex.Message}");
+                return false;
+            }
+        }
+
+        /// <inheritdoc />
+        public async UniTask<bool> ImportSlotAsync(
+            string importPath,
+            int targetSlotId,
+            CancellationToken cancellationToken = default
+        )
+        {
+            if (!Directory.Exists(importPath))
+                return false;
+
+            var targetDir = GetSlotDir(targetSlotId);
+
+            try
+            {
+                // 确保目标目录存在
+                if (!Directory.Exists(targetDir))
+                    Directory.CreateDirectory(targetDir);
+
+                // 复制所有文件
+                foreach (var file in Directory.GetFiles(importPath))
+                {
+                    var destFile = Path.Combine(targetDir, Path.GetFileName(file));
+                    await UniTask.RunOnThreadPool(() => File.Copy(file, destFile, true));
+                }
+
+                ALog.Info($"[AsakiSave] Imported from {importPath} to slot {targetSlotId}");
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[AsakiSave] Failed to import to slot {targetSlotId}: {ex.Message}");
+                return false;
+            }
         }
     }
 }

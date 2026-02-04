@@ -8,7 +8,7 @@ using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules
 {
-    [AsakiModule(175, typeof(AsakiEventBusModule))]
+    [AsakiModule(100, typeof(AsakiEventBusModule))]
     public class AsakiSaveModule : IAsakiModule
     {
         private IAsakiSaveService _asakiSaveService;

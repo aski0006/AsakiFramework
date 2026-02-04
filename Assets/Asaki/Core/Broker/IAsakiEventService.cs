@@ -40,6 +40,6 @@ namespace Asaki.Core.Broker
         /// <typeparam name="T">要发布的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="e">要发布的事件实例。</param>
         void Publish<T>(T e)
-            where T : IAsakiEvent;
+            where T : struct, IAsakiEvent;
     }
 }
