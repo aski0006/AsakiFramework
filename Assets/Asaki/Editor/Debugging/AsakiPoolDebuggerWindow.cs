@@ -122,17 +122,19 @@ namespace Asaki.Editor.Debugging
                     return;
 
                 // 列表项样式
-                NormalItemStyle = new GUIStyle(EditorStyles.toolbarButton)
+                NormalItemStyle = new GUIStyle(GUI.skin.button)
                 {
                     alignment = TextAnchor.MiddleLeft,
                     padding = new RectOffset(10, 10, 6, 6),
-                    fontSize = 11
+                    fontSize = 11,
+                    margin = new RectOffset(0, 0, 1, 1)
                 };
 
                 SelectedItemStyle = new GUIStyle(NormalItemStyle)
                 {
                     normal = { textColor = Color.white, background = CreateTexture(2, 2, new Color(0.2f, 0.4f, 0.8f)) },
-                    fontStyle = FontStyle.Bold
+                    fontStyle = FontStyle.Bold,
+                    margin = new RectOffset(0, 0, 1, 1)
                 };
 
                 // 其他样式

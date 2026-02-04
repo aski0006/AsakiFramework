@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
+using Asaki.Core.Configs;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Utils;
@@ -63,9 +64,21 @@ namespace Asaki.Unity.Services.Serialization
         {
             _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
-            MaxSlots = DEFAULT_MAX_SLOTS;
-            AutoSaveSlotIndex = 0;
-            QuickSaveSlotIndex = 1;
+
+            // 尝试从 SaveService 获取配置
+            if (saveService is AsakiSaveService asakiSaveService && asakiSaveService.Config != null)
+            {
+                var config = asakiSaveService.Config;
+                MaxSlots = config.MaxSlots;
+                AutoSaveSlotIndex = config.AutoSaveSlotIndex;
+                QuickSaveSlotIndex = config.QuickSaveSlotIndex;
+            }
+            else
+            {
+                MaxSlots = DEFAULT_MAX_SLOTS;
+                AutoSaveSlotIndex = 0;
+                QuickSaveSlotIndex = 1;
+            }
         }
 
         public void OnInit()

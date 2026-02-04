@@ -396,10 +396,12 @@ namespace Asaki.Unity.Services.Serialization
                 }
 
                 // 获取存档数据
-                var data = _dataProvider?.Invoke();
+                IAsakiSavable data = _dataProvider?.Invoke();
                 if (data == null)
                 {
-                    throw new InvalidOperationException("Data provider returned null");
+                    // 应用退出时数据提供者可能已清理，静默返回
+                    ALog.Warn("[AsakiAutoSaveService] Data provider returned null, skipping auto save");
+                    return false;
                 }
 
                 // 发布开始事件

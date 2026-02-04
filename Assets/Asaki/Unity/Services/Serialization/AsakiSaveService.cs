@@ -7,6 +7,7 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading;
 using Asaki.Core.Broker;
+using Asaki.Core.Configs;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Utils;
@@ -121,6 +122,11 @@ namespace Asaki.Unity.Services.Serialization
         private IAsakiEventService _eventService;
 
         /// <summary>
+        /// 存档配置引用，用于获取存档系统的配置参数。
+        /// </summary>
+        private AsakiSaveConfig _config;
+
+        /// <summary>
         /// 默认最大支持的存档槽位数
         /// </summary>
         public const int DEFAULT_MAX_SLOTS = 999;
@@ -129,7 +135,12 @@ namespace Asaki.Unity.Services.Serialization
         public string SaveDirectoryPath => _rootPath;
 
         /// <inheritdoc />
-        public int MaxSupportedSlots => DEFAULT_MAX_SLOTS;
+        public int MaxSupportedSlots => _config?.MaxSlots ?? DEFAULT_MAX_SLOTS;
+
+        /// <summary>
+        /// 当前使用的存档配置
+        /// </summary>
+        public AsakiSaveConfig Config => _config;
 
         /// <summary>
         /// 构造函数，通过依赖注入获取事件服务实例。
@@ -139,6 +150,17 @@ namespace Asaki.Unity.Services.Serialization
         public AsakiSaveService(IAsakiEventService eventService)
         {
             _eventService = eventService;
+        }
+
+        /// <summary>
+        /// 构造函数，通过依赖注入获取事件服务和配置实例。
+        /// </summary>
+        /// <param name="eventService">事件发布服务，用于通知存档状态变更</param>
+        /// <param name="config">存档配置</param>
+        public AsakiSaveService(IAsakiEventService eventService, AsakiSaveConfig config)
+        {
+            _eventService = eventService;
+            _config = config;
         }
 
         /// <summary>
@@ -155,18 +177,31 @@ namespace Asaki.Unity.Services.Serialization
         /// </summary>
         public void OnInit()
         {
-            // 使用Unity的persistentDataPath确保跨平台兼容性（仅在未设置时）
-            if (string.IsNullOrEmpty(_rootPath))
-            {
-                _rootPath = Path.Combine(Application.persistentDataPath, "Saves");
-            }
+            // 如果没有配置，创建默认配置
+            _config ??= new AsakiSaveConfig();
 
-            // 编辑器或Debug构建时启用详细日志和元数据保存
-            _isDebug = Application.isEditor || UnityEngine.Debug.isDebugBuild;
+            // 验证槽位索引
+            _config.ValidateSlotIndices();
+
+            // 使用配置中的路径设置
+            _rootPath = _config.GetSaveRootPath();
+
+            // 根据配置设置调试模式
+            _isDebug = _config.EnableDebugMode;
 
             // 惰性创建根目录，避免不必要的IO操作
             if (!Directory.Exists(_rootPath))
                 Directory.CreateDirectory(_rootPath);
+
+            // 如果启用备份，创建备份目录
+            if (_config.EnableBackup)
+            {
+                string backupPath = _config.GetBackupPath();
+                if (!Directory.Exists(backupPath))
+                    Directory.CreateDirectory(backupPath);
+            }
+
+            ALog.Info($"[AsakiSaveService] Initialized with path: {_rootPath}, MaxSlots: {_config.MaxSlots}, Debug: {_isDebug}");
         }
 
         /// <summary>
