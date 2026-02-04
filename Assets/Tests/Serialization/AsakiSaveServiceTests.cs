@@ -94,13 +94,11 @@ namespace Asaki.Tests.Serialization
         [UnityTest]
         public IEnumerator GetUsedSlots_NoSaves_ReturnsEmptyList()
         {
-            return UniTask.ToCoroutine(async () =>
-            {
-                var slots = _saveService.GetUsedSlots();
+            var slots = _saveService.GetUsedSlots();
 
-                Assert.IsNotNull(slots);
-                Assert.AreEqual(0, slots.Count);
-            });
+            Assert.IsNotNull(slots);
+            Assert.AreEqual(0, slots.Count);
+            yield return null;
         }
 
         /// <summary>
