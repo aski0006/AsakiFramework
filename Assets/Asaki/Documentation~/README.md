@@ -38,7 +38,7 @@
 1. 打开 Unity 编辑器
 2. 进入 `Window > Package Manager`
 3. 点击 `+` 按钮，选择 `Add package from git URL`
-4. 输入：`https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0`
+4. 输入：`https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.2.1`
 
 ### 通过 manifest.json
 
@@ -47,7 +47,7 @@
 ```json
 {
   "dependencies": {
-    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.0.0"
+    "com.asaki.framework": "https://github.com/aski0006/AsakiFramework.git?path=Assets/Asaki#v1.2.1"
   }
 }
 ```
