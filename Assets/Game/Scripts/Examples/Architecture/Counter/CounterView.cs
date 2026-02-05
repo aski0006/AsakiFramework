@@ -54,8 +54,7 @@ namespace Game.Scripts.Examples.Architecture.Counter
         private CounterArchitecture _architecture;
         private CounterModel _model;
 
-        // Undo/Redo 栈
-        private readonly AsakiUndoRedoStack _undoRedoStack = new();
+        // 注意：Undo/Redo 由 Architecture 统一管理
 
         [AsakiInject]
         public void Init(CounterArchitecture architecture)
@@ -97,19 +96,8 @@ namespace Game.Scripts.Examples.Architecture.Counter
         /// </summary>
         private void OnAddClicked()
         {
-            // 使用可撤销的 Command（从 AsakiArchitecturePoolManager 租借）
-            var cmd = AsakiArchitecturePoolManager.Rent<UndoableIncrementCommand>();
-            try
-            {
-                cmd.Create(_architecture);
-                cmd.Execute();
-                _undoRedoStack.RecordCommand(cmd);
-            }
-            finally
-            {
-                // 记录后不归还，Undo/Redo 栈会管理它
-                // 注意：这里 cmd 被栈引用，不需要 Return
-            }
+            // 使用 Architecture 的 SendUndoCommand 方法，支持调试器捕获
+            _architecture.SendUndoCommand<UndoableIncrementCommand>();
 
             UpdateUndoRedoButtons();
         }
@@ -121,26 +109,23 @@ namespace Game.Scripts.Examples.Architecture.Counter
         {
             // 使用 ExecutePooledCommand 便捷方法（自动租借和归还）
             _architecture.ExecutePooledCommand<ResetCounterCommand>();
-
-            // 重置会清空历史
-            _undoRedoStack.ClearHistory();
             UpdateUndoRedoButtons();
         }
 
         private void OnUndoClicked()
         {
-            if (_undoRedoStack.CanUndo)
+            if (_architecture.CanUndo)
             {
-                _undoRedoStack.Undo();
+                _architecture.Undo();
                 UpdateUndoRedoButtons();
             }
         }
 
         private void OnRedoClicked()
         {
-            if (_undoRedoStack.CanRedo)
+            if (_architecture.CanRedo)
             {
-                _undoRedoStack.Redo();
+                _architecture.Redo();
                 UpdateUndoRedoButtons();
             }
         }
@@ -159,14 +144,13 @@ namespace Game.Scripts.Examples.Architecture.Counter
         private void UpdateUndoRedoButtons()
         {
             if (btnUndo != null)
-                btnUndo.interactable = _undoRedoStack.CanUndo;
+                btnUndo.interactable = _architecture.CanUndo;
 
             if (btnRedo != null)
-                btnRedo.interactable = _undoRedoStack.CanRedo;
+                btnRedo.interactable = _architecture.CanRedo;
 
             if (txtStatus != null)
-                txtStatus.text =
-                    $"History: {_undoRedoStack.UndoCount} | {_undoRedoStack.RedoCount}";
+                txtStatus.text = $"History: {_architecture.UndoCount} | {_architecture.RedoCount}";
         }
 
         public void OnEvent(AchievementUnlockedEvent e)
@@ -188,7 +172,7 @@ namespace Game.Scripts.Examples.Architecture.Counter
             btnRedo?.onClick.RemoveAllListeners();
 
             // 清理 Undo/Redo 历史
-            _undoRedoStack.ClearHistory();
+            _architecture.ClearUndoHistory();
         }
 
         /// <summary>

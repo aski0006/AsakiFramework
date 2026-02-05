@@ -5,13 +5,8 @@ namespace Asaki.Core.Architecture.Entities.Components
     /// <summary>
     /// 生命周期组件 - 管理实体的创建、激活、禁用和销毁事件
     /// </summary>
-    public class LifecycleComponent : IEntityComponent
+    public class LifecycleComponent : EntityComponent
     {
-        /// <summary>
-        /// 所属实体
-        /// </summary>
-        public IEntity Entity { get; set; }
-
         /// <summary>
         /// 实体创建时间
         /// </summary>
@@ -35,7 +30,7 @@ namespace Asaki.Core.Architecture.Entities.Components
         /// <summary>
         /// 组件被附加到实体时调用
         /// </summary>
-        public virtual void OnAttach()
+        public override void OnAttach()
         {
             CreationTime = DateTime.Now;
         }
@@ -43,7 +38,7 @@ namespace Asaki.Core.Architecture.Entities.Components
         /// <summary>
         /// 组件从实体移除时调用
         /// </summary>
-        public virtual void OnDetach()
+        public override void OnDetach()
         {
             // 清理事件订阅
             OnActivated = null;
@@ -54,7 +49,7 @@ namespace Asaki.Core.Architecture.Entities.Components
         /// <summary>
         /// 实体激活时调用
         /// </summary>
-        public virtual void OnEnable()
+        public override void OnEnable()
         {
             ActivationTime = DateTime.Now;
             OnActivated?.Invoke();
@@ -63,7 +58,7 @@ namespace Asaki.Core.Architecture.Entities.Components
         /// <summary>
         /// 实体禁用时调用
         /// </summary>
-        public virtual void OnDisable()
+        public override void OnDisable()
         {
             OnDeactivated?.Invoke();
         }
@@ -71,7 +66,7 @@ namespace Asaki.Core.Architecture.Entities.Components
         /// <summary>
         /// 组件被销毁时调用
         /// </summary>
-        public virtual void Dispose()
+        public override void Dispose()
         {
             if (IsDestroyed)
                 return;

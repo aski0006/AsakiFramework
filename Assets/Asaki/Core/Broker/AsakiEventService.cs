@@ -192,10 +192,10 @@ namespace Asaki.Core.Broker
         /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="e">要发布的事件实例。</param>
         public void Publish<T>(T e)
-            where T : IAsakiEvent
+            where T : struct, IAsakiEvent
         {
             // 极速路径：如果桶不存在，说明没订阅者，直接跳过 (比静态类访问还快，因为省了泛型初始化检查)
-            if (TryGetBucket<T>(out var bucket))
+            if (TryGetBucket<T>(out EventBucket<T> bucket))
             {
                 bucket.Publish(e);
             }

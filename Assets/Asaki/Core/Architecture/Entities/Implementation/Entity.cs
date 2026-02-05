@@ -219,6 +219,48 @@ namespace Asaki.Core.Architecture.Entities
         }
 
         /// <summary>
+        /// 检查是否具有指定组件（基于类型）
+        /// </summary>
+        public bool HasComponent(Type componentType)
+        {
+            if (componentType == null)
+                throw new ArgumentNullException(nameof(componentType));
+
+            int typeId = ComponentTypeRegistry.GetTypeId(componentType);
+            return HasComponent(typeId);
+        }
+
+        /// <summary>
+        /// 移除组件（基于类型）
+        /// </summary>
+        public bool RemoveComponent(Type componentType)
+        {
+            if (componentType == null)
+                throw new ArgumentNullException(nameof(componentType));
+
+            int typeId = ComponentTypeRegistry.GetTypeId(componentType);
+
+            if (!_components.TryGetValue(typeId, out var component))
+                return false;
+
+            if (IsActive)
+                component.OnDisable();
+            component.OnDetach();
+            component.Dispose();
+
+            _components.Remove(typeId);
+            if (typeId < _componentMask.Length)
+                _componentMask[typeId] = false;
+
+            // 发布组件移除事件
+            AsakiBroker.Publish(
+                new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = componentType.Name }
+            );
+
+            return true;
+        }
+
+        /// <summary>
         /// 获取所有组件
         /// </summary>
         public IEnumerable<IEntityComponent> GetAllComponents()

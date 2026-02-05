@@ -74,6 +74,20 @@ namespace Asaki.Core.Architecture.Entities
             where T : class, IEntityComponent;
 
         /// <summary>
+        /// 检查是否具有指定组件（基于类型）
+        /// </summary>
+        /// <param name="componentType">组件类型</param>
+        /// <returns>是否具有该组件</returns>
+        bool HasComponent(Type componentType);
+
+        /// <summary>
+        /// 移除组件（基于类型）
+        /// </summary>
+        /// <param name="componentType">组件类型</param>
+        /// <returns>是否成功移除</returns>
+        bool RemoveComponent(Type componentType);
+
+        /// <summary>
         /// 获取所有组件
         /// </summary>
         /// <returns>组件枚举</returns>

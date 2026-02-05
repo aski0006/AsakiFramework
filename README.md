@@ -1,7 +1,7 @@
 # Asaki Framework
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Unity-2022.3+-blue.svg?style=flat-square" alt="Unity Version">
+  <img src="https://img.shields.io/badge/Unity-6000.0+-blue.svg?style=flat-square" alt="Unity Version">
   <img src="https://img.shields.io/badge/.NET-4.7.1+-blue.svg?style=flat-square" alt=".NET Version">
   <img src="https://img.shields.io/badge/License-MIT-green.svg?style=flat-square" alt="License">
 </p>
@@ -76,7 +76,15 @@ public class AchievementUnlockedEvent : IAsakiEvent { }
 - **低内存自动收缩**：响应系统内存压力事件
 - **预加载与异步扩容**：平滑处理突发请求
 
-### 5. 编译时代码生成 (Compile-Time Code Generation)
+### 5. 轻量级实体组件系统 (Entity-Component System)
+
+与 Architecture 无缝集成的高性能 ECS：
+
+- **MagicContainer**：O(1) 增删改查，内存连续，缓存友好
+- **代际验证**：防止 ABA 问题的实体 ID 设计
+- **类型安全查询**：泛型查询支持，编译时类型检查
+
+### 6. 编译时代码生成 (Compile-Time Code Generation)
 
 通过 Roslyn Source Generator 减少运行时反射开销：
 
@@ -90,21 +98,23 @@ public class AchievementUnlockedEvent : IAsakiEvent { }
 
 | 特性 | 描述 | 状态 |
 |------|------|------|
-| **服务容器** | 极速无锁服务定位器 | ✅ 稳定 |
+| **服务容器** | 极速无锁服务定位器 (V5.1 Lock-Free) | ✅ 稳定 |
 | **依赖注入** | 属性和构造函数注入 | ✅ 稳定 |
 | **模块化系统** | DAG 依赖解析，支持异步初始化 | ✅ 稳定 |
 | **对象池** | 智能治理，自动内存管理 | ✅ 稳定 |
 | **事件总线** | 类型安全的事件发布订阅 | ✅ 稳定 |
 | **响应式架构** | CQRS + 命令/查询/事件 | ✅ 稳定 |
+| **实体系统** | 轻量级 ECS，与 Architecture 集成 | ✅ 稳定 |
 | **配置系统** | CSV/Binary 热重载 | ✅ 稳定 |
 | **资源管理** | Addressables/Resources 统一抽象 | ✅ 稳定 |
 | **音频系统** | 状态机驱动的音频管理 | ✅ 稳定 |
 | **UI 框架** | MVVM 数据绑定，层级管理 | ✅ 稳定 |
-| **存档系统** | 版本化存档，自动迁移 | ✅ 稳定 |
+| **存档系统** | 版本化存档，自动迁移，槽位管理 | ✅ 稳定 |
 | **日志系统** | 异步文件写入，分级过滤 | ✅ 稳定 |
 | **网络服务** | HTTP 请求，下载管理 | ✅ 稳定 |
+| **定时器服务** | 零分配高性能定时器 | ✅ 稳定 |
 | **安全协程** | 异常隔离，生命周期管理 | ✅ 稳定 |
-| **可视化编辑器** | 节点编辑器，模块依赖图 | ✅ 稳定 |
+| **可视化编辑器** | 节点编辑器，模块依赖图，实体调试器 | ✅ 稳定 |
 
 ---
 
@@ -112,7 +122,7 @@ public class AchievementUnlockedEvent : IAsakiEvent { }
 
 ### 环境要求
 
-- Unity 2022.3 LTS 或更高版本
+- Unity 6000.0 LTS 或更高版本
 - .NET Framework 4.7.1 或 .NET Standard 2.1
 - UniTask 2.x（异步操作支持）
 - Optional: Addressables（资源管理）
@@ -129,7 +139,7 @@ public class AchievementUnlockedEvent : IAsakiEvent { }
 
 1. 打开 Unity Package Manager
 2. 点击 "+" -> "Add package from git URL"
-3. 输入 `https://github.com/yourusername/Asaki.git?path=Assets/Asaki/#{Version}`
+3. 输入 `https://github.com/yourusername/Asaki.git?path=Assets/Asaki#{Version}`
    替换 `#{Version}` 为你要安装的版本号，例如 `v1.0.0`
 4. 点击 "Add"
 
@@ -157,16 +167,16 @@ public class AsakiBootstrapper : MonoBehaviour
 {
     [SerializeField] private AsakiConfig _config;
     [SerializeField] private MonoBehaviour[] _globalBehaviourServices;
-    
+
     private async void Start()
     {
         // 自动发现模块并按 DAG 顺序初始化
         var discovery = new AsakiStaticModuleDiscovery();
         await AsakiModuleLoader.Startup(discovery);
-        
+
         // 冻结容器，防止运行时修改
         AsakiContext.Freeze();
-        
+
         // 广播框架就绪事件
         AsakiBroker.Publish(new OnAsakiFrameworkReadyEvent());
     }
@@ -183,22 +193,22 @@ public class AsakiBootstrapper : MonoBehaviour
 public class MyGameModule : IAsakiModule
 {
     private IAsakiAudioService _audioService;
-    
+
     public void OnInit()
     {
         // 获取依赖服务
         _audioService = AsakiContext.Get<IAsakiAudioService>();
-        
+
         // 注册本模块提供的服务
         AsakiContext.Register<IMyGameService>(new MyGameService());
     }
-    
+
     public async UniTask OnInitAsync()
     {
         // 异步加载资源
         await LoadGameAssetsAsync();
     }
-    
+
     public void OnDispose()
     {
         // 清理资源
@@ -233,16 +243,49 @@ public class StartGameCommand : AsakiCommand
 public class GameView : MonoBehaviour, IAsakiAutoInject
 {
     [AsakiInject] private GameArchitecture _architecture;
-    
+
     private void Start()
     {
         // 执行命令
         _architecture.Execute(new StartGameCommand());
-        
+
         // 订阅事件
         AsakiBroker.Subscribe(new GameStateChangedHandler());
     }
 }
+```
+
+### 使用实体系统
+
+```csharp
+// 1. 定义组件
+public class HealthComponent : EntityComponent
+{
+    public int MaxHealth { get; set; } = 100;
+    public int CurrentHealth { get; set; } = 100;
+}
+
+public class PlayerTag : TagComponent { }
+
+// 2. 创建实体
+var entity = world.Create()
+    .With<HealthComponent>(h => {
+        h.MaxHealth = 200;
+        h.CurrentHealth = 200;
+    })
+    .WithTag<PlayerTag>();
+
+// 3. 查询实体
+foreach (var (entity, health) in world.QueryWith<HealthComponent>())
+{
+    health.CurrentHealth += 10;
+}
+
+// 4. 批量处理
+world.ForEach<HealthComponent>((entity, health) => {
+    if (health.CurrentHealth < health.MaxHealth)
+        health.CurrentHealth++;
+});
 ```
 
 ### 对象池使用
@@ -252,9 +295,9 @@ public class GameView : MonoBehaviour, IAsakiAutoInject
 var pool = await AsakiContext.Get<IAsakiPoolService>().CreatePoolAsync(
     key: "Projectiles",
     factory: new ProjectileFactory(projectilePrefab),
-    config: new AsakiPoolConfig 
-    { 
-        InitialSize = 10, 
+    config: new AsakiPoolConfig
+    {
+        InitialSize = 10,
         MaxSize = 100,
         AutoShrink = true
     }
@@ -267,10 +310,80 @@ var projectile = await pool.GetAsync();
 pool.Return(projectile);
 ```
 
+### 使用定时器服务
+
+```csharp
+public class GameManager : MonoBehaviour
+{
+    [AsakiInject]
+    private IAsakiTimerService _timerService;
+
+    private void Start()
+    {
+        // 创建一次性定时器
+        _timerService.Register(
+            duration: 3f,
+            onComplete: () => Debug.Log("定时器完成！")
+        );
+
+        // 创建循环定时器
+        _timerService.Register(
+            duration: 2f,
+            onComplete: () => Debug.Log("循环执行"),
+            isLooped: true
+        );
+
+        // 创建带进度更新的定时器
+        _timerService.Register(
+            duration: 5f,
+            onComplete: () => Debug.Log("倒计时结束"),
+            onUpdate: (progress) => Debug.Log($"进度: {progress * 100:F1}%")
+        );
+    }
+}
+```
+
+### 使用存档系统
+
+```csharp
+// 定义存档数据
+[AsakiSave(Version = 1)]
+public partial class GameSaveData : IAsakiSavable
+{
+    [AsakiSaveMember(0)]
+    public Vector3 PlayerPosition;
+
+    [AsakiSaveMember(1)]
+    public int PlayerLevel;
+}
+
+// 创建存档
+var slotManager = AsakiContext.Get<IAsakiSaveSlotManager>();
+var slot = await slotManager.CreateSaveAsync("第一章", saveData);
+
+// 加载存档
+var (slot, data) = await slotManager.LoadSaveAsync<GameSaveData>(slotId);
+
+// 配置自动保存
+var autoSaveService = AsakiContext.Get<IAsakiAutoSaveService>();
+autoSaveService.RegisterDataProvider(() => CreateSaveData());
+autoSaveService.SetConfig(new AsakiAutoSaveConfig
+{
+    Enabled = true,
+    Triggers = AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.TimeInterval
+});
+```
+
 ---
 
-## 项目文档 (DeepWiki)
-- **[项目](https://deepwiki.com/aski0006/AsakiFramework)**
+## 项目文档
+
+- **[DeepWiki 项目文档](https://deepwiki.com/aski0006/AsakiFramework)**
+- **[实体系统使用指南](Assets/Asaki/Core/Architecture/Entities/README.md)**
+- **[实体系统改进指南](Assets/Asaki/Core/Architecture/Entities/IMPROVEMENTS.md)**
+- **[存档系统使用指南](Assets/Asaki/Core/Serialization/README.md)**
+- **[定时器服务使用指南](Assets/Asaki/Documents/AsakiTimeService使用指南.md)**
+
 ---
 
 ## 示例项目
@@ -282,12 +395,14 @@ pool.Return(projectile);
 - **PoolExample** - 对象池使用演示
 - **AudioExample** - 音频系统使用演示
 - **SaveExample** - 存档系统与版本迁移
+- **EntityExample** - 实体系统使用演示
+- **SafeCoroutineExample** - 安全协程使用演示
 
 ---
 
 ## 性能基准
 
-在 Unity 2022.3 LTS 上的测试数据：
+在 Unity 6000.0 LTS 上的测试数据：
 
 | 操作 | 耗时 | GC Alloc |
 |------|------|----------|
@@ -295,8 +410,39 @@ pool.Return(projectile);
 | 事件发布 | ~50ns | 0 B |
 | 对象池获取 | ~20ns | 0 B |
 | 命令执行 | ~30ns | 0 B |
+| 实体创建 | ~120ns | 0 B |
+| 定时器注册 | ~25ns | 0 B |
+| 魔法容器遍历 (1000实体) | ~3μs | 0 B |
 
 *测试环境：Intel i7-12700K, 32GB RAM*
+
+---
+
+## 项目结构
+
+```
+Assets/Asaki/
+├── Core/                       # 核心框架（纯 C#，无 Unity 依赖）
+│   ├── Architecture/           # CQRS 架构
+│   │   ├── Command/            # 命令系统
+│   │   ├── Queries/            # 查询系统
+│   │   └── Entities/           # 实体组件系统
+│   ├── Context/                # 服务容器
+│   ├── Pooling/                # 对象池
+│   ├── Broker/                 # 事件总线
+│   ├── Serialization/          # 序列化/存档
+│   ├── Time/                   # 定时器服务
+│   └── ...
+├── Unity/                      # Unity 实现层
+│   ├── Modules/                # 内置模块
+│   ├── Services/               # 服务实现
+│   └── Bootstrapper/           # 引导程序
+├── Editor/                     # 编辑器工具
+│   ├── Entities/               # 实体调试器
+│   ├── Debugging/              # 调试窗口
+│   └── Utilities/              # 实用工具
+└── CodeGen/                    # 代码生成器
+```
 
 ---
 

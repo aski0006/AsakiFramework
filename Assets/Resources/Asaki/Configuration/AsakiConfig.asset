@@ -19,6 +19,8 @@ MonoBehaviour:
     MaxFileSizeKB: 10240
     MaxHistoryFiles: 10
     FilePrefix: GameLog
+    OutputToUnityConsole: 0
+    DashboardRefreshInterval: 0.05
   resConfig:
     Mode: 1
     TimeoutSeconds: 60
@@ -67,11 +69,20 @@ MonoBehaviour:
     <BaseUrl>k__BackingField: 
     <TimeoutSeconds>k__BackingField: 3
     InitialInterceptors: []
-  localizationConfig:
-    <FallbackLanguage>k__BackingField: en-US
-    <RawCsvPath>k__BackingField: Assets/StreamingAssets/Configs/RawLocalization.csv
-    <OutputTableName>k__BackingField: LocalizationTable
-    <OutputRelativePath>k__BackingField: Configs
+  saveConfig:
+    SaveDirectoryName: Saves
+    CustomSavePath: 
+    MaxSlots: 10
+    AutoSaveSlotIndex: 0
+    QuickSaveSlotIndex: 1
+    EnableBackup: 0
+    BackupDirectoryName: Backups
+    MaxBackupCount: 3
+    EnableDebugMode: 1
+    VerboseLogging: 0
+    OperationTimeout: 30
+    EnableCompression: 0
+    CompressionLevel: 6
   references:
     version: 2
     RefIds: []

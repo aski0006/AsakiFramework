@@ -257,8 +257,8 @@ namespace Asaki.Core.Logging
             }
 
             _writer?.Dispose();
-            Aggregator.Dispose();
             Aggregator.Clear();
+            Aggregator.Dispose();
         }
 
         /// <summary>

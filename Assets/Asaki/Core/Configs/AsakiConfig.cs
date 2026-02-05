@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Context;
+using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Network;
 using UnityEngine;
@@ -51,10 +51,10 @@ namespace Asaki.Core.Configs
         private AsakiWebConfig webConfig = new AsakiWebConfig();
         public AsakiWebConfig WebConfig => webConfig;
 
-        [Header("Modules: Localization")]
+        [Header("Modules: Save")]
         [SerializeField]
-        private AsakiLocalizationConfig localizationConfig = new AsakiLocalizationConfig();
-        public AsakiLocalizationConfig LocalizationConfig => localizationConfig;
+        private AsakiSaveConfig saveConfig = new AsakiSaveConfig();
+        public AsakiSaveConfig SaveConfig => saveConfig;
 
         // =========================================================
         // 3. Runtime Initialization
