@@ -51,11 +51,6 @@ namespace Asaki.Core.Configs
         private AsakiWebConfig webConfig = new AsakiWebConfig();
         public AsakiWebConfig WebConfig => webConfig;
 
-        [Header("Modules: Localization")]
-        [SerializeField]
-        private AsakiLocalizationConfig localizationConfig = new AsakiLocalizationConfig();
-        public AsakiLocalizationConfig LocalizationConfig => localizationConfig;
-
         [Header("Modules: Save")]
         [SerializeField]
         private AsakiSaveConfig saveConfig = new AsakiSaveConfig();
