@@ -119,7 +119,8 @@ namespace Asaki.Core.Serialization
             string saveName,
             TData data,
             CancellationToken token = default
-        ) where TData : IAsakiSavable;
+        )
+            where TData : IAsakiSavable;
 
         /// <summary>
         /// 覆盖指定槽位的存档
@@ -134,7 +135,8 @@ namespace Asaki.Core.Serialization
             string saveName,
             TData data,
             CancellationToken token = default
-        ) where TData : IAsakiSavable;
+        )
+            where TData : IAsakiSavable;
 
         /// <summary>
         /// 加载指定槽位的存档
@@ -145,7 +147,8 @@ namespace Asaki.Core.Serialization
         UniTask<(IAsakiSaveSlot Slot, TData Data)> LoadSaveAsync<TData>(
             int slotId,
             CancellationToken token = default
-        ) where TData : IAsakiSavable, new();
+        )
+            where TData : IAsakiSavable, new();
 
         /// <summary>
         /// 加载最新的存档
@@ -154,7 +157,8 @@ namespace Asaki.Core.Serialization
         /// <returns>存档数据和槽位信息，如果没有存档返回 null</returns>
         UniTask<(IAsakiSaveSlot Slot, TData Data)?> LoadLatestSaveAsync<TData>(
             CancellationToken token = default
-        ) where TData : IAsakiSavable, new();
+        )
+            where TData : IAsakiSavable, new();
 
         /// <summary>
         /// 删除指定槽位的存档
@@ -208,10 +212,8 @@ namespace Asaki.Core.Serialization
         /// <param name="data">存档数据</param>
         /// <param name="token">取消令牌</param>
         /// <returns>槽位信息</returns>
-        UniTask<IAsakiSaveSlot> AutoSaveAsync<TData>(
-            TData data,
-            CancellationToken token = default
-        ) where TData : IAsakiSavable;
+        UniTask<IAsakiSaveSlot> AutoSaveAsync<TData>(TData data, CancellationToken token = default)
+            where TData : IAsakiSavable;
 
         /// <summary>
         /// 执行快速保存
@@ -219,10 +221,8 @@ namespace Asaki.Core.Serialization
         /// <param name="data">存档数据</param>
         /// <param name="token">取消令牌</param>
         /// <returns>槽位信息</returns>
-        UniTask<IAsakiSaveSlot> QuickSaveAsync<TData>(
-            TData data,
-            CancellationToken token = default
-        ) where TData : IAsakiSavable;
+        UniTask<IAsakiSaveSlot> QuickSaveAsync<TData>(TData data, CancellationToken token = default)
+            where TData : IAsakiSavable;
 
         /// <summary>
         /// 加载自动保存的存档
@@ -231,7 +231,8 @@ namespace Asaki.Core.Serialization
         /// <returns>存档数据和槽位信息，如果不存在返回 null</returns>
         UniTask<(IAsakiSaveSlot Slot, TData Data)?> LoadAutoSaveAsync<TData>(
             CancellationToken token = default
-        ) where TData : IAsakiSavable, new();
+        )
+            where TData : IAsakiSavable, new();
 
         /// <summary>
         /// 加载快速保存的存档
@@ -240,6 +241,7 @@ namespace Asaki.Core.Serialization
         /// <returns>存档数据和槽位信息，如果不存在返回 null</returns>
         UniTask<(IAsakiSaveSlot Slot, TData Data)?> LoadQuickSaveAsync<TData>(
             CancellationToken token = default
-        ) where TData : IAsakiSavable, new();
+        )
+            where TData : IAsakiSavable, new();
     }
 }

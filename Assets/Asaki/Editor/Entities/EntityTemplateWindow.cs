@@ -79,12 +79,14 @@ namespace Asaki.Editor.Entities
                 var template = EntityTemplateRegistry.Get(name);
                 if (template != null)
                 {
-                    _templates.Add(new TemplateData
-                    {
-                        Name = name,
-                        Template = template,
-                        LastModified = DateTime.Now
-                    });
+                    _templates.Add(
+                        new TemplateData
+                        {
+                            Name = name,
+                            Template = template,
+                            LastModified = DateTime.Now,
+                        }
+                    );
                 }
             }
         }
@@ -111,7 +113,11 @@ namespace Asaki.Editor.Entities
             GUILayout.Space(10);
 
             GUILayout.Label("Search:", GUILayout.Width(45));
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(150));
+            _searchFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                EditorStyles.toolbarSearchField,
+                GUILayout.Width(150)
+            );
 
             GUILayout.FlexibleSpace();
 
@@ -129,8 +135,9 @@ namespace Asaki.Editor.Entities
             GUILayout.Label("New Template", EditorStyles.miniBoldLabel);
             _newTemplateName = EditorGUILayout.TextField(_newTemplateName);
 
-            GUI.enabled = !string.IsNullOrWhiteSpace(_newTemplateName) &&
-                         !_templates.Any(t => t.Name == _newTemplateName);
+            GUI.enabled =
+                !string.IsNullOrWhiteSpace(_newTemplateName)
+                && !_templates.Any(t => t.Name == _newTemplateName);
 
             GUI.backgroundColor = new Color(0.6f, 1f, 0.6f);
             if (GUILayout.Button("Create Template"))
@@ -148,9 +155,12 @@ namespace Asaki.Editor.Entities
 
             _templateListScroll = EditorGUILayout.BeginScrollView(_templateListScroll, "box");
 
-            var filtered = _templates.Where(t =>
-                string.IsNullOrEmpty(_searchFilter) ||
-                t.Name.ToLower().Contains(_searchFilter.ToLower())).ToList();
+            var filtered = _templates
+                .Where(t =>
+                    string.IsNullOrEmpty(_searchFilter)
+                    || t.Name.ToLower().Contains(_searchFilter.ToLower())
+                )
+                .ToList();
 
             foreach (var template in filtered)
             {
@@ -177,14 +187,21 @@ namespace Asaki.Editor.Entities
 
             EditorGUILayout.BeginHorizontal(style);
 
-            var label = $"<b>{data.Name}</b>\n<size=10>{data.ComponentTypes.Count} components</size>";
+            var label =
+                $"<b>{data.Name}</b>\n<size=10>{data.ComponentTypes.Count} components</size>";
 
             if (GUILayout.Button(label, new GUIStyle(EditorStyles.label) { richText = true }))
             {
                 if (_isEditing)
                 {
-                    if (EditorUtility.DisplayDialog("Discard Changes?",
-                        "You have unsaved changes. Discard them?", "Yes", "No"))
+                    if (
+                        EditorUtility.DisplayDialog(
+                            "Discard Changes?",
+                            "You have unsaved changes. Discard them?",
+                            "Yes",
+                            "No"
+                        )
+                    )
                     {
                         _isEditing = false;
                         _editingTemplate = null;
@@ -211,7 +228,10 @@ namespace Asaki.Editor.Entities
             }
             else if (_selectedTemplate == null)
             {
-                EditorGUILayout.HelpBox("Select a template to view details or create a new one", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Select a template to view details or create a new one",
+                    MessageType.Info
+                );
             }
             else
             {
@@ -271,8 +291,14 @@ namespace Asaki.Editor.Entities
             GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
             if (GUILayout.Button("Delete", GUILayout.Height(30), GUILayout.Width(80)))
             {
-                if (EditorUtility.DisplayDialog("Delete Template",
-                    $"Delete template '{_selectedTemplate.Name}'?", "Yes", "No"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Delete Template",
+                        $"Delete template '{_selectedTemplate.Name}'?",
+                        "Yes",
+                        "No"
+                    )
+                )
                 {
                     DeleteTemplate(_selectedTemplate);
                 }
@@ -295,7 +321,10 @@ namespace Asaki.Editor.Entities
             }
             else
             {
-                EditorGUILayout.HelpBox("Enter Play Mode to test create entities", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Enter Play Mode to test create entities",
+                    MessageType.Info
+                );
             }
 
             EditorGUILayout.EndScrollView();
@@ -319,12 +348,16 @@ namespace Asaki.Editor.Entities
             // 组件选择
             GUILayout.Label("Add Components:", EditorStyles.miniBoldLabel);
 
-            _componentPickerScroll = EditorGUILayout.BeginScrollView(_componentPickerScroll, GUILayout.Height(150));
+            _componentPickerScroll = EditorGUILayout.BeginScrollView(
+                _componentPickerScroll,
+                GUILayout.Height(150)
+            );
 
             foreach (var type in _availableComponentTypes)
             {
                 bool alreadyAdded = _editingComponents.Any(c => c.ComponentType == type);
-                if (alreadyAdded) continue;
+                if (alreadyAdded)
+                    continue;
 
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label(type.Name);
@@ -380,8 +413,10 @@ namespace Asaki.Editor.Entities
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             EditorGUILayout.BeginHorizontal();
-            GUILayout.Label($"<b>{config.ComponentType.Name}</b>",
-                new GUIStyle(EditorStyles.label) { richText = true });
+            GUILayout.Label(
+                $"<b>{config.ComponentType.Name}</b>",
+                new GUIStyle(EditorStyles.label) { richText = true }
+            );
             GUILayout.FlexibleSpace();
 
             GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
@@ -396,7 +431,9 @@ namespace Asaki.Editor.Entities
             EditorGUI.indentLevel++;
 
             // 显示可配置字段
-            var fields = config.ComponentType.GetFields(BindingFlags.Public | BindingFlags.Instance);
+            var fields = config.ComponentType.GetFields(
+                BindingFlags.Public | BindingFlags.Instance
+            );
             foreach (var field in fields)
             {
                 DrawFieldEditor(config, field);
@@ -460,13 +497,20 @@ namespace Asaki.Editor.Entities
 
         private object GetDefaultValue(Type type)
         {
-            if (type == typeof(int)) return 0;
-            if (type == typeof(float)) return 0f;
-            if (type == typeof(bool)) return false;
-            if (type == typeof(string)) return "";
-            if (type == typeof(Vector2)) return Vector2.zero;
-            if (type == typeof(Vector3)) return Vector3.zero;
-            if (type.IsEnum) return Enum.GetValues(type).GetValue(0);
+            if (type == typeof(int))
+                return 0;
+            if (type == typeof(float))
+                return 0f;
+            if (type == typeof(bool))
+                return false;
+            if (type == typeof(string))
+                return "";
+            if (type == typeof(Vector2))
+                return Vector2.zero;
+            if (type == typeof(Vector3))
+                return Vector3.zero;
+            if (type.IsEnum)
+                return Enum.GetValues(type).GetValue(0);
             return null;
         }
 
@@ -479,7 +523,7 @@ namespace Asaki.Editor.Entities
             {
                 Name = name,
                 Template = template,
-                LastModified = DateTime.Now
+                LastModified = DateTime.Now,
             };
 
             _templates.Add(data);
@@ -496,21 +540,17 @@ namespace Asaki.Editor.Entities
             // 复制当前组件配置
             foreach (var type in data.ComponentTypes)
             {
-                _editingComponents.Add(new ComponentConfig
-                {
-                    ComponentType = type,
-                    IsConfigured = true
-                });
+                _editingComponents.Add(
+                    new ComponentConfig { ComponentType = type, IsConfigured = true }
+                );
             }
         }
 
         private void AddComponentToEdit(Type type)
         {
-            _editingComponents.Add(new ComponentConfig
-            {
-                ComponentType = type,
-                IsConfigured = true
-            });
+            _editingComponents.Add(
+                new ComponentConfig { ComponentType = type, IsConfigured = true }
+            );
         }
 
         private void SaveEditingTemplate()
@@ -534,7 +574,8 @@ namespace Asaki.Editor.Entities
                 else
                 {
                     // 普通组件使用With并配置字段
-                    var method = typeof(EntityTemplate).GetMethods()
+                    var method = typeof(EntityTemplate)
+                        .GetMethods()
                         .First(m => m.Name == "With" && m.GetParameters().Length == 1)
                         .MakeGenericMethod(type);
 
@@ -559,7 +600,9 @@ namespace Asaki.Editor.Entities
             _editingTemplate.Name = _editingName;
             _editingTemplate.Template = newTemplate;
             _editingTemplate.LastModified = DateTime.Now;
-            _editingTemplate.ComponentTypes = _editingComponents.Select(c => c.ComponentType).ToList();
+            _editingTemplate.ComponentTypes = _editingComponents
+                .Select(c => c.ComponentType)
+                .ToList();
 
             _isEditing = false;
             _editingTemplate = null;
@@ -587,9 +630,14 @@ namespace Asaki.Editor.Entities
             var entity = EntityTemplateRegistry.Instantiate(data.Name, worlds[0]);
             if (entity != null)
             {
-                Debug.Log($"[EntityTemplate] Created entity {entity.Id} from template '{data.Name}'");
-                EditorUtility.DisplayDialog("Success",
-                    $"Created entity {entity.Id} with {entity.ComponentCount} components", "OK");
+                Debug.Log(
+                    $"[EntityTemplate] Created entity {entity.Id} from template '{data.Name}'"
+                );
+                EditorUtility.DisplayDialog(
+                    "Success",
+                    $"Created entity {entity.Id} with {entity.ComponentCount} components",
+                    "OK"
+                );
             }
         }
     }

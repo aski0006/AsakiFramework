@@ -41,7 +41,7 @@ namespace Asaki.Core.Serialization
         /// <summary>
         /// 全部触发条件
         /// </summary>
-        All = TimeInterval | Checkpoint | SceneChange | ApplicationPause | Manual
+        All = TimeInterval | Checkpoint | SceneChange | ApplicationPause | Manual,
     }
 
     /// <summary>
@@ -159,7 +159,8 @@ namespace Asaki.Core.Serialization
         public bool Enabled { get; set; } = true;
 
         /// <inheritdoc />
-        public AsakiAutoSaveTrigger Triggers { get; set; } = AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause;
+        public AsakiAutoSaveTrigger Triggers { get; set; } =
+            AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause;
 
         /// <inheritdoc />
         public float TimeIntervalSeconds { get; set; } = 300f; // 5分钟
@@ -280,7 +281,7 @@ namespace Asaki.Core.Serialization
                 TimeIntervalSeconds = 60f,
                 MaxAutoSaveCount = 5,
                 ShowNotification = true,
-                GenerateThumbnail = true
+                GenerateThumbnail = true,
             };
         }
 
@@ -295,7 +296,7 @@ namespace Asaki.Core.Serialization
                 Triggers = AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause,
                 MaxAutoSaveCount = 1,
                 ShowNotification = false,
-                GenerateThumbnail = false
+                GenerateThumbnail = false,
             };
         }
 
@@ -307,7 +308,7 @@ namespace Asaki.Core.Serialization
             return new AsakiAutoSaveConfig
             {
                 Enabled = false,
-                Triggers = AsakiAutoSaveTrigger.None
+                Triggers = AsakiAutoSaveTrigger.None,
             };
         }
     }

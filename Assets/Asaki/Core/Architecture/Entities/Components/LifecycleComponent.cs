@@ -7,7 +7,6 @@ namespace Asaki.Core.Architecture.Entities.Components
     /// </summary>
     public class LifecycleComponent : EntityComponent
     {
-
         /// <summary>
         /// 实体创建时间
         /// </summary>

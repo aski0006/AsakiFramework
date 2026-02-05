@@ -25,7 +25,7 @@ namespace Asaki.Core.Serialization
         /// <summary>
         /// 槽位被锁定（无法覆盖）
         /// </summary>
-        Locked
+        Locked,
     }
 
     /// <summary>

@@ -150,8 +150,7 @@ namespace Game.Scripts.Examples.Architecture.Counter
                 btnRedo.interactable = _architecture.CanRedo;
 
             if (txtStatus != null)
-                txtStatus.text =
-                    $"History: {_architecture.UndoCount} | {_architecture.RedoCount}";
+                txtStatus.text = $"History: {_architecture.UndoCount} | {_architecture.RedoCount}";
         }
 
         public void OnEvent(AchievementUnlockedEvent e)

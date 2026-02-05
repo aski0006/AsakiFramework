@@ -103,11 +103,17 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 查询具有任意指定标签的实体
         /// </summary>
-        public static IEnumerable<IEntity> QueryByAnyTag(this IEntityWorld world, params string[] tags)
+        public static IEnumerable<IEntity> QueryByAnyTag(
+            this IEntityWorld world,
+            params string[] tags
+        )
         {
             foreach (var entity in world.GetAllEntities())
             {
-                if (entity.TryGetComponent<TagsComponent>(out var tagsComp) && tagsComp.HasAnyTag(tags))
+                if (
+                    entity.TryGetComponent<TagsComponent>(out var tagsComp)
+                    && tagsComp.HasAnyTag(tags)
+                )
                 {
                     yield return entity;
                 }
@@ -117,11 +123,17 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 查询具有所有指定标签的实体
         /// </summary>
-        public static IEnumerable<IEntity> QueryByAllTags(this IEntityWorld world, params string[] tags)
+        public static IEnumerable<IEntity> QueryByAllTags(
+            this IEntityWorld world,
+            params string[] tags
+        )
         {
             foreach (var entity in world.GetAllEntities())
             {
-                if (entity.TryGetComponent<TagsComponent>(out var tagsComp) && tagsComp.HasAllTags(tags))
+                if (
+                    entity.TryGetComponent<TagsComponent>(out var tagsComp)
+                    && tagsComp.HasAllTags(tags)
+                )
                 {
                     yield return entity;
                 }

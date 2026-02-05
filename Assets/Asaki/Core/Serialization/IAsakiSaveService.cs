@@ -39,14 +39,29 @@ namespace Asaki.Core.Serialization
         /// <summary>
         /// 成功的结果
         /// </summary>
-        public static AsakiSaveResult Successful(int slotId, long fileSize = 0, long elapsedMs = 0) =>
-            new AsakiSaveResult { Success = true, SlotId = slotId, FileSize = fileSize, ElapsedMilliseconds = elapsedMs };
+        public static AsakiSaveResult Successful(
+            int slotId,
+            long fileSize = 0,
+            long elapsedMs = 0
+        ) =>
+            new AsakiSaveResult
+            {
+                Success = true,
+                SlotId = slotId,
+                FileSize = fileSize,
+                ElapsedMilliseconds = elapsedMs,
+            };
 
         /// <summary>
         /// 失败的结果
         /// </summary>
         public static AsakiSaveResult Failed(string errorMessage, int slotId = -1) =>
-            new AsakiSaveResult { Success = false, ErrorMessage = errorMessage, SlotId = slotId };
+            new AsakiSaveResult
+            {
+                Success = false,
+                ErrorMessage = errorMessage,
+                SlotId = slotId,
+            };
     }
 
     /// <summary>
@@ -84,8 +99,18 @@ namespace Asaki.Core.Serialization
         /// <summary>
         /// 成功的结果
         /// </summary>
-        public static AsakiLoadResult<TMeta, TData> Successful(TMeta meta, TData data, long elapsedMs = 0) =>
-            new AsakiLoadResult<TMeta, TData> { Success = true, Meta = meta, Data = data, ElapsedMilliseconds = elapsedMs };
+        public static AsakiLoadResult<TMeta, TData> Successful(
+            TMeta meta,
+            TData data,
+            long elapsedMs = 0
+        ) =>
+            new AsakiLoadResult<TMeta, TData>
+            {
+                Success = true,
+                Meta = meta,
+                Data = data,
+                ElapsedMilliseconds = elapsedMs,
+            };
 
         /// <summary>
         /// 失败的结果
@@ -240,17 +265,29 @@ namespace Asaki.Core.Serialization
         /// <summary>
         /// 复制存档到另一个槽位
         /// </summary>
-        UniTask<bool> CopySlotAsync(int sourceSlotId, int targetSlotId, CancellationToken cancellationToken = default);
+        UniTask<bool> CopySlotAsync(
+            int sourceSlotId,
+            int targetSlotId,
+            CancellationToken cancellationToken = default
+        );
 
         /// <summary>
         /// 导出存档到指定路径
         /// </summary>
-        UniTask<bool> ExportSlotAsync(int slotId, string exportPath, CancellationToken cancellationToken = default);
+        UniTask<bool> ExportSlotAsync(
+            int slotId,
+            string exportPath,
+            CancellationToken cancellationToken = default
+        );
 
         /// <summary>
         /// 从指定路径导入存档
         /// </summary>
-        UniTask<bool> ImportSlotAsync(string importPath, int targetSlotId, CancellationToken cancellationToken = default);
+        UniTask<bool> ImportSlotAsync(
+            string importPath,
+            int targetSlotId,
+            CancellationToken cancellationToken = default
+        );
     }
 
     /// <summary>

@@ -11,9 +11,7 @@ namespace Asaki.Tests.Serialization
     public class AsakiSaveSlotTests
     {
         [SetUp]
-        public void Setup()
-        {
-        }
+        public void Setup() { }
 
         /// <summary>
         /// 测试：默认槽位状态为空
@@ -21,10 +19,7 @@ namespace Asaki.Tests.Serialization
         [Test]
         public void DefaultSlotStatus_IsEmpty()
         {
-            AsakiSaveSlot slot = new AsakiSaveSlot
-            {
-                SlotId = 0
-            };
+            AsakiSaveSlot slot = new AsakiSaveSlot { SlotId = 0 };
 
             Assert.AreEqual(AsakiSaveSlotStatus.Empty, slot.Status);
             Assert.IsTrue(slot.IsEmpty);
@@ -41,7 +36,7 @@ namespace Asaki.Tests.Serialization
             {
                 SlotId = 1,
                 Status = AsakiSaveSlotStatus.Occupied,
-                SaveName = "Test Save"
+                SaveName = "Test Save",
             };
 
             Assert.AreEqual(AsakiSaveSlotStatus.Occupied, slot.Status);
@@ -57,7 +52,7 @@ namespace Asaki.Tests.Serialization
         {
             var slot = new AsakiSaveSlot
             {
-                PlayTimeSeconds = 3661 // 1小时1分1秒
+                PlayTimeSeconds = 3661, // 1小时1分1秒
             };
 
             var result = slot.GetFormattedPlayTime();
@@ -73,7 +68,7 @@ namespace Asaki.Tests.Serialization
         {
             var slot = new AsakiSaveSlot
             {
-                PlayTimeSeconds = 3661 // 1小时1分1秒
+                PlayTimeSeconds = 3661, // 1小时1分1秒
             };
 
             var result = slot.GetFormattedPlayTime();
@@ -87,10 +82,7 @@ namespace Asaki.Tests.Serialization
         [Test]
         public void GetFormattedPlayTime_ZeroSeconds_ReturnsZeroMinutes()
         {
-            var slot = new AsakiSaveSlot
-            {
-                PlayTimeSeconds = 0
-            };
+            var slot = new AsakiSaveSlot { PlayTimeSeconds = 0 };
 
             var result = slot.GetFormattedPlayTime();
 
@@ -103,10 +95,7 @@ namespace Asaki.Tests.Serialization
         [Test]
         public void GetFormattedSaveTime_InvalidTime_ReturnsDash()
         {
-            var slot = new AsakiSaveSlot
-            {
-                LastSaveTime = 0
-            };
+            var slot = new AsakiSaveSlot { LastSaveTime = 0 };
 
             var result = slot.GetFormattedSaveTime();
 
@@ -131,7 +120,7 @@ namespace Asaki.Tests.Serialization
                 PlayerName = "Hero",
                 GameVersion = "1.0.0",
                 Description = "Test description",
-                Tags = new[] { "checkpoint", "boss" }
+                Tags = new[] { "checkpoint", "boss" },
             };
 
             Assert.AreEqual(5, slot.SlotId);
@@ -165,7 +154,7 @@ namespace Asaki.Tests.Serialization
                 PlayerName = "TestPlayer",
                 GameVersion = "1.0.0",
                 Description = "Test",
-                Tags = new[] { "tag1", "tag2" }
+                Tags = new[] { "tag1", "tag2" },
             };
 
             // 序列化到内存流

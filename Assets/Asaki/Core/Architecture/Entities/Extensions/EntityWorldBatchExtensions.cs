@@ -49,7 +49,10 @@ namespace Asaki.Core.Architecture.Entities.Extensions
         /// <summary>
         /// 批量添加组件
         /// </summary>
-        public static int BatchAddComponent<T1>(this IEntityWorld world, Func<IEntity, bool> predicate)
+        public static int BatchAddComponent<T1>(
+            this IEntityWorld world,
+            Func<IEntity, bool> predicate
+        )
             where T1 : class, IEntityComponent, new()
         {
             int addedCount = 0;
@@ -85,7 +88,10 @@ namespace Asaki.Core.Architecture.Entities.Extensions
         /// <summary>
         /// 批量移除组件
         /// </summary>
-        public static int BatchRemoveComponent<T1>(this IEntityWorld world, Func<IEntity, bool> predicate = null)
+        public static int BatchRemoveComponent<T1>(
+            this IEntityWorld world,
+            Func<IEntity, bool> predicate = null
+        )
             where T1 : class, IEntityComponent
         {
             int removedCount = 0;
@@ -125,7 +131,11 @@ namespace Asaki.Core.Architecture.Entities.Extensions
         /// <summary>
         /// 批量设置激活状态
         /// </summary>
-        public static int BatchSetActive(this IEntityWorld world, bool active, Func<IEntity, bool> predicate)
+        public static int BatchSetActive(
+            this IEntityWorld world,
+            bool active,
+            Func<IEntity, bool> predicate
+        )
         {
             int modifiedCount = 0;
             foreach (var entity in world.GetAllEntities())

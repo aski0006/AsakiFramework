@@ -45,7 +45,7 @@ namespace Asaki.Editor.Entities
             IsActive,
             IsInactive,
             HasTag,
-            Custom
+            Custom,
         }
 
         private class QueryCondition
@@ -120,7 +120,10 @@ namespace Asaki.Editor.Entities
 
             GUILayout.Label("Query Conditions", EditorStyles.boldLabel);
 
-            _conditionsScroll = EditorGUILayout.BeginScrollView(_conditionsScroll, GUILayout.Height(150));
+            _conditionsScroll = EditorGUILayout.BeginScrollView(
+                _conditionsScroll,
+                GUILayout.Height(150)
+            );
 
             for (int i = 0; i < _conditions.Count; i++)
             {
@@ -192,7 +195,8 @@ namespace Asaki.Editor.Entities
             GUI.enabled = condition.IsEnabled;
 
             // 条件类型
-            condition.Type = (ConditionType)EditorGUILayout.EnumPopup(condition.Type, GUILayout.Width(120));
+            condition.Type = (ConditionType)
+                EditorGUILayout.EnumPopup(condition.Type, GUILayout.Width(120));
 
             // 根据类型显示额外选项
             switch (condition.Type)
@@ -225,9 +229,10 @@ namespace Asaki.Editor.Entities
         private void DrawComponentSelector(QueryCondition condition)
         {
             var componentNames = _availableComponentTypes.Select(t => t.Name).ToArray();
-            int currentIndex = condition.ComponentType != null
-                ? _availableComponentTypes.IndexOf(condition.ComponentType)
-                : -1;
+            int currentIndex =
+                condition.ComponentType != null
+                    ? _availableComponentTypes.IndexOf(condition.ComponentType)
+                    : -1;
 
             int newIndex = EditorGUILayout.Popup(Mathf.Max(0, currentIndex), componentNames);
             if (newIndex >= 0 && newIndex < _availableComponentTypes.Count)
@@ -241,42 +246,54 @@ namespace Asaki.Editor.Entities
             if (_world == null)
             {
                 RefreshWorld();
-                if (_world == null) return;
+                if (_world == null)
+                    return;
             }
 
-            _queryResults = _world.GetAllEntities().Where(e =>
-            {
-                foreach (var condition in _conditions)
+            _queryResults = _world
+                .GetAllEntities()
+                .Where(e =>
                 {
-                    if (!condition.IsEnabled) continue;
-
-                    bool passes = condition.Type switch
+                    foreach (var condition in _conditions)
                     {
-                        ConditionType.HasComponent => condition.ComponentType != null &&
-                            e.HasComponent(condition.ComponentType),
-                        ConditionType.NotHasComponent => condition.ComponentType == null ||
-                            !e.HasComponent(condition.ComponentType),
-                        ConditionType.IsActive => e.IsActive,
-                        ConditionType.IsInactive => !e.IsActive,
-                        ConditionType.HasTag => !string.IsNullOrEmpty(condition.Tag) &&
-                            e.TryGetComponent<TagsComponent>(out var tags) && tags.HasTag(condition.Tag),
-                        _ => true
-                    };
+                        if (!condition.IsEnabled)
+                            continue;
 
-                    if (!passes) return false;
-                }
-                return true;
-            }).ToList();
+                        bool passes = condition.Type switch
+                        {
+                            ConditionType.HasComponent => condition.ComponentType != null
+                                && e.HasComponent(condition.ComponentType),
+                            ConditionType.NotHasComponent => condition.ComponentType == null
+                                || !e.HasComponent(condition.ComponentType),
+                            ConditionType.IsActive => e.IsActive,
+                            ConditionType.IsInactive => !e.IsActive,
+                            ConditionType.HasTag => !string.IsNullOrEmpty(condition.Tag)
+                                && e.TryGetComponent<TagsComponent>(out var tags)
+                                && tags.HasTag(condition.Tag),
+                            _ => true,
+                        };
+
+                        if (!passes)
+                            return false;
+                    }
+                    return true;
+                })
+                .ToList();
         }
 
         private void DrawQueryResults()
         {
-            _showResults = EditorGUILayout.BeginFoldoutHeaderGroup(_showResults,
-                $"Query Results ({_queryResults.Count})");
+            _showResults = EditorGUILayout.BeginFoldoutHeaderGroup(
+                _showResults,
+                $"Query Results ({_queryResults.Count})"
+            );
 
             if (_showResults)
             {
-                _resultsScroll = EditorGUILayout.BeginScrollView(_resultsScroll, GUILayout.MinHeight(200));
+                _resultsScroll = EditorGUILayout.BeginScrollView(
+                    _resultsScroll,
+                    GUILayout.MinHeight(200)
+                );
 
                 foreach (var entity in _queryResults)
                 {
@@ -285,7 +302,10 @@ namespace Asaki.Editor.Entities
 
                 if (_queryResults.Count == 0)
                 {
-                    EditorGUILayout.LabelField("No matching entities", EditorStyles.centeredGreyMiniLabel);
+                    EditorGUILayout.LabelField(
+                        "No matching entities",
+                        EditorStyles.centeredGreyMiniLabel
+                    );
                 }
 
                 EditorGUILayout.EndScrollView();
@@ -315,7 +335,14 @@ namespace Asaki.Editor.Entities
             GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
             if (GUILayout.Button("Destroy", GUILayout.Width(60)))
             {
-                if (EditorUtility.DisplayDialog("Destroy Entity", $"Destroy {entity.Id}?", "Yes", "No"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Destroy Entity",
+                        $"Destroy {entity.Id}?",
+                        "Yes",
+                        "No"
+                    )
+                )
                 {
                     _world.DestroyEntity(entity.Id);
                     ExecuteQuery();
@@ -340,9 +367,13 @@ namespace Asaki.Editor.Entities
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("Add Component:", GUILayout.Width(100));
 
-                var componentNames = new[] { "Select..." }.Concat(_availableComponentTypes.Select(t => t.Name)).ToArray();
-                int selectedIndex = _componentToAdd != null ?
-                    _availableComponentTypes.IndexOf(_componentToAdd) + 1 : 0;
+                var componentNames = new[] { "Select..." }
+                    .Concat(_availableComponentTypes.Select(t => t.Name))
+                    .ToArray();
+                int selectedIndex =
+                    _componentToAdd != null
+                        ? _availableComponentTypes.IndexOf(_componentToAdd) + 1
+                        : 0;
 
                 int newIndex = EditorGUILayout.Popup(selectedIndex, componentNames);
                 if (newIndex > 0)
@@ -363,8 +394,10 @@ namespace Asaki.Editor.Entities
                 EditorGUILayout.BeginHorizontal();
                 GUILayout.Label("Remove Component:", GUILayout.Width(100));
 
-                selectedIndex = _componentToRemove != null ?
-                    _availableComponentTypes.IndexOf(_componentToRemove) + 1 : 0;
+                selectedIndex =
+                    _componentToRemove != null
+                        ? _availableComponentTypes.IndexOf(_componentToRemove) + 1
+                        : 0;
 
                 newIndex = EditorGUILayout.Popup(selectedIndex, componentNames);
                 if (newIndex > 0)
@@ -403,8 +436,14 @@ namespace Asaki.Editor.Entities
                 GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
                 if (GUILayout.Button("Destroy All") && _queryResults.Count > 0)
                 {
-                    if (EditorUtility.DisplayDialog("Destroy All",
-                        $"Destroy all {_queryResults.Count} entities?", "Yes", "No"))
+                    if (
+                        EditorUtility.DisplayDialog(
+                            "Destroy All",
+                            $"Destroy all {_queryResults.Count} entities?",
+                            "Yes",
+                            "No"
+                        )
+                    )
                     {
                         BatchDestroy();
                     }
@@ -424,7 +463,8 @@ namespace Asaki.Editor.Entities
             {
                 if (!entity.HasComponent(componentType))
                 {
-                    var method = typeof(IEntity).GetMethod("AddComponent")
+                    var method = typeof(IEntity)
+                        .GetMethod("AddComponent")
                         .MakeGenericMethod(componentType);
                     method.Invoke(entity, null);
                     count++;
@@ -441,7 +481,8 @@ namespace Asaki.Editor.Entities
             {
                 if (entity.HasComponent(componentType))
                 {
-                    var method = typeof(IEntity).GetMethod("RemoveComponent")
+                    var method = typeof(IEntity)
+                        .GetMethod("RemoveComponent")
                         .MakeGenericMethod(componentType);
                     method.Invoke(entity, null);
                     count++;

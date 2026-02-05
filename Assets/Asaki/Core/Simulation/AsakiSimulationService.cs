@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace Asaki.Core.Simulation
 {
@@ -12,13 +13,13 @@ namespace Asaki.Core.Simulation
         // 内部包装结构
         // =========================================================
 
-        private struct TickableWrapper
+        public struct TickableWrapper
         {
             public IAsakiTickable Tickable;
             public int Priority;
         }
 
-        private struct LateTickableWrapper
+        public struct LateTickableWrapper
         {
             public IAsakiLateTickable Tickable;
             public int Priority;
@@ -36,6 +37,41 @@ namespace Asaki.Core.Simulation
         // 脏标记控制排序触发频率
         private bool _isTickDirty = false;
         private bool _isLateTickDirty = false;
+
+#if UNITY_EDITOR
+        // =========================================================
+        // 编辑器访问接口 (仅编辑器可用)
+        // =========================================================
+
+        /// <summary>
+        /// 获取所有已注册的Tick对象（只读）
+        /// </summary>
+        public ReadOnlyCollection<TickableWrapper> GetTickables() => _tickables.AsReadOnly();
+
+        /// <summary>
+        /// 获取所有已注册的FixedTick对象（只读）
+        /// </summary>
+        public ReadOnlyCollection<IAsakiFixedTickable> GetFixedTickables() =>
+            _fixedTickables.AsReadOnly();
+
+        /// <summary>
+        /// 获取所有已注册的LateTick对象（只读）
+        /// </summary>
+        public ReadOnlyCollection<LateTickableWrapper> GetLateTickables() =>
+            _lateTickables.AsReadOnly();
+
+        /// <summary>
+        /// 获取Tick对象总数
+        /// </summary>
+        public int GetTotalTickableCount() =>
+            _tickables.Count + _fixedTickables.Count + _lateTickables.Count;
+
+        /// <summary>
+        /// 获取Tick对象统计信息
+        /// </summary>
+        public (int tickCount, int fixedTickCount, int lateTickCount) GetTickableStats() =>
+            (_tickables.Count, _fixedTickables.Count, _lateTickables.Count);
+#endif
 
         // =========================================================
         // 注册与注销

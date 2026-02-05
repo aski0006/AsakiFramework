@@ -28,7 +28,8 @@ namespace Asaki.Core.Architecture.Command
             bool isAsync,
             bool isUndoCommand,
             bool hasError,
-            string errorMessage)
+            string errorMessage
+        )
         {
             CommandType = commandType;
             Timestamp = timestamp;
@@ -112,11 +113,21 @@ namespace Asaki.Core.Architecture.Command
         }
 #else
         public static bool IsEnabled { get; set; }
+
         public static void SetHook(IAsakiCommandDebugHook hook) { }
+
         public static void ClearHook() { }
-        internal static void NotifyExecuting(string commandType, bool isAsync, bool isUndoCommand) { }
+
+        internal static void NotifyExecuting(
+            string commandType,
+            bool isAsync,
+            bool isUndoCommand
+        ) { }
+
         internal static void NotifyExecuted(CommandExecutionInfo info) { }
+
         internal static void NotifyUndo(string commandType) { }
+
         internal static void NotifyRedo(string commandType) { }
 #endif
     }

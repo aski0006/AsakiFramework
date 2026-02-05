@@ -19,7 +19,8 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 添加组件类型
         /// </summary>
-        public EntityTemplate With<T>() where T : class, IEntityComponent, new()
+        public EntityTemplate With<T>()
+            where T : class, IEntityComponent, new()
         {
             _componentAdders.Add(e => e.AddComponent<T>());
             return this;
@@ -28,9 +29,11 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 添加并配置组件
         /// </summary>
-        public EntityTemplate With<T>(Action<T> configure) where T : class, IEntityComponent, new()
+        public EntityTemplate With<T>(Action<T> configure)
+            where T : class, IEntityComponent, new()
         {
-            _componentAdders.Add(e => {
+            _componentAdders.Add(e =>
+            {
                 var component = e.AddComponent<T>();
                 configure?.Invoke(component);
             });
@@ -40,7 +43,8 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 添加标签组件
         /// </summary>
-        public EntityTemplate WithTag<T>() where T : TagComponent, new()
+        public EntityTemplate WithTag<T>()
+            where T : TagComponent, new()
         {
             _componentAdders.Add(e => e.AddComponent<T>());
             return this;

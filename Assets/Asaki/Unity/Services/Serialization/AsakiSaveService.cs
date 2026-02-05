@@ -201,7 +201,9 @@ namespace Asaki.Unity.Services.Serialization
                     Directory.CreateDirectory(backupPath);
             }
 
-            ALog.Info($"[AsakiSaveService] Initialized with path: {_rootPath}, MaxSlots: {_config.MaxSlots}, Debug: {_isDebug}");
+            ALog.Info(
+                $"[AsakiSaveService] Initialized with path: {_rootPath}, MaxSlots: {_config.MaxSlots}, Debug: {_isDebug}"
+            );
         }
 
         /// <summary>

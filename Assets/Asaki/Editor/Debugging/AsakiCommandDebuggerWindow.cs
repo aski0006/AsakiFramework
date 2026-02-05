@@ -33,7 +33,9 @@ namespace Asaki.Editor.Debugging
         public static void ToggleDebug()
         {
             AsakiCommandDebugger.IsEnabled = !AsakiCommandDebugger.IsEnabled;
-            Debug.Log($"[Command Debugger] Debug {(AsakiCommandDebugger.IsEnabled ? "Enabled" : "Disabled")}");
+            Debug.Log(
+                $"[Command Debugger] Debug {(AsakiCommandDebugger.IsEnabled ? "Enabled" : "Disabled")}"
+            );
         }
 
         // --- 窗口状态 ---
@@ -43,7 +45,10 @@ namespace Asaki.Editor.Debugging
         private Vector2 _detailScrollPos;
 
         private float _leftPanelWidth = 300f;
+
+#pragma warning disable CS0414 // 字段已被赋值，但它的值从未被使用
         private float _bottomPanelHeight = 200f;
+#pragma warning restore CS0414 // 字段已被赋值，但它的值从未被使用
 
         private int _selectedTab = 0; // 0: History, 1: Timeline, 2: Undo/Redo Stack
         private int _selectedCommandIndex = -1;
@@ -54,8 +59,10 @@ namespace Asaki.Editor.Debugging
         private int _maxHistorySize = 500;
 
         // --- 调试数据 ---
-        private readonly List<CommandExecutionRecord> _commandHistory = new List<CommandExecutionRecord>();
-        private readonly Dictionary<string, CommandStatistics> _commandStats = new Dictionary<string, CommandStatistics>();
+        private readonly List<CommandExecutionRecord> _commandHistory =
+            new List<CommandExecutionRecord>();
+        private readonly Dictionary<string, CommandStatistics> _commandStats =
+            new Dictionary<string, CommandStatistics>();
 
         // --- 断点 ---
         private readonly HashSet<string> _breakpoints = new HashSet<string>();
@@ -75,14 +82,18 @@ namespace Asaki.Editor.Debugging
         {
             AsakiCommandDebugger.SetHook(this);
             EditorApplication.playModeStateChanged += OnPlayModeChanged;
-            
-            Debug.Log($"[Command Debugger] Window enabled. Debug enabled: {AsakiCommandDebugger.IsEnabled}");
-            
+
+            Debug.Log(
+                $"[Command Debugger] Window enabled. Debug enabled: {AsakiCommandDebugger.IsEnabled}"
+            );
+
             FindActiveArchitecture();
-            
+
             if (_activeArchitecture != null)
             {
-                Debug.Log($"[Command Debugger] Architecture found: {_activeArchitecture.GetType().Name}");
+                Debug.Log(
+                    $"[Command Debugger] Architecture found: {_activeArchitecture.GetType().Name}"
+                );
             }
             else
             {
@@ -102,19 +113,21 @@ namespace Asaki.Editor.Debugging
             {
                 ClearHistory();
                 _sessionStartTime = DateTime.Now;
-                
+
                 // 进入 Play Mode 时自动启用调试
                 if (!AsakiCommandDebugger.IsEnabled)
                 {
                     AsakiCommandDebugger.IsEnabled = true;
                     Debug.Log("[Command Debugger] Auto-enabled debug in Play Mode");
                 }
-                
+
                 FindActiveArchitecture();
-                
+
                 if (_activeArchitecture != null)
                 {
-                    Debug.Log($"[Command Debugger] Architecture connected: {_activeArchitecture.GetType().Name}");
+                    Debug.Log(
+                        $"[Command Debugger] Architecture connected: {_activeArchitecture.GetType().Name}"
+                    );
                 }
             }
             else if (state == PlayModeStateChange.ExitingPlayMode)
@@ -135,7 +148,8 @@ namespace Asaki.Editor.Debugging
                 // 使用反射获取 _pureCSharpServices 字段
                 var servicesField = typeof(AsakiSceneContext).GetField(
                     "_pureCSharpServices",
-                    BindingFlags.NonPublic | BindingFlags.Instance);
+                    BindingFlags.NonPublic | BindingFlags.Instance
+                );
 
                 if (servicesField?.GetValue(context) is System.Collections.IList services)
                 {
@@ -143,7 +157,9 @@ namespace Asaki.Editor.Debugging
                     {
                         if (service is AsakiArchitecture architecture)
                         {
-                            Debug.Log($"[Command Debugger] Found active architecture: {architecture.GetType().Name}");
+                            Debug.Log(
+                                $"[Command Debugger] Found active architecture: {architecture.GetType().Name}"
+                            );
                             _activeArchitecture = architecture;
                             return;
                         }
@@ -152,8 +168,10 @@ namespace Asaki.Editor.Debugging
             }
 
             // 备选：尝试从全局上下文获取
-            if (AsakiContext.TryGet<IAsakiArchitecture>(out var archInterface) &&
-                archInterface is AsakiArchitecture arch)
+            if (
+                AsakiContext.TryGet<IAsakiArchitecture>(out var archInterface)
+                && archInterface is AsakiArchitecture arch
+            )
             {
                 _activeArchitecture = arch;
             }
@@ -165,11 +183,11 @@ namespace Asaki.Editor.Debugging
 
         public void OnCommandExecuting(string commandType, bool isAsync, bool isUndoCommand)
         {
-            if (_pauseRecording) return;
+            if (_pauseRecording)
+                return;
 
             // 检查断点
-            if (_breakpoints.Contains(commandType) ||
-                (isUndoCommand && _breakOnUndoCommand))
+            if (_breakpoints.Contains(commandType) || (isUndoCommand && _breakOnUndoCommand))
             {
                 Debug.Break();
                 Debug.Log($"[Command Debugger] Breakpoint hit: {commandType}");
@@ -178,7 +196,8 @@ namespace Asaki.Editor.Debugging
 
         public void OnCommandExecuted(CommandExecutionInfo info)
         {
-            if (_pauseRecording) return;
+            if (_pauseRecording)
+                return;
 
             // 诊断日志 - 首次捕获时输出
             if (_commandHistory.Count == 0)
@@ -190,7 +209,7 @@ namespace Asaki.Editor.Debugging
             {
                 Info = info,
                 SessionTime = _sessionTime,
-                Index = _commandHistory.Count
+                Index = _commandHistory.Count,
             };
 
             _commandHistory.Add(record);
@@ -211,7 +230,9 @@ namespace Asaki.Editor.Debugging
                 if (_breakOnError)
                 {
                     Debug.Break();
-                    Debug.LogError($"[Command Debugger] Error in command: {info.CommandType} - {info.ErrorMessage}");
+                    Debug.LogError(
+                        $"[Command Debugger] Error in command: {info.CommandType} - {info.ErrorMessage}"
+                    );
                 }
             }
 
@@ -232,7 +253,8 @@ namespace Asaki.Editor.Debugging
 
         public void OnCommandUndo(string commandType)
         {
-            if (_pauseRecording) return;
+            if (_pauseRecording)
+                return;
 
             var record = new CommandExecutionRecord
             {
@@ -250,7 +272,7 @@ namespace Asaki.Editor.Debugging
                 ),
                 SessionTime = _sessionTime,
                 Index = _commandHistory.Count,
-                IsUndoOperation = true
+                IsUndoOperation = true,
             };
 
             _commandHistory.Add(record);
@@ -259,7 +281,8 @@ namespace Asaki.Editor.Debugging
 
         public void OnCommandRedo(string commandType)
         {
-            if (_pauseRecording) return;
+            if (_pauseRecording)
+                return;
 
             var record = new CommandExecutionRecord
             {
@@ -277,7 +300,7 @@ namespace Asaki.Editor.Debugging
                 ),
                 SessionTime = _sessionTime,
                 Index = _commandHistory.Count,
-                IsRedoOperation = true
+                IsRedoOperation = true,
             };
 
             _commandHistory.Add(record);
@@ -430,7 +453,7 @@ namespace Asaki.Editor.Debugging
             // 命令类型
             GUIStyle nameStyle = new GUIStyle(EditorStyles.label)
             {
-                fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal
+                fontStyle = isSelected ? FontStyle.Bold : FontStyle.Normal,
             };
 
             if (GUILayout.Button(record.Info.CommandType, nameStyle, GUILayout.ExpandWidth(true)))
@@ -455,7 +478,10 @@ namespace Asaki.Editor.Debugging
             if (record.Info.HasError)
             {
                 GUI.color = Color.red;
-                EditorGUILayout.LabelField($"  ⚠ {record.Info.ErrorMessage}", EditorStyles.miniLabel);
+                EditorGUILayout.LabelField(
+                    $"  ⚠ {record.Info.ErrorMessage}",
+                    EditorStyles.miniLabel
+                );
                 GUI.color = Color.white;
             }
 
@@ -566,7 +592,10 @@ namespace Asaki.Editor.Debugging
 
             if (!Application.isPlaying || _activeArchitecture == null)
             {
-                EditorGUILayout.HelpBox("Undo/Redo stack is only available in Play Mode with an active Architecture.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Undo/Redo stack is only available in Play Mode with an active Architecture.",
+                    MessageType.Info
+                );
                 EditorGUILayout.EndScrollView();
                 return;
             }
@@ -589,7 +618,10 @@ namespace Asaki.Editor.Debugging
             foreach (var cmd in undoStack)
             {
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                GUILayout.Label(EditorGUIUtility.IconContent("d_Animation.PrevKey"), GUILayout.Width(20));
+                GUILayout.Label(
+                    EditorGUIUtility.IconContent("d_Animation.PrevKey"),
+                    GUILayout.Width(20)
+                );
                 EditorGUILayout.LabelField(cmd.GetType().Name);
                 EditorGUILayout.EndHorizontal();
             }
@@ -604,7 +636,10 @@ namespace Asaki.Editor.Debugging
             foreach (var cmd in redoStack)
             {
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
-                GUILayout.Label(EditorGUIUtility.IconContent("d_Animation.NextKey"), GUILayout.Width(20));
+                GUILayout.Label(
+                    EditorGUIUtility.IconContent("d_Animation.NextKey"),
+                    GUILayout.Width(20)
+                );
                 EditorGUILayout.LabelField(cmd.GetType().Name);
                 EditorGUILayout.EndHorizontal();
             }
@@ -701,7 +736,10 @@ namespace Asaki.Editor.Debugging
 
                 EditorGUILayout.LabelField("Command Type:", info.CommandType);
                 EditorGUILayout.LabelField("Session Time:", $"{record.SessionTime:F3}s");
-                EditorGUILayout.LabelField("Timestamp:", new DateTime(info.Timestamp).ToString("HH:mm:ss.fff"));
+                EditorGUILayout.LabelField(
+                    "Timestamp:",
+                    new DateTime(info.Timestamp).ToString("HH:mm:ss.fff")
+                );
 
                 EditorGUILayout.Space(5);
 
@@ -714,7 +752,11 @@ namespace Asaki.Editor.Debugging
                     EditorGUILayout.Space(5);
                     EditorGUILayout.LabelField("Result Type:", info.ResultType);
                     EditorGUILayout.LabelField("Result Value:");
-                    EditorGUILayout.SelectableLabel(info.ResultValue, EditorStyles.textArea, GUILayout.Height(60));
+                    EditorGUILayout.SelectableLabel(
+                        info.ResultValue,
+                        EditorStyles.textArea,
+                        GUILayout.Height(60)
+                    );
                 }
 
                 if (info.HasError)
@@ -742,7 +784,10 @@ namespace Asaki.Editor.Debugging
             }
             else
             {
-                EditorGUILayout.HelpBox("Select a command from the history to view details.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Select a command from the history to view details.",
+                    MessageType.Info
+                );
             }
 
             EditorGUILayout.EndScrollView();
@@ -756,8 +801,8 @@ namespace Asaki.Editor.Debugging
 
             var statsScrollPos = EditorGUILayout.BeginScrollView(Vector2.zero);
 
-            var sortedStats = _commandStats.Values
-                .OrderByDescending(s => s.TotalExecutions)
+            var sortedStats = _commandStats
+                .Values.OrderByDescending(s => s.TotalExecutions)
                 .Take(10);
 
             foreach (var stat in sortedStats)
@@ -799,7 +844,10 @@ namespace Asaki.Editor.Debugging
                 return _commandHistory;
 
             return _commandHistory
-                .Where(r => r.Info.CommandType.IndexOf(_searchFilter, StringComparison.OrdinalIgnoreCase) >= 0)
+                .Where(r =>
+                    r.Info.CommandType.IndexOf(_searchFilter, StringComparison.OrdinalIgnoreCase)
+                    >= 0
+                )
                 .ToList();
         }
 
@@ -818,8 +866,10 @@ namespace Asaki.Editor.Debugging
 
         private Color GetTimeColor(double ms)
         {
-            if (ms < 1) return Color.green;
-            if (ms < 10) return Color.yellow;
+            if (ms < 1)
+                return Color.green;
+            if (ms < 10)
+                return Color.yellow;
             return Color.red;
         }
 
@@ -834,15 +884,18 @@ namespace Asaki.Editor.Debugging
         private List<IAsakiUndoCommand> GetUndoStack()
         {
             var list = new List<IAsakiUndoCommand>();
-            if (_activeArchitecture == null) return list;
+            if (_activeArchitecture == null)
+                return list;
 
             // 通过反射获取 Undo 栈
-            var field = _activeArchitecture.GetType()
+            var field = _activeArchitecture
+                .GetType()
                 .GetField("_asakiUndoRedoStack", BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (field?.GetValue(_activeArchitecture) is AsakiUndoRedoStack stack)
             {
-                var undoField = stack.GetType()
+                var undoField = stack
+                    .GetType()
                     .GetField("_undoStack", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (undoField?.GetValue(stack) is Stack<IAsakiUndoCommand> undoStack)
@@ -857,15 +910,18 @@ namespace Asaki.Editor.Debugging
         private List<IAsakiUndoCommand> GetRedoStack()
         {
             var list = new List<IAsakiUndoCommand>();
-            if (_activeArchitecture == null) return list;
+            if (_activeArchitecture == null)
+                return list;
 
             // 通过反射获取 Redo 栈
-            var field = _activeArchitecture.GetType()
+            var field = _activeArchitecture
+                .GetType()
                 .GetField("_asakiUndoRedoStack", BindingFlags.NonPublic | BindingFlags.Instance);
 
             if (field?.GetValue(_activeArchitecture) is AsakiUndoRedoStack stack)
             {
-                var redoField = stack.GetType()
+                var redoField = stack
+                    .GetType()
                     .GetField("_redoStack", BindingFlags.NonPublic | BindingFlags.Instance);
 
                 if (redoField?.GetValue(stack) is Stack<IAsakiUndoCommand> redoStack)
@@ -879,9 +935,11 @@ namespace Asaki.Editor.Debugging
 
         private bool GetCanUndo()
         {
-            if (_activeArchitecture == null) return false;
+            if (_activeArchitecture == null)
+                return false;
 
-            var property = _activeArchitecture.GetType()
+            var property = _activeArchitecture
+                .GetType()
                 .GetProperty("CanUndo", BindingFlags.Public | BindingFlags.Instance);
 
             return property?.GetValue(_activeArchitecture) is bool value && value;
@@ -889,9 +947,11 @@ namespace Asaki.Editor.Debugging
 
         private bool GetCanRedo()
         {
-            if (_activeArchitecture == null) return false;
+            if (_activeArchitecture == null)
+                return false;
 
-            var property = _activeArchitecture.GetType()
+            var property = _activeArchitecture
+                .GetType()
                 .GetProperty("CanRedo", BindingFlags.Public | BindingFlags.Instance);
 
             return property?.GetValue(_activeArchitecture) is bool value && value;
@@ -899,9 +959,11 @@ namespace Asaki.Editor.Debugging
 
         private void InvokeUndo()
         {
-            if (_activeArchitecture == null) return;
+            if (_activeArchitecture == null)
+                return;
 
-            var method = _activeArchitecture.GetType()
+            var method = _activeArchitecture
+                .GetType()
                 .GetMethod("Undo", BindingFlags.Public | BindingFlags.Instance);
 
             method?.Invoke(_activeArchitecture, null);
@@ -909,9 +971,11 @@ namespace Asaki.Editor.Debugging
 
         private void InvokeRedo()
         {
-            if (_activeArchitecture == null) return;
+            if (_activeArchitecture == null)
+                return;
 
-            var method = _activeArchitecture.GetType()
+            var method = _activeArchitecture
+                .GetType()
                 .GetMethod("Redo", BindingFlags.Public | BindingFlags.Instance);
 
             method?.Invoke(_activeArchitecture, null);
@@ -919,9 +983,11 @@ namespace Asaki.Editor.Debugging
 
         private void InvokeClearHistory()
         {
-            if (_activeArchitecture == null) return;
+            if (_activeArchitecture == null)
+                return;
 
-            var method = _activeArchitecture.GetType()
+            var method = _activeArchitecture
+                .GetType()
                 .GetMethod("ClearUndoHistory", BindingFlags.Public | BindingFlags.Instance);
 
             method?.Invoke(_activeArchitecture, null);

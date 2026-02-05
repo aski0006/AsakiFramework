@@ -66,8 +66,10 @@ namespace Asaki.Editor.Entities
 
         private void Update()
         {
-            if (!Application.isPlaying) return;
-            if (_pauseAutoRefresh) return;
+            if (!Application.isPlaying)
+                return;
+            if (_pauseAutoRefresh)
+                return;
 
             if (EditorApplication.timeSinceStartup - _lastUpdateTime > RefreshInterval)
             {
@@ -113,18 +115,33 @@ namespace Asaki.Editor.Entities
                 RefreshEntities();
             }
 
-            _pauseAutoRefresh = GUILayout.Toggle(_pauseAutoRefresh, "Pause", EditorStyles.toolbarButton, GUILayout.Width(50));
+            _pauseAutoRefresh = GUILayout.Toggle(
+                _pauseAutoRefresh,
+                "Pause",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(50)
+            );
 
             GUILayout.Space(10);
 
             GUILayout.Label("Search:", GUILayout.Width(45));
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(150));
+            _searchFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                EditorStyles.toolbarSearchField,
+                GUILayout.Width(150)
+            );
 
             GUILayout.FlexibleSpace();
 
             Color originalColor = GUI.backgroundColor;
             GUI.backgroundColor = new Color(0.6f, 1f, 0.6f);
-            if (GUILayout.Button("+ Create Entity", EditorStyles.toolbarButton, GUILayout.Width(100)))
+            if (
+                GUILayout.Button(
+                    "+ Create Entity",
+                    EditorStyles.toolbarButton,
+                    GUILayout.Width(100)
+                )
+            )
             {
                 _showCreatePanel = !_showCreatePanel;
             }
@@ -141,12 +158,16 @@ namespace Asaki.Editor.Entities
 
             _entityScrollPos = EditorGUILayout.BeginScrollView(_entityScrollPos, "box");
 
-            var filtered = _entities.Where(e =>
-            {
-                if (string.IsNullOrEmpty(_searchFilter)) return true;
-                return e.Id.ToString().ToLower().Contains(_searchFilter.ToLower()) ||
-                       e.GetAllComponents().Any(c => c.GetType().Name.ToLower().Contains(_searchFilter.ToLower()));
-            }).ToList();
+            var filtered = _entities
+                .Where(e =>
+                {
+                    if (string.IsNullOrEmpty(_searchFilter))
+                        return true;
+                    return e.Id.ToString().ToLower().Contains(_searchFilter.ToLower())
+                        || e.GetAllComponents()
+                            .Any(c => c.GetType().Name.ToLower().Contains(_searchFilter.ToLower()));
+                })
+                .ToList();
 
             foreach (var entity in filtered)
             {
@@ -177,7 +198,8 @@ namespace Asaki.Editor.Entities
             var content = $"<b>{entity.Id}</b>\n<size=10>";
             var components = entity.GetAllComponents().Take(3);
             content += string.Join(", ", components.Select(c => c.GetType().Name));
-            if (entity.ComponentCount > 3) content += "...";
+            if (entity.ComponentCount > 3)
+                content += "...";
             content += $"</size>\n<size=9>({entity.ComponentCount} components)</size>";
 
             if (GUILayout.Button(content, new GUIStyle(EditorStyles.label) { richText = true }))
@@ -198,7 +220,14 @@ namespace Asaki.Editor.Entities
             GUI.backgroundColor = new Color(1f, 0.5f, 0.5f);
             if (GUILayout.Button("×", GUILayout.Height(15)))
             {
-                if (EditorUtility.DisplayDialog("Destroy Entity", $"Destroy {entity.Id}?", "Yes", "No"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Destroy Entity",
+                        $"Destroy {entity.Id}?",
+                        "Yes",
+                        "No"
+                    )
+                )
                 {
                     _world.DestroyEntity(entity.Id);
                     if (_selectedEntity == entity)
@@ -242,7 +271,10 @@ namespace Asaki.Editor.Entities
 
             GUILayout.Label("Select Components to Add:", EditorStyles.miniBoldLabel);
 
-            _createScrollPos = EditorGUILayout.BeginScrollView(_createScrollPos, GUILayout.Height(300));
+            _createScrollPos = EditorGUILayout.BeginScrollView(
+                _createScrollPos,
+                GUILayout.Height(300)
+            );
 
             foreach (var type in _availableComponentTypes)
             {
@@ -264,12 +296,14 @@ namespace Asaki.Editor.Entities
 
             if (GUILayout.Button("Select All"))
             {
-                foreach (var entry in _newComponents) entry.IsSelected = true;
+                foreach (var entry in _newComponents)
+                    entry.IsSelected = true;
             }
 
             if (GUILayout.Button("Clear All"))
             {
-                foreach (var entry in _newComponents) entry.IsSelected = false;
+                foreach (var entry in _newComponents)
+                    entry.IsSelected = false;
             }
 
             EditorGUILayout.EndHorizontal();
@@ -298,7 +332,8 @@ namespace Asaki.Editor.Entities
 
             foreach (var entry in _newComponents.Where(e => e.IsSelected))
             {
-                var method = typeof(IEntity).GetMethod("AddComponent")
+                var method = typeof(IEntity)
+                    .GetMethod("AddComponent")
                     .MakeGenericMethod(entry.ComponentType);
                 method.Invoke(entity, null);
             }
@@ -307,7 +342,8 @@ namespace Asaki.Editor.Entities
             _showCreatePanel = false;
 
             // 清除选择
-            foreach (var entry in _newComponents) entry.IsSelected = false;
+            foreach (var entry in _newComponents)
+                entry.IsSelected = false;
 
             RefreshEntities();
         }
@@ -324,7 +360,11 @@ namespace Asaki.Editor.Entities
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField("Handle", _selectedEntity.Id.Handle.ToString(), GUILayout.Width(150));
+            EditorGUILayout.LabelField(
+                "Handle",
+                _selectedEntity.Id.Handle.ToString(),
+                GUILayout.Width(150)
+            );
             EditorGUILayout.LabelField("Generation", _selectedEntity.Id.Generation.ToString());
             EditorGUILayout.EndHorizontal();
 
@@ -339,7 +379,10 @@ namespace Asaki.Editor.Entities
             GUILayout.Space(10);
 
             // 组件列表
-            GUILayout.Label($"Components ({_selectedEntity.ComponentCount})", EditorStyles.boldLabel);
+            GUILayout.Label(
+                $"Components ({_selectedEntity.ComponentCount})",
+                EditorStyles.boldLabel
+            );
 
             foreach (var component in _selectedEntity.GetAllComponents())
             {
@@ -363,7 +406,8 @@ namespace Asaki.Editor.Entities
             EditorGUILayout.BeginHorizontal();
 
             GUIStyle headerStyle = new GUIStyle(EditorStyles.foldoutHeader);
-            if (isExpanded) GUI.backgroundColor = new Color(0.8f, 0.9f, 1f);
+            if (isExpanded)
+                GUI.backgroundColor = new Color(0.8f, 0.9f, 1f);
 
             bool newExpanded = EditorGUILayout.Foldout(isExpanded, type.Name, true, headerStyle);
             if (newExpanded != isExpanded)
@@ -378,9 +422,17 @@ namespace Asaki.Editor.Entities
             GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
             if (GUILayout.Button("×", GUILayout.Width(20)))
             {
-                if (EditorUtility.DisplayDialog("Remove Component", $"Remove {type.Name}?", "Yes", "No"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Remove Component",
+                        $"Remove {type.Name}?",
+                        "Yes",
+                        "No"
+                    )
+                )
                 {
-                    var method = typeof(IEntity).GetMethod("RemoveComponent")
+                    var method = typeof(IEntity)
+                        .GetMethod("RemoveComponent")
                         .MakeGenericMethod(type);
                     method.Invoke(_selectedEntity, null);
                     if (_selectedComponent == component)
@@ -498,16 +550,21 @@ namespace Asaki.Editor.Entities
             {
                 EditorGUILayout.BeginVertical("box");
 
-                _addComponentScroll = EditorGUILayout.BeginScrollView(_addComponentScroll, GUILayout.Height(150));
+                _addComponentScroll = EditorGUILayout.BeginScrollView(
+                    _addComponentScroll,
+                    GUILayout.Height(150)
+                );
 
                 foreach (var type in _availableComponentTypes)
                 {
-                    if (_selectedEntity.HasComponent(type)) continue;
+                    if (_selectedEntity.HasComponent(type))
+                        continue;
 
                     if (GUILayout.Button(type.Name, EditorStyles.miniButton))
                     {
-                        MethodInfo method = typeof(IEntity).GetMethod("AddComponent")
-                                                           ?.MakeGenericMethod(type);
+                        MethodInfo method = typeof(IEntity)
+                            .GetMethod("AddComponent")
+                            ?.MakeGenericMethod(type);
                         if (method != null)
                         {
                             method.Invoke(_selectedEntity, null);

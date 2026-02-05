@@ -26,16 +26,26 @@ namespace Asaki.Tests.Serialization
         public void Setup()
         {
             // 每次测试使用唯一目录，避免测试间干扰
-            _testRootPath = Path.Combine(Application.temporaryCachePath, "AsakiSlotManagerTests", Guid.NewGuid().ToString("N"));
+            _testRootPath = Path.Combine(
+                Application.temporaryCachePath,
+                "AsakiSlotManagerTests",
+                Guid.NewGuid().ToString("N")
+            );
             Directory.CreateDirectory(_testRootPath);
 
             _eventService = new AsakiEventService();
             _saveService = new AsakiSaveService(_eventService);
 
             // 初始化保存服务
-            var rootPathField = typeof(AsakiSaveService).GetField("_rootPath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var rootPathField = typeof(AsakiSaveService).GetField(
+                "_rootPath",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             rootPathField?.SetValue(_saveService, _testRootPath);
-            var debugField = typeof(AsakiSaveService).GetField("_isDebug", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var debugField = typeof(AsakiSaveService).GetField(
+                "_isDebug",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             debugField?.SetValue(_saveService, true);
             _saveService.OnInit();
 
@@ -138,13 +148,14 @@ namespace Asaki.Tests.Serialization
         /// 测试：检查槽位是否有效
         /// </summary>
         [UnityTest]
-        public IEnumerator IsSlotValid_AfterSave_ReturnsTrue() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.CreateSaveAsync("Test", new TestSaveData());
+        public IEnumerator IsSlotValid_AfterSave_ReturnsTrue() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                await _slotManager.CreateSaveAsync("Test", new TestSaveData());
 
-            Assert.IsTrue(_slotManager.IsSlotValid(0));
-            Assert.IsFalse(_slotManager.IsSlotEmpty(0));
-        });
+                Assert.IsTrue(_slotManager.IsSlotValid(0));
+                Assert.IsFalse(_slotManager.IsSlotEmpty(0));
+            });
 
         /// <summary>
         /// 测试：获取已使用槽位数量
@@ -154,14 +165,19 @@ namespace Asaki.Tests.Serialization
         {
             return UniTask.ToCoroutine(async () =>
             {
-                IAsakiSaveSlot slot1 = await _slotManager.CreateSaveAsync("Save 1", new TestSaveData());
-                IAsakiSaveSlot slot2 = await _slotManager.CreateSaveAsync("Save 2", new TestSaveData());
+                IAsakiSaveSlot slot1 = await _slotManager.CreateSaveAsync(
+                    "Save 1",
+                    new TestSaveData()
+                );
+                IAsakiSaveSlot slot2 = await _slotManager.CreateSaveAsync(
+                    "Save 2",
+                    new TestSaveData()
+                );
 
                 int count = _slotManager.GetUsedSlotCount();
                 Assert.AreEqual(2, count);
                 _slotManager.DeleteSave(slot1.SlotId);
                 _slotManager.DeleteSave(slot2.SlotId);
-
             });
         }
 
@@ -169,54 +185,60 @@ namespace Asaki.Tests.Serialization
         /// 测试：创建新存档
         /// </summary>
         [UnityTest]
-        public IEnumerator CreateSaveAsync_CreatesNewSlot() => UniTask.ToCoroutine(async () =>
-        {
-            var slot = await _slotManager.CreateSaveAsync("My Save", new TestSaveData
+        public IEnumerator CreateSaveAsync_CreatesNewSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "Hero"
-            });
+                var slot = await _slotManager.CreateSaveAsync(
+                    "My Save",
+                    new TestSaveData { PlayerName = "Hero" }
+                );
 
-            Assert.IsNotNull(slot);
-            Assert.AreEqual("My Save", slot.SaveName);
-            Assert.AreEqual(AsakiSaveSlotStatus.Occupied, slot.Status);
-        });
+                Assert.IsNotNull(slot);
+                Assert.AreEqual("My Save", slot.SaveName);
+                Assert.AreEqual(AsakiSaveSlotStatus.Occupied, slot.Status);
+            });
 
         /// <summary>
         /// 测试：覆盖现有存档
         /// </summary>
         [UnityTest]
-        public IEnumerator OverwriteSaveAsync_UpdatesExistingSlot() => UniTask.ToCoroutine(async () =>
-        {
-            // 先创建一个存档
-            var slot1 = await _slotManager.CreateSaveAsync("Original", new TestSaveData());
-
-            // 覆盖第一个存档
-            var slot = await _slotManager.OverwriteSaveAsync(slot1.SlotId, "Updated", new TestSaveData
+        public IEnumerator OverwriteSaveAsync_UpdatesExistingSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "New"
-            });
+                // 先创建一个存档
+                var slot1 = await _slotManager.CreateSaveAsync("Original", new TestSaveData());
 
-            Assert.IsNotNull(slot);
-            Assert.AreEqual("Updated", slot.SaveName);
-        });
+                // 覆盖第一个存档
+                var slot = await _slotManager.OverwriteSaveAsync(
+                    slot1.SlotId,
+                    "Updated",
+                    new TestSaveData { PlayerName = "New" }
+                );
+
+                Assert.IsNotNull(slot);
+                Assert.AreEqual("Updated", slot.SaveName);
+            });
 
         /// <summary>
         /// 测试：加载存档
         /// </summary>
         [UnityTest]
-        public IEnumerator LoadSaveAsync_LoadsCorrectData() => UniTask.ToCoroutine(async () =>
-        {
-            TestSaveData originalData = new TestSaveData
+        public IEnumerator LoadSaveAsync_LoadsCorrectData() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "TestPlayer", PlayerLevel = 42
-            };
-            IAsakiSaveSlot slot1 = await _slotManager.CreateSaveAsync("LoadTest", originalData);
+                TestSaveData originalData = new TestSaveData
+                {
+                    PlayerName = "TestPlayer",
+                    PlayerLevel = 42,
+                };
+                IAsakiSaveSlot slot1 = await _slotManager.CreateSaveAsync("LoadTest", originalData);
 
-            (IAsakiSaveSlot slot, TestSaveData data) = await _slotManager.LoadSaveAsync<TestSaveData>(slot1.SlotId);
+                (IAsakiSaveSlot slot, TestSaveData data) =
+                    await _slotManager.LoadSaveAsync<TestSaveData>(slot1.SlotId);
 
-            Assert.AreEqual("TestPlayer", data.PlayerName);
-            Assert.AreEqual(42, data.PlayerLevel);
-        });
+                Assert.AreEqual("TestPlayer", data.PlayerName);
+                Assert.AreEqual(42, data.PlayerLevel);
+            });
 
         /// <summary>
         /// 测试：加载最新的存档
@@ -230,7 +252,8 @@ namespace Asaki.Tests.Serialization
                 await UniTask.Delay(100); // 确保时间不同
                 await _slotManager.CreateSaveAsync("Newer", new TestSaveData());
 
-                (IAsakiSaveSlot Slot, TestSaveData Data)? result = await _slotManager.LoadLatestSaveAsync<TestSaveData>();
+                (IAsakiSaveSlot Slot, TestSaveData Data)? result =
+                    await _slotManager.LoadLatestSaveAsync<TestSaveData>();
 
                 Assert.IsTrue(result.HasValue);
                 Assert.AreEqual("Newer", result.Value.Slot.SaveName);
@@ -241,94 +264,92 @@ namespace Asaki.Tests.Serialization
         /// 测试：删除存档
         /// </summary>
         [UnityTest]
-        public IEnumerator DeleteSave_RemovesSlot() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.CreateSaveAsync("ToDelete", new TestSaveData());
-            Assert.IsTrue(_slotManager.IsSlotValid(0));
+        public IEnumerator DeleteSave_RemovesSlot() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                await _slotManager.CreateSaveAsync("ToDelete", new TestSaveData());
+                Assert.IsTrue(_slotManager.IsSlotValid(0));
 
-            bool deleted = _slotManager.DeleteSave(0);
+                bool deleted = _slotManager.DeleteSave(0);
 
-            Assert.IsTrue(deleted);
-            Assert.IsTrue(_slotManager.IsSlotEmpty(0));
-        });
+                Assert.IsTrue(deleted);
+                Assert.IsTrue(_slotManager.IsSlotEmpty(0));
+            });
 
         /// <summary>
         /// 测试：快速保存
         /// </summary>
         [UnityTest]
-        public IEnumerator QuickSaveAsync_SavesToQuickSlot() => UniTask.ToCoroutine(async () =>
-        {
-            var slot = await _slotManager.QuickSaveAsync(new TestSaveData
+        public IEnumerator QuickSaveAsync_SavesToQuickSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "Quick"
-            });
+                var slot = await _slotManager.QuickSaveAsync(
+                    new TestSaveData { PlayerName = "Quick" }
+                );
 
-            Assert.AreEqual(_slotManager.QuickSaveSlotIndex, slot.SlotId);
-            Assert.IsTrue(slot.SaveName.Contains("快速"));
-        });
+                Assert.AreEqual(_slotManager.QuickSaveSlotIndex, slot.SlotId);
+                Assert.IsTrue(slot.SaveName.Contains("快速"));
+            });
 
         /// <summary>
         /// 测试：自动保存
         /// </summary>
         [UnityTest]
-        public IEnumerator AutoSaveAsync_SavesToAutoSlot() => UniTask.ToCoroutine(async () =>
-        {
-            var slot = await _slotManager.AutoSaveAsync(new TestSaveData
+        public IEnumerator AutoSaveAsync_SavesToAutoSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "Auto"
-            });
+                var slot = await _slotManager.AutoSaveAsync(
+                    new TestSaveData { PlayerName = "Auto" }
+                );
 
-            Assert.AreEqual(_slotManager.AutoSaveSlotIndex, slot.SlotId);
-            Assert.IsTrue(slot.SaveName.Contains("自动"));
-        });
+                Assert.AreEqual(_slotManager.AutoSaveSlotIndex, slot.SlotId);
+                Assert.IsTrue(slot.SaveName.Contains("自动"));
+            });
 
         /// <summary>
         /// 测试：加载快速保存
         /// </summary>
         [UnityTest]
-        public IEnumerator LoadQuickSaveAsync_LoadsQuickSlot() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.QuickSaveAsync(new TestSaveData
+        public IEnumerator LoadQuickSaveAsync_LoadsQuickSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "QuickLoad"
+                await _slotManager.QuickSaveAsync(new TestSaveData { PlayerName = "QuickLoad" });
+
+                var result = await _slotManager.LoadQuickSaveAsync<TestSaveData>();
+
+                Assert.IsTrue(result.HasValue);
+                Assert.AreEqual("QuickLoad", result.Value.Data.PlayerName);
             });
-
-            var result = await _slotManager.LoadQuickSaveAsync<TestSaveData>();
-
-            Assert.IsTrue(result.HasValue);
-            Assert.AreEqual("QuickLoad", result.Value.Data.PlayerName);
-        });
 
         /// <summary>
         /// 测试：加载自动保存
         /// </summary>
         [UnityTest]
-        public IEnumerator LoadAutoSaveAsync_LoadsAutoSlot() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.AutoSaveAsync(new TestSaveData
+        public IEnumerator LoadAutoSaveAsync_LoadsAutoSlot() =>
+            UniTask.ToCoroutine(async () =>
             {
-                PlayerName = "AutoLoad"
+                await _slotManager.AutoSaveAsync(new TestSaveData { PlayerName = "AutoLoad" });
+
+                var result = await _slotManager.LoadAutoSaveAsync<TestSaveData>();
+
+                Assert.IsTrue(result.HasValue);
+                Assert.AreEqual("AutoLoad", result.Value.Data.PlayerName);
             });
-
-            var result = await _slotManager.LoadAutoSaveAsync<TestSaveData>();
-
-            Assert.IsTrue(result.HasValue);
-            Assert.AreEqual("AutoLoad", result.Value.Data.PlayerName);
-        });
 
         /// <summary>
         /// 测试：复制存档
         /// </summary>
         [UnityTest]
-        public IEnumerator CopySaveAsync_CreatesCopy() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.CreateSaveAsync("Original", new TestSaveData());
+        public IEnumerator CopySaveAsync_CreatesCopy() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                await _slotManager.CreateSaveAsync("Original", new TestSaveData());
 
-            var newSlot = await _slotManager.CopySaveAsync(0);
+                var newSlot = await _slotManager.CopySaveAsync(0);
 
-            Assert.IsNotNull(newSlot);
-            Assert.IsTrue(newSlot.SaveName.Contains("复制"));
-        });
+                Assert.IsNotNull(newSlot);
+                Assert.IsTrue(newSlot.SaveName.Contains("复制"));
+            });
 
         /// <summary>
         /// 测试：查找最佳保存槽位
@@ -366,31 +387,33 @@ namespace Asaki.Tests.Serialization
         /// 测试：锁定槽位
         /// </summary>
         [UnityTest]
-        public IEnumerator LockSlot_LocksSlot() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.CreateSaveAsync("ToLock", new TestSaveData());
+        public IEnumerator LockSlot_LocksSlot() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                await _slotManager.CreateSaveAsync("ToLock", new TestSaveData());
 
-            bool locked = _slotManager.LockSlot(0);
+                bool locked = _slotManager.LockSlot(0);
 
-            Assert.IsTrue(locked);
-            // 锁定后槽位状态应为 Locked
-            var slot = _slotManager.GetSlotInfo(0);
-            Assert.AreEqual(AsakiSaveSlotStatus.Locked, slot.Status);
-        });
+                Assert.IsTrue(locked);
+                // 锁定后槽位状态应为 Locked
+                var slot = _slotManager.GetSlotInfo(0);
+                Assert.AreEqual(AsakiSaveSlotStatus.Locked, slot.Status);
+            });
 
         /// <summary>
         /// 测试：解锁槽位
         /// </summary>
         [UnityTest]
-        public IEnumerator UnlockSlot_UnlocksSlot() => UniTask.ToCoroutine(async () =>
-        {
-            await _slotManager.CreateSaveAsync("ToUnlock", new TestSaveData());
-            _slotManager.LockSlot(0);
+        public IEnumerator UnlockSlot_UnlocksSlot() =>
+            UniTask.ToCoroutine(async () =>
+            {
+                await _slotManager.CreateSaveAsync("ToUnlock", new TestSaveData());
+                _slotManager.LockSlot(0);
 
-            bool unlocked = _slotManager.UnlockSlot(0);
+                bool unlocked = _slotManager.UnlockSlot(0);
 
-            Assert.IsTrue(unlocked);
-        });
+                Assert.IsTrue(unlocked);
+            });
 
         // ===== 测试数据类 =====
 

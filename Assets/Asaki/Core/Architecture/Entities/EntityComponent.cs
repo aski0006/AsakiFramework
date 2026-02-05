@@ -40,7 +40,8 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 获取同一实体的其他组件（便捷方法）
         /// </summary>
-        protected T GetSibling<T>() where T : class, IEntityComponent
+        protected T GetSibling<T>()
+            where T : class, IEntityComponent
         {
             return Entity?.GetComponent<T>();
         }
@@ -48,7 +49,8 @@ namespace Asaki.Core.Architecture.Entities
         /// <summary>
         /// 检查同一实体是否有其他组件（便捷方法）
         /// </summary>
-        protected bool HasSibling<T>() where T : class, IEntityComponent
+        protected bool HasSibling<T>()
+            where T : class, IEntityComponent
         {
             return Entity?.HasComponent<T>() ?? false;
         }

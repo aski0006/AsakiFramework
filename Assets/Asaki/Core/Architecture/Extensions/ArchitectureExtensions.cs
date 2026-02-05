@@ -22,46 +22,50 @@ namespace Asaki.Core.Architecture.Extensions
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw = AsakiCommandDebugger.IsEnabled ? Stopwatch.StartNew() : null;
-            
+
             AsakiCommandDebugger.NotifyExecuting(commandType, false, false);
-            
+
             try
             {
                 cmd.Create(architecture);
                 cmd.Execute();
-                
+
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -83,46 +87,50 @@ namespace Asaki.Core.Architecture.Extensions
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw = AsakiCommandDebugger.IsEnabled ? Stopwatch.StartNew() : null;
-            
+
             AsakiCommandDebugger.NotifyExecuting(commandType, true, false);
-            
+
             try
             {
                 cmd.Create(architecture);
                 await cmd.ExecuteAsync();
-                
+
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally

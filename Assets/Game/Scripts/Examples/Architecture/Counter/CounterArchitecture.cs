@@ -22,8 +22,10 @@ namespace Game.Scripts.Examples.Architecture.Counter
             RegisterModel(model);
             RegisterSystem(new CounterSystem(model));
             RegisterSystem(new AchievementSystem(model, audioService));
-            Debug.Log($"[CounterArchitecture] Initialized with new architecture!" +
-                      $"Slot Count: {saveSlotManager?.GetAllSlots().Count ?? 0}");
+            Debug.Log(
+                $"[CounterArchitecture] Initialized with new architecture!"
+                    + $"Slot Count: {saveSlotManager?.GetAllSlots().Count ?? 0}"
+            );
         }
     }
 }

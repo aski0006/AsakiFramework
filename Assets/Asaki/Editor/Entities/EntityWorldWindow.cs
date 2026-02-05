@@ -67,7 +67,8 @@ namespace Asaki.Editor.Entities
 
         private void InitializeReflection()
         {
-            if (_reflectionInitialized) return;
+            if (_reflectionInitialized)
+                return;
 
             try
             {
@@ -98,8 +99,10 @@ namespace Asaki.Editor.Entities
 
         private void Update()
         {
-            if (!Application.isPlaying) return;
-            if (!_autoRefresh) return;
+            if (!Application.isPlaying)
+                return;
+            if (!_autoRefresh)
+                return;
 
             if (EditorApplication.timeSinceStartup - _lastUpdateTime > RefreshInterval)
             {
@@ -120,17 +123,20 @@ namespace Asaki.Editor.Entities
                 .OfType<IEntityWorld>()
                 .ToList();
 
-            if (worlds.Count == 0) return;
+            if (worlds.Count == 0)
+                return;
 
             _cachedWorld = worlds[0];
             var allEntities = _cachedWorld.GetAllEntities().ToList();
 
             foreach (var entity in allEntities)
             {
-                if (entity == null) continue;
+                if (entity == null)
+                    continue;
 
                 _totalEntities++;
-                if (entity.IsActive) _activeEntities++;
+                if (entity.IsActive)
+                    _activeEntities++;
                 _totalComponents += entity.ComponentCount;
 
                 var info = new EntityInfo
@@ -139,7 +145,7 @@ namespace Asaki.Editor.Entities
                     Entity = entity,
                     IsValid = entity.Id.IsValid,
                     ComponentCount = entity.ComponentCount,
-                    IsActive = entity.IsActive
+                    IsActive = entity.IsActive,
                 };
 
                 // 收集组件类型
@@ -160,30 +166,35 @@ namespace Asaki.Editor.Entities
 
         private void FilterEntities()
         {
-            _filteredEntities = _entityInfos.Where(e =>
-            {
-                // 激活状态筛选
-                if (_showActiveOnly && !e.IsActive) return false;
-
-                // 搜索文本筛选
-                if (!string.IsNullOrEmpty(_searchFilter))
+            _filteredEntities = _entityInfos
+                .Where(e =>
                 {
-                    var searchLower = _searchFilter.ToLower();
-                    bool matchesId = e.Id.ToString().ToLower().Contains(searchLower);
-                    bool matchesComponent = e.ComponentTypes.Any(t =>
-                        t.Name.ToLower().Contains(searchLower));
-                    if (!matchesId && !matchesComponent) return false;
-                }
-
-                // 组件类型筛选
-                if (_selectedComponentType != null)
-                {
-                    if (!e.ComponentTypes.Contains(_selectedComponentType))
+                    // 激活状态筛选
+                    if (_showActiveOnly && !e.IsActive)
                         return false;
-                }
 
-                return true;
-            }).ToList();
+                    // 搜索文本筛选
+                    if (!string.IsNullOrEmpty(_searchFilter))
+                    {
+                        var searchLower = _searchFilter.ToLower();
+                        bool matchesId = e.Id.ToString().ToLower().Contains(searchLower);
+                        bool matchesComponent = e.ComponentTypes.Any(t =>
+                            t.Name.ToLower().Contains(searchLower)
+                        );
+                        if (!matchesId && !matchesComponent)
+                            return false;
+                    }
+
+                    // 组件类型筛选
+                    if (_selectedComponentType != null)
+                    {
+                        if (!e.ComponentTypes.Contains(_selectedComponentType))
+                            return false;
+                    }
+
+                    return true;
+                })
+                .ToList();
         }
 
         private void OnGUI()
@@ -208,13 +219,22 @@ namespace Asaki.Editor.Entities
             }
 
             // 自动刷新开关
-            _autoRefresh = GUILayout.Toggle(_autoRefresh, "Auto", EditorStyles.toolbarButton, GUILayout.Width(50));
+            _autoRefresh = GUILayout.Toggle(
+                _autoRefresh,
+                "Auto",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(50)
+            );
 
             GUILayout.Space(10);
 
             // 搜索框
             GUILayout.Label("Search:", GUILayout.Width(45));
-            var newFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField, GUILayout.Width(150));
+            var newFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                EditorStyles.toolbarSearchField,
+                GUILayout.Width(150)
+            );
             if (newFilter != _searchFilter)
             {
                 _searchFilter = newFilter;
@@ -224,8 +244,14 @@ namespace Asaki.Editor.Entities
             GUILayout.Space(10);
 
             // 激活状态筛选
-            _showActiveOnly = GUILayout.Toggle(_showActiveOnly, "Active Only", EditorStyles.toolbarButton, GUILayout.Width(80));
-            if (GUI.changed) FilterEntities();
+            _showActiveOnly = GUILayout.Toggle(
+                _showActiveOnly,
+                "Active Only",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(80)
+            );
+            if (GUI.changed)
+                FilterEntities();
 
             GUILayout.FlexibleSpace();
 
@@ -233,15 +259,22 @@ namespace Asaki.Editor.Entities
             GUILayout.Label("Component:", GUILayout.Width(65));
             var componentNames = new List<string> { "All" };
             componentNames.AddRange(_availableComponentTypes.Select(t => t.Name));
-            int selectedIndex = _selectedComponentType == null ? 0 :
-                _availableComponentTypes.IndexOf(_selectedComponentType) + 1;
+            int selectedIndex =
+                _selectedComponentType == null
+                    ? 0
+                    : _availableComponentTypes.IndexOf(_selectedComponentType) + 1;
 
-            int newIndex = EditorGUILayout.Popup(selectedIndex, componentNames.ToArray(),
-                EditorStyles.toolbarPopup, GUILayout.Width(120));
+            int newIndex = EditorGUILayout.Popup(
+                selectedIndex,
+                componentNames.ToArray(),
+                EditorStyles.toolbarPopup,
+                GUILayout.Width(120)
+            );
 
             if (newIndex != selectedIndex)
             {
-                _selectedComponentType = newIndex == 0 ? null : _availableComponentTypes[newIndex - 1];
+                _selectedComponentType =
+                    newIndex == 0 ? null : _availableComponentTypes[newIndex - 1];
                 FilterEntities();
             }
 
@@ -250,7 +283,8 @@ namespace Asaki.Editor.Entities
 
         private void DrawStatsBar()
         {
-            if (!_showStats) return;
+            if (!_showStats)
+                return;
 
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
             GUILayout.Label($"Total: {_totalEntities}", GUILayout.Width(70));
@@ -300,7 +334,8 @@ namespace Asaki.Editor.Entities
 
             // 实体ID和状态
             var label = $"<b>{info.Id}</b>";
-            if (!info.IsActive) label += " <color=gray>[Inactive]</color>";
+            if (!info.IsActive)
+                label += " <color=gray>[Inactive]</color>";
             label += $"\n<size=10>{info.ComponentCount} components</size>";
 
             if (GUILayout.Button(label, new GUIStyle(EditorStyles.label) { richText = true }))
@@ -356,7 +391,10 @@ namespace Asaki.Editor.Entities
 
             EditorGUILayout.Space();
 
-            bool newActive = EditorGUILayout.ToggleLeft("Is Active", _selectedEntity.Entity.IsActive);
+            bool newActive = EditorGUILayout.ToggleLeft(
+                "Is Active",
+                _selectedEntity.Entity.IsActive
+            );
             if (newActive != _selectedEntity.Entity.IsActive)
             {
                 _selectedEntity.Entity.IsActive = newActive;
@@ -370,7 +408,10 @@ namespace Asaki.Editor.Entities
             GUILayout.Space(10);
             GUILayout.Label("Components", EditorStyles.boldLabel);
 
-            _showComponents = EditorGUILayout.Foldout(_showComponents, $"Show Components ({_selectedEntity.ComponentCount})");
+            _showComponents = EditorGUILayout.Foldout(
+                _showComponents,
+                $"Show Components ({_selectedEntity.ComponentCount})"
+            );
 
             if (_showComponents)
             {
@@ -378,7 +419,8 @@ namespace Asaki.Editor.Entities
 
                 foreach (var comp in _selectedEntity.Entity.GetAllComponents())
                 {
-                    if (comp == null) continue;
+                    if (comp == null)
+                        continue;
 
                     DrawComponentItem(comp);
                 }
@@ -397,8 +439,9 @@ namespace Asaki.Editor.Entities
                 EditorGUI.indentLevel++;
 
                 // 显示组件字段
-                var fields = type.GetFields(System.Reflection.BindingFlags.Public |
-                    System.Reflection.BindingFlags.Instance);
+                var fields = type.GetFields(
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance
+                );
 
                 foreach (var field in fields)
                 {
@@ -407,8 +450,10 @@ namespace Asaki.Editor.Entities
                 }
 
                 // 显示属性
-                var properties = type.GetProperties(System.Reflection.BindingFlags.Public |
-                    System.Reflection.BindingFlags.Instance)
+                var properties = type.GetProperties(
+                        System.Reflection.BindingFlags.Public
+                            | System.Reflection.BindingFlags.Instance
+                    )
                     .Where(p => p.CanRead && p.GetIndexParameters().Length == 0);
 
                 foreach (var prop in properties)
@@ -427,8 +472,7 @@ namespace Asaki.Editor.Entities
                 GUI.backgroundColor = new Color(1f, 0.4f, 0.4f);
                 if (GUILayout.Button("Remove Component", GUILayout.Height(20)))
                 {
-                    if (EditorUtility.DisplayDialog("Confirm",
-                        $"Remove {type.Name}?", "Yes", "No"))
+                    if (EditorUtility.DisplayDialog("Confirm", $"Remove {type.Name}?", "Yes", "No"))
                     {
                         _selectedEntity.Entity.RemoveComponent(type);
                         RefreshData();

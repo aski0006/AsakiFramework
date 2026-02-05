@@ -27,12 +27,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, false, false);
-            
+
             try
             {
                 cmd.Create(this);
@@ -41,45 +42,49 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[Command] Executing {commandType}");
 
                 cmd.Execute();
-                
+
                 sw?.Stop();
-                
+
                 if (_enableCommandProfiling)
                 {
                     ALog.Info($"[Command] {commandType} took {sw.ElapsedMilliseconds}ms");
                 }
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
                 ALog.Error($"[Command] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -94,12 +99,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, false, false);
-            
+
             try
             {
                 cmd.Create(this);
@@ -108,28 +114,32 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[Command] Executing {commandType}");
 
                 TResult result = cmd.Execute();
-                
+
                 sw?.Stop();
-                
+
                 if (_enableCommandProfiling)
                 {
                     ALog.Info($"[Command] {commandType} took {sw.ElapsedMilliseconds}ms");
                 }
-                
+
                 string resultValue = result?.ToString() ?? "null";
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    true,
-                    typeof(TResult).Name,
-                    resultValue.Length > 100 ? resultValue.Substring(0, 100) + "..." : resultValue,
-                    false,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        true,
+                        typeof(TResult).Name,
+                        resultValue.Length > 100
+                            ? resultValue.Substring(0, 100) + "..."
+                            : resultValue,
+                        false,
+                        false,
+                        false,
+                        null
+                    )
+                );
 
                 return result;
             }
@@ -137,20 +147,22 @@ namespace Asaki.Core.Architecture
             {
                 sw?.Stop();
                 ALog.Error($"[Command] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -165,12 +177,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, true, false);
-            
+
             try
             {
                 cmd.Create(this);
@@ -179,45 +192,49 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[CommandAsync] Executing {commandType}");
 
                 await cmd.ExecuteAsync();
-                
+
                 sw?.Stop();
-                
+
                 if (_enableCommandProfiling)
                 {
                     ALog.Info($"[CommandAsync] {commandType} took {sw.ElapsedMilliseconds}ms");
                 }
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
                 ALog.Error($"[CommandAsync] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -232,12 +249,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, true, false);
-            
+
             try
             {
                 cmd.Create(this);
@@ -246,28 +264,32 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[CommandAsync] Executing {commandType}");
 
                 TResult result = await cmd.ExecuteAsync();
-                
+
                 sw?.Stop();
-                
+
                 if (_enableCommandProfiling)
                 {
                     ALog.Info($"[CommandAsync] {commandType} took {sw.ElapsedMilliseconds}ms");
                 }
-                
+
                 string resultValue = result?.ToString() ?? "null";
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    true,
-                    typeof(TResult).Name,
-                    resultValue.Length > 100 ? resultValue.Substring(0, 100) + "..." : resultValue,
-                    true,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        true,
+                        typeof(TResult).Name,
+                        resultValue.Length > 100
+                            ? resultValue.Substring(0, 100) + "..."
+                            : resultValue,
+                        true,
+                        false,
+                        false,
+                        null
+                    )
+                );
 
                 return result;
             }
@@ -275,20 +297,22 @@ namespace Asaki.Core.Architecture
             {
                 sw?.Stop();
                 ALog.Error($"[CommandAsync] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -303,12 +327,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, false, false);
-            
+
             try
             {
                 configure?.Invoke(cmd);
@@ -318,40 +343,44 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[Command] Executing {commandType}");
 
                 cmd.Execute();
-                
+
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
                 ALog.Error($"[Command] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -366,12 +395,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, false, false);
-            
+
             try
             {
                 configure?.Invoke(cmd);
@@ -381,23 +411,27 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[Command] Executing {commandType}");
 
                 TResult result = cmd.Execute();
-                
+
                 sw?.Stop();
-                
+
                 string resultValue = result?.ToString() ?? "null";
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    true,
-                    typeof(TResult).Name,
-                    resultValue.Length > 100 ? resultValue.Substring(0, 100) + "..." : resultValue,
-                    false,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        true,
+                        typeof(TResult).Name,
+                        resultValue.Length > 100
+                            ? resultValue.Substring(0, 100) + "..."
+                            : resultValue,
+                        false,
+                        false,
+                        false,
+                        null
+                    )
+                );
 
                 return result;
             }
@@ -405,20 +439,22 @@ namespace Asaki.Core.Architecture
             {
                 sw?.Stop();
                 ALog.Error($"[Command] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -433,12 +469,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, true, false);
-            
+
             try
             {
                 configure?.Invoke(cmd);
@@ -448,40 +485,44 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[CommandAsync] Executing {commandType}");
 
                 await cmd.ExecuteAsync();
-                
+
                 sw?.Stop();
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
                 sw?.Stop();
                 ALog.Error($"[CommandAsync] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally
@@ -498,12 +539,13 @@ namespace Asaki.Core.Architecture
             TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
-            Stopwatch sw = _enableCommandProfiling || AsakiCommandDebugger.IsEnabled 
-                ? Stopwatch.StartNew() 
-                : null;
-            
+            Stopwatch sw =
+                _enableCommandProfiling || AsakiCommandDebugger.IsEnabled
+                    ? Stopwatch.StartNew()
+                    : null;
+
             AsakiCommandDebugger.NotifyExecuting(commandType, true, false);
-            
+
             try
             {
                 configure?.Invoke(cmd);
@@ -513,23 +555,27 @@ namespace Asaki.Core.Architecture
                     ALog.Info($"[CommandAsync] Executing {commandType}");
 
                 TResult result = await cmd.ExecuteAsync();
-                
+
                 sw?.Stop();
-                
+
                 string resultValue = result?.ToString() ?? "null";
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    true,
-                    typeof(TResult).Name,
-                    resultValue.Length > 100 ? resultValue.Substring(0, 100) + "..." : resultValue,
-                    true,
-                    false,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        true,
+                        typeof(TResult).Name,
+                        resultValue.Length > 100
+                            ? resultValue.Substring(0, 100) + "..."
+                            : resultValue,
+                        true,
+                        false,
+                        false,
+                        null
+                    )
+                );
 
                 return result;
             }
@@ -537,20 +583,22 @@ namespace Asaki.Core.Architecture
             {
                 sw?.Stop();
                 ALog.Error($"[CommandAsync] {commandType} failed: {ex.Message}", ex);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    timestamp,
-                    sw?.Elapsed.TotalMilliseconds ?? 0,
-                    false,
-                    null,
-                    null,
-                    true,
-                    false,
-                    true,
-                    ex.Message
-                ));
-                
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        timestamp,
+                        sw?.Elapsed.TotalMilliseconds ?? 0,
+                        false,
+                        null,
+                        null,
+                        true,
+                        false,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 throw;
             }
             finally

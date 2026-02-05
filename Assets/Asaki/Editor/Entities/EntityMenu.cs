@@ -19,7 +19,9 @@ namespace Asaki.Editor.Entities
             }
             else
             {
-                UnityEngine.Debug.LogWarning("[EntityMenu] Documentation file not found at: " + path);
+                UnityEngine.Debug.LogWarning(
+                    "[EntityMenu] Documentation file not found at: " + path
+                );
             }
         }
     }

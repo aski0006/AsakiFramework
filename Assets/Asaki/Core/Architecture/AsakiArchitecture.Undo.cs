@@ -33,35 +33,39 @@ namespace Asaki.Core.Architecture
 
                 // 记录到 Undo 栈（注意：这里不能 Return，因为栈持有引用）
                 _asakiUndoRedoStack?.RecordCommand(cmd);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    DateTime.Now.Ticks,
-                    0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    true,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        DateTime.Now.Ticks,
+                        0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        true,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    DateTime.Now.Ticks,
-                    0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    true,
-                    true,
-                    ex.Message
-                ));
-                
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        DateTime.Now.Ticks,
+                        0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        true,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 // 执行失败则归还对象池
                 AsakiCommandPoolManager.Return(cmd);
                 throw;
@@ -85,35 +89,39 @@ namespace Asaki.Core.Architecture
 
                 cmd.Execute();
                 _asakiUndoRedoStack?.RecordCommand(cmd);
-                
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    DateTime.Now.Ticks,
-                    0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    true,
-                    false,
-                    null
-                ));
+
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        DateTime.Now.Ticks,
+                        0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        true,
+                        false,
+                        null
+                    )
+                );
             }
             catch (Exception ex)
             {
-                AsakiCommandDebugger.NotifyExecuted(new CommandExecutionInfo(
-                    commandType,
-                    DateTime.Now.Ticks,
-                    0,
-                    false,
-                    null,
-                    null,
-                    false,
-                    true,
-                    true,
-                    ex.Message
-                ));
-                
+                AsakiCommandDebugger.NotifyExecuted(
+                    new CommandExecutionInfo(
+                        commandType,
+                        DateTime.Now.Ticks,
+                        0,
+                        false,
+                        null,
+                        null,
+                        false,
+                        true,
+                        true,
+                        ex.Message
+                    )
+                );
+
                 AsakiCommandPoolManager.Return(cmd);
                 throw;
             }
@@ -126,7 +134,7 @@ namespace Asaki.Core.Architecture
                 // 获取即将撤销的命令类型
                 var undoStack = GetUndoStackSnapshot();
                 string commandType = undoStack.Count > 0 ? undoStack[0].GetType().Name : "Unknown";
-                
+
                 _asakiUndoRedoStack?.Undo();
                 AsakiCommandDebugger.NotifyUndo(commandType);
             }
@@ -139,7 +147,7 @@ namespace Asaki.Core.Architecture
                 // 获取即将重做的命令类型
                 var redoStack = GetRedoStackSnapshot();
                 string commandType = redoStack.Count > 0 ? redoStack[0].GetType().Name : "Unknown";
-                
+
                 _asakiUndoRedoStack?.Redo();
                 AsakiCommandDebugger.NotifyRedo(commandType);
             }
@@ -149,11 +157,20 @@ namespace Asaki.Core.Architecture
         {
             // 通过反射获取 Undo 栈的快照
             var stack = new System.Collections.Generic.List<IAsakiUndoCommand>();
-            if (_asakiUndoRedoStack == null) return stack;
-            
-            var field = _asakiUndoRedoStack.GetType().GetField("_undoStack", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field?.GetValue(_asakiUndoRedoStack) is System.Collections.Generic.Stack<IAsakiUndoCommand> undoStack)
+            if (_asakiUndoRedoStack == null)
+                return stack;
+
+            var field = _asakiUndoRedoStack
+                .GetType()
+                .GetField(
+                    "_undoStack",
+                    System.Reflection.BindingFlags.NonPublic
+                        | System.Reflection.BindingFlags.Instance
+                );
+            if (
+                field?.GetValue(_asakiUndoRedoStack)
+                is System.Collections.Generic.Stack<IAsakiUndoCommand> undoStack
+            )
             {
                 stack.AddRange(undoStack);
             }
@@ -164,11 +181,20 @@ namespace Asaki.Core.Architecture
         {
             // 通过反射获取 Redo 栈的快照
             var stack = new System.Collections.Generic.List<IAsakiUndoCommand>();
-            if (_asakiUndoRedoStack == null) return stack;
-            
-            var field = _asakiUndoRedoStack.GetType().GetField("_redoStack", 
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (field?.GetValue(_asakiUndoRedoStack) is System.Collections.Generic.Stack<IAsakiUndoCommand> redoStack)
+            if (_asakiUndoRedoStack == null)
+                return stack;
+
+            var field = _asakiUndoRedoStack
+                .GetType()
+                .GetField(
+                    "_redoStack",
+                    System.Reflection.BindingFlags.NonPublic
+                        | System.Reflection.BindingFlags.Instance
+                );
+            if (
+                field?.GetValue(_asakiUndoRedoStack)
+                is System.Collections.Generic.Stack<IAsakiUndoCommand> redoStack
+            )
             {
                 stack.AddRange(redoStack);
             }

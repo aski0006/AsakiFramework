@@ -55,7 +55,10 @@ namespace Asaki.Core.Serialization.Examples
             // 配置自动保存
             var config = new AsakiAutoSaveConfig
             {
-                Enabled = true, Triggers = AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause, ShowNotification = true, MaxAutoSaveCount = 3
+                Enabled = true,
+                Triggers = AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause,
+                ShowNotification = true,
+                MaxAutoSaveCount = 3,
             };
             _autoSaveService.SetConfig(config);
             _autoSaveService.StartService();
@@ -138,10 +141,12 @@ namespace Asaki.Core.Serialization.Examples
             Debug.Log($"=== 共有 {slots.Count} 个存档 ===");
             foreach (var slot in slots)
             {
-                Debug.Log($"[{slot.SlotId}] {slot.SaveName} - " +
-                          $"{slot.GetFormattedSaveTime()} - " +
-                          $"进度: {slot.ProgressPercent:F1}% - " +
-                          $"时长: {slot.GetFormattedPlayTime()}");
+                Debug.Log(
+                    $"[{slot.SlotId}] {slot.SaveName} - "
+                        + $"{slot.GetFormattedSaveTime()} - "
+                        + $"进度: {slot.ProgressPercent:F1}% - "
+                        + $"时长: {slot.GetFormattedPlayTime()}"
+                );
             }
         }
 
@@ -270,10 +275,7 @@ namespace Asaki.Core.Serialization.Examples
                 PlayerName = "勇者",
                 CurrentChapter = 3,
                 PlayTime = UnityEngine.Time.time,
-                UnlockedLevels = new List<int>
-                {
-                    1, 2, 3
-                }
+                UnlockedLevels = new List<int> { 1, 2, 3 },
             };
         }
 

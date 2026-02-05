@@ -29,7 +29,7 @@ namespace Asaki.Unity.Modules
             _slotManager = new AsakiSaveSlotManager();
             ((AsakiSaveSlotManager)_slotManager).Init(_saveService, _eventService);
             _slotManager.OnInit();
-            
+
             AsakiContext.Register<IAsakiSaveSlotManager>(_slotManager);
         }
 

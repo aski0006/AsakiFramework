@@ -20,7 +20,10 @@ namespace Asaki.Editor.Debugging
         public static void ShowWindow()
         {
             AsakiPoolDebuggerWindow window = GetWindow<AsakiPoolDebuggerWindow>();
-            window.titleContent = new GUIContent("Pool Debugger", EditorGUIUtility.IconContent("Profiler.Memory").image);
+            window.titleContent = new GUIContent(
+                "Pool Debugger",
+                EditorGUIUtility.IconContent("Profiler.Memory").image
+            );
             window.minSize = new Vector2(700, 500);
             window.Show();
         }
@@ -92,7 +95,7 @@ namespace Asaki.Editor.Debugging
             ActiveCount,
             InactiveCount,
             TotalCreated,
-            UtilizationRate
+            UtilizationRate,
         }
 
         #endregion
@@ -127,37 +130,38 @@ namespace Asaki.Editor.Debugging
                     alignment = TextAnchor.MiddleLeft,
                     padding = new RectOffset(10, 10, 6, 6),
                     fontSize = 11,
-                    margin = new RectOffset(0, 0, 1, 1)
+                    margin = new RectOffset(0, 0, 1, 1),
                 };
 
                 SelectedItemStyle = new GUIStyle(NormalItemStyle)
                 {
-                    normal = { textColor = Color.white, background = CreateTexture(2, 2, new Color(0.2f, 0.4f, 0.8f)) },
+                    normal =
+                    {
+                        textColor = Color.white,
+                        background = CreateTexture(2, 2, new Color(0.2f, 0.4f, 0.8f)),
+                    },
                     fontStyle = FontStyle.Bold,
-                    margin = new RectOffset(0, 0, 1, 1)
+                    margin = new RectOffset(0, 0, 1, 1),
                 };
 
                 // 其他样式
                 HeaderStyle = new GUIStyle(EditorStyles.boldLabel)
                 {
                     fontSize = 14,
-                    margin = new RectOffset(0, 0, 8, 8)
+                    margin = new RectOffset(0, 0, 8, 8),
                 };
 
-                BoxStyle = new GUIStyle(GUI.skin.box)
-                {
-                    padding = new RectOffset(12, 12, 12, 12)
-                };
+                BoxStyle = new GUIStyle(GUI.skin.box) { padding = new RectOffset(12, 12, 12, 12) };
 
                 StatsLabelStyle = new GUIStyle(EditorStyles.label)
                 {
                     fontSize = 11,
-                    richText = true
+                    richText = true,
                 };
 
                 CenteredLabelStyle = new GUIStyle(EditorStyles.label)
                 {
-                    alignment = TextAnchor.MiddleCenter
+                    alignment = TextAnchor.MiddleCenter,
                 };
 
                 ToolbarSearchFieldStyle = new GUIStyle(EditorStyles.toolbarSearchField);
@@ -250,7 +254,12 @@ namespace Asaki.Editor.Debugging
 
             // 自动刷新开关
             GUI.changed = false;
-            bool newAutoRefresh = GUILayout.Toggle(_autoRefresh, "Auto", EditorStyles.toolbarButton, GUILayout.Width(50));
+            bool newAutoRefresh = GUILayout.Toggle(
+                _autoRefresh,
+                "Auto",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(50)
+            );
             if (GUI.changed)
             {
                 _autoRefresh = newAutoRefresh;
@@ -260,7 +269,12 @@ namespace Asaki.Editor.Debugging
 
             // 显示非活动池开关
             GUI.changed = false;
-            bool newShowInactive = GUILayout.Toggle(_showInactivePools, "Show Empty", EditorStyles.toolbarButton, GUILayout.Width(80));
+            bool newShowInactive = GUILayout.Toggle(
+                _showInactivePools,
+                "Show Empty",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(80)
+            );
             if (GUI.changed)
             {
                 _showInactivePools = newShowInactive;
@@ -270,10 +284,21 @@ namespace Asaki.Editor.Debugging
 
             // 排序下拉
             EditorGUILayout.LabelField("Sort:", GUILayout.Width(32));
-            _currentSortMode = (SortMode)EditorGUILayout.EnumPopup(_currentSortMode, EditorStyles.toolbarPopup, GUILayout.Width(100));
+            _currentSortMode = (SortMode)
+                EditorGUILayout.EnumPopup(
+                    _currentSortMode,
+                    EditorStyles.toolbarPopup,
+                    GUILayout.Width(100)
+                );
 
             // 排序方向按钮
-            if (GUILayout.Button(_sortAscending ? "▲" : "▼", EditorStyles.toolbarButton, GUILayout.Width(24)))
+            if (
+                GUILayout.Button(
+                    _sortAscending ? "▲" : "▼",
+                    EditorStyles.toolbarButton,
+                    GUILayout.Width(24)
+                )
+            )
             {
                 _sortAscending = !_sortAscending;
             }
@@ -281,7 +306,11 @@ namespace Asaki.Editor.Debugging
             GUILayout.FlexibleSpace();
 
             // 搜索框
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, _styles.ToolbarSearchFieldStyle, GUILayout.Width(200));
+            _searchFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                _styles.ToolbarSearchFieldStyle,
+                GUILayout.Width(200)
+            );
 
             if (GUILayout.Button("", EditorStyles.toolbarButton, GUILayout.Width(20)))
             {
@@ -313,8 +342,8 @@ namespace Asaki.Editor.Debugging
         private void DrawServiceNotReadyMessage()
         {
             EditorGUILayout.HelpBox(
-                "IAsakiPoolService not found in Context.\n" +
-                "Make sure the Bootstrapper has started and PoolModule is initialized.",
+                "IAsakiPoolService not found in Context.\n"
+                    + "Make sure the Bootstrapper has started and PoolModule is initialized.",
                 MessageType.Warning
             );
         }
@@ -354,8 +383,9 @@ namespace Asaki.Editor.Debugging
             {
                 string filter = _searchFilter.ToLowerInvariant();
                 filteredData = filteredData.Where(d =>
-                    d.Key.ToLowerInvariant().Contains(filter) ||
-                    d.ObjectType?.Name.ToLowerInvariant().Contains(filter) == true);
+                    d.Key.ToLowerInvariant().Contains(filter)
+                    || d.ObjectType?.Name.ToLowerInvariant().Contains(filter) == true
+                );
             }
 
             // 隐藏空池
@@ -392,7 +422,11 @@ namespace Asaki.Editor.Debugging
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"Pools: {totalPools}", EditorStyles.boldLabel, GUILayout.Width(80));
+            EditorGUILayout.LabelField(
+                $"Pools: {totalPools}",
+                EditorStyles.boldLabel,
+                GUILayout.Width(80)
+            );
             EditorGUILayout.LabelField($"Active: {totalActive}", GUILayout.Width(80));
             EditorGUILayout.LabelField($"Inactive: {totalInactive}", GUILayout.Width(90));
             EditorGUILayout.LabelField($"Total: {totalObjects}", GUILayout.Width(80));
@@ -420,7 +454,7 @@ namespace Asaki.Editor.Debugging
                 SortMode.UtilizationRate => _sortAscending
                     ? data.OrderBy(d => d.GetUtilizationRate())
                     : data.OrderByDescending(d => d.GetUtilizationRate()),
-                _ => data.OrderBy(d => d.Key)
+                _ => data.OrderBy(d => d.Key),
             };
             return ordered;
         }
@@ -431,7 +465,8 @@ namespace Asaki.Editor.Debugging
             int totalCount = data.GetTotalObjectCount();
 
             // 构建标签
-            string label = $"{data.Key}\n<color=#888888><size=10>{data.ObjectType?.Name ?? "Unknown"} | A:{data.ActiveCount} I:{data.InactiveCount}</size></color>";
+            string label =
+                $"{data.Key}\n<color=#888888><size=10>{data.ObjectType?.Name ?? "Unknown"} | A:{data.ActiveCount} I:{data.InactiveCount}</size></color>";
 
             GUIStyle style = isSelected ? _styles.SelectedItemStyle : _styles.NormalItemStyle;
 
@@ -456,13 +491,19 @@ namespace Asaki.Editor.Debugging
                 GUI.color = oldColor;
             }
 
-            if (Event.current.type == EventType.MouseDown && splitterRect.Contains(Event.current.mousePosition))
+            if (
+                Event.current.type == EventType.MouseDown
+                && splitterRect.Contains(Event.current.mousePosition)
+            )
             {
                 GUI.FocusControl(null);
             }
 
             // 简单的拖拽处理
-            if (Event.current.type == EventType.MouseDrag && splitterRect.Contains(Event.current.mousePosition))
+            if (
+                Event.current.type == EventType.MouseDrag
+                && splitterRect.Contains(Event.current.mousePosition)
+            )
             {
                 _splitterPosition += Event.current.delta.x;
                 _splitterPosition = Mathf.Clamp(_splitterPosition, 200f, position.width - 300f);
@@ -483,7 +524,10 @@ namespace Asaki.Editor.Debugging
             }
             else
             {
-                EditorGUILayout.HelpBox("Select a pool from the list to view details.", MessageType.Info);
+                EditorGUILayout.HelpBox(
+                    "Select a pool from the list to view details.",
+                    MessageType.Info
+                );
             }
 
             EditorGUILayout.EndScrollView();
@@ -496,7 +540,10 @@ namespace Asaki.Editor.Debugging
             EditorGUILayout.LabelField(data.Key, _styles.HeaderStyle);
 
             // 类型信息
-            EditorGUILayout.LabelField($"Type: {data.ObjectType?.FullName ?? "Unknown"}", _styles.StatsLabelStyle);
+            EditorGUILayout.LabelField(
+                $"Type: {data.ObjectType?.FullName ?? "Unknown"}",
+                _styles.StatsLabelStyle
+            );
             GUILayout.Space(12);
 
             // 统计信息卡片
@@ -544,10 +591,19 @@ namespace Asaki.Editor.Debugging
             // 命中率
             if (data.GetCallCount > 0)
             {
-                float hitRate = (float)(data.GetCallCount - (data.TotalCreated - data.InactiveCount - data.ActiveCount)) / data.GetCallCount * 100;
+                float hitRate =
+                    (float)(
+                        data.GetCallCount
+                        - (data.TotalCreated - data.InactiveCount - data.ActiveCount)
+                    )
+                    / data.GetCallCount
+                    * 100;
                 hitRate = Mathf.Clamp(hitRate, 0f, 100f);
                 GUILayout.Space(8);
-                EditorGUILayout.LabelField($"Pool Hit Rate: {hitRate:F1}%", _styles.StatsLabelStyle);
+                EditorGUILayout.LabelField(
+                    $"Pool Hit Rate: {hitRate:F1}%",
+                    _styles.StatsLabelStyle
+                );
             }
 
             EditorGUILayout.EndVertical();
@@ -566,9 +622,16 @@ namespace Asaki.Editor.Debugging
             // 填充
             if (rate > 0 && maxSize > 0)
             {
-                Rect fillRect = new Rect(barRect.x, barRect.y, barRect.width * rate, barRect.height);
-                Texture2D fillTexture = rate < 0.5f ? _styles.GreenBarTexture :
-                                       rate < 0.8f ? _styles.YellowBarTexture : _styles.RedBarTexture;
+                Rect fillRect = new Rect(
+                    barRect.x,
+                    barRect.y,
+                    barRect.width * rate,
+                    barRect.height
+                );
+                Texture2D fillTexture =
+                    rate < 0.5f ? _styles.GreenBarTexture
+                    : rate < 0.8f ? _styles.YellowBarTexture
+                    : _styles.RedBarTexture;
                 GUI.DrawTexture(fillRect, fillTexture);
             }
 
@@ -576,7 +639,10 @@ namespace Asaki.Editor.Debugging
             GUI.Box(barRect, "", GUI.skin.box);
 
             // 文本
-            string label = maxSize > 0 ? $"{activeCount} / {maxSize} ({rate * 100:F0}%)" : $"{activeCount} (No Limit)";
+            string label =
+                maxSize > 0
+                    ? $"{activeCount} / {maxSize} ({rate * 100:F0}%)"
+                    : $"{activeCount} (No Limit)";
             GUI.Label(barRect, label, _styles.CenteredLabelStyle);
 
             EditorGUILayout.EndHorizontal();
@@ -589,7 +655,7 @@ namespace Asaki.Editor.Debugging
             GUIStyle valueStyle = new GUIStyle(EditorStyles.largeLabel)
             {
                 normal = { textColor = valueColor },
-                fontSize = 14
+                fontSize = 14,
             };
             EditorGUILayout.LabelField(value, valueStyle);
             EditorGUILayout.EndVertical();
@@ -626,7 +692,10 @@ namespace Asaki.Editor.Debugging
                 DrawConfigRow("Max Size", data.Config.MaxSize.ToString());
                 DrawConfigRow("Allow Sync Creation", data.Config.AllowSyncCreation.ToString());
                 DrawConfigRow("Enable Validation", data.Config.EnableValidation.ToString());
-                DrawConfigRow("Enable Collection Check", data.Config.EnableCollectionCheck.ToString());
+                DrawConfigRow(
+                    "Enable Collection Check",
+                    data.Config.EnableCollectionCheck.ToString()
+                );
 
                 EditorGUILayout.Space(4);
                 EditorGUILayout.LabelField("Governance", EditorStyles.miniBoldLabel);
@@ -682,10 +751,14 @@ namespace Asaki.Editor.Debugging
             // 清空
             if (GUILayout.Button("Clear", GUILayout.Height(28)))
             {
-                if (EditorUtility.DisplayDialog(
-                    "Clear Pool",
-                    $"Are you sure you want to clear all inactive objects from pool '{data.Key}'?",
-                    "Clear", "Cancel"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Clear Pool",
+                        $"Are you sure you want to clear all inactive objects from pool '{data.Key}'?",
+                        "Clear",
+                        "Cancel"
+                    )
+                )
                 {
                     PerformClear(data);
                 }
@@ -705,11 +778,15 @@ namespace Asaki.Editor.Debugging
             GUI.backgroundColor = new Color(1f, 0.5f, 0.5f);
             if (GUILayout.Button("Destroy Pool", GUILayout.Height(28)))
             {
-                if (EditorUtility.DisplayDialog(
-                    "Destroy Pool",
-                    $"Are you sure you want to destroy pool '{data.Key}'?\n\n" +
-                    "Active objects will be orphaned.",
-                    "Destroy", "Cancel"))
+                if (
+                    EditorUtility.DisplayDialog(
+                        "Destroy Pool",
+                        $"Are you sure you want to destroy pool '{data.Key}'?\n\n"
+                            + "Active objects will be orphaned.",
+                        "Destroy",
+                        "Cancel"
+                    )
+                )
                 {
                     PerformDestroyPool(data);
                 }
@@ -733,13 +810,18 @@ namespace Asaki.Editor.Debugging
             if (getPoolMethod == null)
                 return;
 
-            MethodInfo genericMethod = getPoolMethod.MakeGenericMethod(data.ObjectType ?? typeof(object));
+            MethodInfo genericMethod = getPoolMethod.MakeGenericMethod(
+                data.ObjectType ?? typeof(object)
+            );
             object pool = genericMethod.Invoke(service, new object[] { data.Key });
 
             if (pool != null)
             {
                 MethodInfo getAsyncMethod = pool.GetType().GetMethod("GetAsync");
-                getAsyncMethod?.Invoke(pool, new object[] { default(System.Threading.CancellationToken) });
+                getAsyncMethod?.Invoke(
+                    pool,
+                    new object[] { default(System.Threading.CancellationToken) }
+                );
             }
 
             RefreshData();
@@ -754,13 +836,18 @@ namespace Asaki.Editor.Debugging
             if (getPoolMethod == null)
                 return;
 
-            MethodInfo genericMethod = getPoolMethod.MakeGenericMethod(data.ObjectType ?? typeof(object));
+            MethodInfo genericMethod = getPoolMethod.MakeGenericMethod(
+                data.ObjectType ?? typeof(object)
+            );
             object pool = genericMethod.Invoke(service, new object[] { data.Key });
 
             if (pool != null)
             {
                 MethodInfo prewarmMethod = pool.GetType().GetMethod("PrewarmAsync");
-                prewarmMethod?.Invoke(pool, new object[] { count, 5, default(System.Threading.CancellationToken) });
+                prewarmMethod?.Invoke(
+                    pool,
+                    new object[] { count, 5, default(System.Threading.CancellationToken) }
+                );
             }
 
             RefreshData();
@@ -808,7 +895,9 @@ namespace Asaki.Editor.Debugging
                 return;
 
             // 通过反射获取 _pools 字典
-            FieldInfo poolsField = service.GetType().GetField("_pools", BindingFlags.NonPublic | BindingFlags.Instance);
+            FieldInfo poolsField = service
+                .GetType()
+                .GetField("_pools", BindingFlags.NonPublic | BindingFlags.Instance);
             if (poolsField?.GetValue(service) is not System.Collections.IDictionary poolsDict)
                 return;
 
@@ -817,14 +906,16 @@ namespace Asaki.Editor.Debugging
                 if (kvp.Value is not IAsakiPoolBase poolBase)
                     continue;
 
-                _viewData.Add(new PoolViewData
-                {
-                    Key = (string)kvp.Key,
-                    ObjectType = poolBase.ObjectType,
-                    Config = poolBase.Config,
-                    Statistics = poolBase.Statistics,
-                    PoolBase = poolBase
-                });
+                _viewData.Add(
+                    new PoolViewData
+                    {
+                        Key = (string)kvp.Key,
+                        ObjectType = poolBase.ObjectType,
+                        Config = poolBase.Config,
+                        Statistics = poolBase.Statistics,
+                        PoolBase = poolBase,
+                    }
+                );
             }
         }
 

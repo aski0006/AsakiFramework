@@ -111,7 +111,8 @@ namespace Asaki.Core.Serialization
         /// </summary>
         /// <typeparam name="TData">存档数据类型</typeparam>
         /// <param name="provider">数据提供者函数</param>
-        void RegisterDataProvider<TData>(Func<TData> provider) where TData : IAsakiSavable;
+        void RegisterDataProvider<TData>(Func<TData> provider)
+            where TData : IAsakiSavable;
 
         /// <summary>
         /// 启动自动保存服务

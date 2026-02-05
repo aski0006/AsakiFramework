@@ -20,6 +20,7 @@ namespace Asaki.Unity.Modules
         public void Init(IAsakiEventService eventService)
         {
             _eventService = eventService;
+
             // 从配置服务获取存档配置，如果不存在则使用默认配置
             if (AsakiContext.TryGet(out AsakiConfig asakiConfig))
             {

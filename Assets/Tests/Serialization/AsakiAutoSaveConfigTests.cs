@@ -46,7 +46,7 @@ namespace Asaki.Tests.Serialization
             var config = new AsakiAutoSaveConfig
             {
                 Enabled = true,
-                Triggers = AsakiAutoSaveTrigger.None
+                Triggers = AsakiAutoSaveTrigger.None,
             };
 
             bool isValid = config.Validate(out string errorMessage);
@@ -66,7 +66,7 @@ namespace Asaki.Tests.Serialization
             {
                 Enabled = true,
                 Triggers = AsakiAutoSaveTrigger.TimeInterval,
-                TimeIntervalSeconds = 10f // 小于30秒
+                TimeIntervalSeconds = 10f, // 小于30秒
             };
 
             bool isValid = config.Validate(out string errorMessage);
@@ -82,11 +82,7 @@ namespace Asaki.Tests.Serialization
         [Test]
         public void MaxAutoSaveCountZero_Validate_ReturnsFalse()
         {
-            var config = new AsakiAutoSaveConfig
-            {
-                Enabled = true,
-                MaxAutoSaveCount = 0
-            };
+            var config = new AsakiAutoSaveConfig { Enabled = true, MaxAutoSaveCount = 0 };
 
             bool isValid = config.Validate(out string errorMessage);
 
@@ -105,7 +101,7 @@ namespace Asaki.Tests.Serialization
                 Enabled = true,
                 GenerateThumbnail = true,
                 ThumbnailWidth = 32,
-                ThumbnailHeight = 32
+                ThumbnailHeight = 32,
             };
 
             bool isValid = config.Validate(out string errorMessage);
@@ -126,7 +122,7 @@ namespace Asaki.Tests.Serialization
             {
                 Enabled = true,
                 GenerateThumbnail = true,
-                ThumbnailQuality = quality
+                ThumbnailQuality = quality,
             };
 
             bool isValid = config.Validate(out string errorMessage);
@@ -144,7 +140,10 @@ namespace Asaki.Tests.Serialization
             var config = AsakiAutoSaveConfig.CreateDefault();
 
             Assert.IsTrue(config.Enabled);
-            Assert.AreEqual(AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause, config.Triggers);
+            Assert.AreEqual(
+                AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause,
+                config.Triggers
+            );
             Assert.AreEqual(300f, config.TimeIntervalSeconds);
             Assert.AreEqual(3, config.MaxAutoSaveCount);
             Assert.IsTrue(config.ShowNotification);
@@ -173,7 +172,10 @@ namespace Asaki.Tests.Serialization
             var config = AsakiAutoSaveConfig.CreateConservative();
 
             Assert.IsTrue(config.Enabled);
-            Assert.AreEqual(AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause, config.Triggers);
+            Assert.AreEqual(
+                AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause,
+                config.Triggers
+            );
             Assert.AreEqual(1, config.MaxAutoSaveCount);
             Assert.IsFalse(config.ShowNotification);
         }
@@ -186,7 +188,7 @@ namespace Asaki.Tests.Serialization
         {
             var config = new AsakiAutoSaveConfig
             {
-                Triggers = AsakiAutoSaveTrigger.TimeInterval | AsakiAutoSaveTrigger.Checkpoint
+                Triggers = AsakiAutoSaveTrigger.TimeInterval | AsakiAutoSaveTrigger.Checkpoint,
             };
 
             Assert.IsTrue(config.Triggers.HasFlag(AsakiAutoSaveTrigger.TimeInterval));
@@ -219,7 +221,7 @@ namespace Asaki.Tests.Serialization
                 MinIntervalBetweenSaves = 30f,
                 KeepLatestAutoSave = true,
                 SaveOnSceneEnter = false,
-                SaveOnSceneExit = true
+                SaveOnSceneExit = true,
             };
 
             bool isValid = config.Validate(out string errorMessage);

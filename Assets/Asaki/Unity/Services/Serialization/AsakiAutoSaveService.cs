@@ -34,9 +34,10 @@ namespace Asaki.Unity.Services.Serialization
         public bool IsAutoSaving => _isAutoSaving;
 
         /// <inheritdoc />
-        public float TimeUntilNextAutoSave => _config?.Enabled == true && _config.Triggers.HasFlag(AsakiAutoSaveTrigger.TimeInterval)
-            ? Mathf.Max(0, _config.TimeIntervalSeconds - _timer)
-            : -1;
+        public float TimeUntilNextAutoSave =>
+            _config?.Enabled == true && _config.Triggers.HasFlag(AsakiAutoSaveTrigger.TimeInterval)
+                ? Mathf.Max(0, _config.TimeIntervalSeconds - _timer)
+                : -1;
 
         /// <inheritdoc />
         public long LastAutoSaveTime => _lastSaveTime;
@@ -64,7 +65,8 @@ namespace Asaki.Unity.Services.Serialization
 
         public AsakiAutoSaveService(
             IAsakiSaveSlotManager slotManager,
-            IAsakiEventService eventService)
+            IAsakiEventService eventService
+        )
         {
             _slotManager = slotManager ?? throw new ArgumentNullException(nameof(slotManager));
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
@@ -117,11 +119,14 @@ namespace Asaki.Unity.Services.Serialization
             _config = config;
             OnConfigChanged?.Invoke(_config);
 
-            ALog.Info($"[AsakiAutoSaveService] Config updated: Enabled={_config.Enabled}, Triggers={_config.Triggers}");
+            ALog.Info(
+                $"[AsakiAutoSaveService] Config updated: Enabled={_config.Enabled}, Triggers={_config.Triggers}"
+            );
         }
 
         /// <inheritdoc />
-        public void RegisterDataProvider<TData>(Func<TData> provider) where TData : IAsakiSavable
+        public void RegisterDataProvider<TData>(Func<TData> provider)
+            where TData : IAsakiSavable
         {
             _dataProvider = () => provider();
             ALog.Info($"[AsakiAutoSaveService] Data provider registered for {typeof(TData).Name}");
@@ -188,7 +193,8 @@ namespace Asaki.Unity.Services.Serialization
         /// <inheritdoc />
         public async UniTask<bool> ForceAutoSaveAsync(
             AsakiAutoSaveTrigger trigger = AsakiAutoSaveTrigger.Manual,
-            CancellationToken token = default)
+            CancellationToken token = default
+        )
         {
             return await ExecuteAutoSaveAsync(trigger, true, token);
         }
@@ -196,7 +202,8 @@ namespace Asaki.Unity.Services.Serialization
         /// <inheritdoc />
         public async UniTask<bool> TriggerCheckpointSaveAsync(
             string checkpointName = null,
-            CancellationToken token = default)
+            CancellationToken token = default
+        )
         {
             if (!_config.Triggers.HasFlag(AsakiAutoSaveTrigger.Checkpoint))
                 return false;
@@ -208,7 +215,8 @@ namespace Asaki.Unity.Services.Serialization
         public async UniTask<bool> TriggerSceneSaveAsync(
             string sceneName,
             bool isEnter,
-            CancellationToken token = default)
+            CancellationToken token = default
+        )
         {
             if (!_config.Triggers.HasFlag(AsakiAutoSaveTrigger.SceneChange))
                 return false;
@@ -342,7 +350,8 @@ namespace Asaki.Unity.Services.Serialization
                 {
                     token.ThrowIfCancellationRequested();
 
-                    var remaining = _config.CountdownSeconds - (UnityEngine.Time.unscaledTime - startTime);
+                    var remaining =
+                        _config.CountdownSeconds - (UnityEngine.Time.unscaledTime - startTime);
                     OnCountdownUpdate?.Invoke(remaining);
 
                     await UniTask.Yield(PlayerLoopTiming.PostLateUpdate, token);
@@ -366,7 +375,8 @@ namespace Asaki.Unity.Services.Serialization
         private async UniTask<bool> ExecuteAutoSaveAsync(
             AsakiAutoSaveTrigger trigger,
             bool skipChecks,
-            CancellationToken externalToken = default)
+            CancellationToken externalToken = default
+        )
         {
             if (!skipChecks && !CanAutoSave())
                 return false;
@@ -391,7 +401,9 @@ namespace Asaki.Unity.Services.Serialization
                     var freeSpace = GetAvailableStorageSpaceMB();
                     if (freeSpace < _config.MinFreeSpaceMB)
                     {
-                        throw new InsufficientStorageException($"Not enough storage space. Required: {_config.MinFreeSpaceMB}MB, Available: {freeSpace}MB");
+                        throw new InsufficientStorageException(
+                            $"Not enough storage space. Required: {_config.MinFreeSpaceMB}MB, Available: {freeSpace}MB"
+                        );
                     }
                 }
 
@@ -400,26 +412,26 @@ namespace Asaki.Unity.Services.Serialization
                 if (data == null)
                 {
                     // 应用退出时数据提供者可能已清理，静默返回
-                    ALog.Warn("[AsakiAutoSaveService] Data provider returned null, skipping auto save");
+                    ALog.Warn(
+                        "[AsakiAutoSaveService] Data provider returned null, skipping auto save"
+                    );
                     return false;
                 }
 
                 // 发布开始事件
-                var beginArgs = new AsakiAutoSaveEventArgs
-                {
-                    Trigger = trigger,
-                    Success = false
-                };
+                var beginArgs = new AsakiAutoSaveEventArgs { Trigger = trigger, Success = false };
                 OnAutoSaveBegin?.Invoke(beginArgs);
 
                 // 显示通知
                 if (_config.ShowNotification)
                 {
-                    _eventService.Publish(new AsakiAutoSaveNotificationEvent
-                    {
-                        Message = _config.NotificationText,
-                        Duration = 2f
-                    });
+                    _eventService.Publish(
+                        new AsakiAutoSaveNotificationEvent
+                        {
+                            Message = _config.NotificationText,
+                            Duration = 2f,
+                        }
+                    );
                 }
 
                 // 执行保存
@@ -429,7 +441,9 @@ namespace Asaki.Unity.Services.Serialization
                 _lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 _timer = 0f;
 
-                ALog.Info($"[AsakiAutoSaveService] AutoSave completed in {stopwatch.ElapsedMilliseconds}ms");
+                ALog.Info(
+                    $"[AsakiAutoSaveService] AutoSave completed in {stopwatch.ElapsedMilliseconds}ms"
+                );
             }
             catch (Exception ex)
             {
@@ -448,7 +462,7 @@ namespace Asaki.Unity.Services.Serialization
                     Trigger = trigger,
                     Success = success,
                     ErrorMessage = errorMessage,
-                    ElapsedMilliseconds = stopwatch.ElapsedMilliseconds
+                    ElapsedMilliseconds = stopwatch.ElapsedMilliseconds,
                 };
                 OnAutoSaveComplete?.Invoke(completeArgs);
             }
@@ -477,8 +491,11 @@ namespace Asaki.Unity.Services.Serialization
     /// </summary>
     public class InsufficientStorageException : Exception
     {
-        public InsufficientStorageException(string message) : base(message) { }
-        public InsufficientStorageException(string message, Exception innerException) : base(message, innerException) { }
+        public InsufficientStorageException(string message)
+            : base(message) { }
+
+        public InsufficientStorageException(string message, Exception innerException)
+            : base(message, innerException) { }
     }
 
     /// <summary>

@@ -14,9 +14,7 @@ namespace Asaki.Core.Architecture.Entities
         /// </summary>
         public bool Required { get; set; } = true;
 
-        public ComponentDependencyAttribute()
-        {
-        }
+        public ComponentDependencyAttribute() { }
 
         public ComponentDependencyAttribute(bool required)
         {
@@ -34,30 +32,32 @@ namespace Asaki.Core.Architecture.Entities
         /// </summary>
         public static void Inject(IEntityComponent component)
         {
-            if (component?.Entity == null) return;
+            if (component?.Entity == null)
+                return;
 
             var type = component.GetType();
-            var fields = type.GetFields(BindingFlags.Instance |
-                                        BindingFlags.Public |
-                                        BindingFlags.NonPublic);
+            var fields = type.GetFields(
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            );
 
             foreach (var field in fields)
             {
                 var attr = field.GetCustomAttribute<ComponentDependencyAttribute>();
-                if (attr == null) continue;
+                if (attr == null)
+                    continue;
 
                 var fieldType = field.FieldType;
                 if (!typeof(IEntityComponent).IsAssignableFrom(fieldType))
                     continue;
 
-                var method = typeof(IEntity).GetMethod("GetComponent")
-                    .MakeGenericMethod(fieldType);
+                var method = typeof(IEntity).GetMethod("GetComponent").MakeGenericMethod(fieldType);
                 var value = method.Invoke(component.Entity, null);
 
                 if (value == null && attr.Required)
                 {
                     throw new InvalidOperationException(
-                        $"Required component {fieldType.Name} not found on entity {component.Entity.Id}");
+                        $"Required component {fieldType.Name} not found on entity {component.Entity.Id}"
+                    );
                 }
 
                 field.SetValue(component, value);

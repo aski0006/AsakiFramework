@@ -71,7 +71,7 @@ namespace Asaki.Editor.Entities
         {
             Entity,
             Component,
-            Tag
+            Tag,
         }
 
         private void OnEnable()
@@ -81,8 +81,10 @@ namespace Asaki.Editor.Entities
 
         private void Update()
         {
-            if (!Application.isPlaying) return;
-            if (!_autoRefresh) return;
+            if (!Application.isPlaying)
+                return;
+            if (!_autoRefresh)
+                return;
 
             if (EditorApplication.timeSinceStartup - _lastUpdateTime > RefreshInterval)
             {
@@ -102,7 +104,8 @@ namespace Asaki.Editor.Entities
                 .OfType<IEntityWorld>()
                 .ToList();
 
-            if (worlds.Count == 0) return;
+            if (worlds.Count == 0)
+                return;
             _world = worlds[0];
 
             var entities = _world.GetAllEntities().ToList();
@@ -115,7 +118,8 @@ namespace Asaki.Editor.Entities
             for (int i = 0; i < entities.Count; i++)
             {
                 var entity = entities[i];
-                if (entity == null) continue;
+                if (entity == null)
+                    continue;
 
                 var entityNode = new Node
                 {
@@ -123,7 +127,7 @@ namespace Asaki.Editor.Entities
                     Label = $"Entity\n{entity.Id}",
                     Position = new Vector2(50 + i * EntitySpacing, 50),
                     Type = NodeType.Entity,
-                    Data = entity
+                    Data = entity,
                 };
 
                 _nodes.Add(entityNode);
@@ -132,7 +136,8 @@ namespace Asaki.Editor.Entities
                 int compIndex = 0;
                 foreach (var comp in entity.GetAllComponents())
                 {
-                    if (comp == null) continue;
+                    if (comp == null)
+                        continue;
 
                     var compType = comp.GetType();
                     Node componentNode;
@@ -151,7 +156,7 @@ namespace Asaki.Editor.Entities
                                 ComponentYOffset + compIndex * ComponentSpacing
                             ),
                             Type = isTag ? NodeType.Tag : NodeType.Component,
-                            Data = compType
+                            Data = compType,
                         };
 
                         allComponentTypes[compType] = componentNode;
@@ -183,7 +188,18 @@ namespace Asaki.Editor.Entities
             // 布局组件节点（按类型分组，垂直排列）
             var groupedComponents = componentNodes
                 .GroupBy(n => n.Label)
-                .SelectMany((g, i) => g.Select((n, j) => new { Node = n, GroupIndex = i, IndexInGroup = j }))
+                .SelectMany(
+                    (g, i) =>
+                        g.Select(
+                            (n, j) =>
+                                new
+                                {
+                                    Node = n,
+                                    GroupIndex = i,
+                                    IndexInGroup = j,
+                                }
+                        )
+                )
                 .ToList();
 
             foreach (var item in groupedComponents)
@@ -211,7 +227,12 @@ namespace Asaki.Editor.Entities
                 RefreshGraph();
             }
 
-            _autoRefresh = GUILayout.Toggle(_autoRefresh, "Auto", EditorStyles.toolbarButton, GUILayout.Width(50));
+            _autoRefresh = GUILayout.Toggle(
+                _autoRefresh,
+                "Auto",
+                EditorStyles.toolbarButton,
+                GUILayout.Width(50)
+            );
 
             GUILayout.Space(10);
 
@@ -221,10 +242,12 @@ namespace Asaki.Editor.Entities
 
             GUILayout.FlexibleSpace();
 
-            GUILayout.Label($"Entities: {_nodes.Count(n => n.Type == NodeType.Entity)} | " +
-                         $"Components: {_nodes.Count(n => n.Type == NodeType.Component)} | " +
-                         $"Tags: {_nodes.Count(n => n.Type == NodeType.Tag)}",
-                         EditorStyles.miniLabel);
+            GUILayout.Label(
+                $"Entities: {_nodes.Count(n => n.Type == NodeType.Entity)} | "
+                    + $"Components: {_nodes.Count(n => n.Type == NodeType.Component)} | "
+                    + $"Tags: {_nodes.Count(n => n.Type == NodeType.Tag)}",
+                EditorStyles.miniLabel
+            );
 
             EditorGUILayout.EndHorizontal();
         }
@@ -289,7 +312,7 @@ namespace Asaki.Editor.Entities
             {
                 NodeType.Entity => EntityNodeColor,
                 NodeType.Tag => TagNodeColor,
-                _ => ComponentNodeColor
+                _ => ComponentNodeColor,
             };
 
             if (node == _selectedNode)
@@ -311,7 +334,7 @@ namespace Asaki.Editor.Entities
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = Mathf.RoundToInt(11 * _zoom),
-                normal = { textColor = Color.white }
+                normal = { textColor = Color.white },
             };
 
             GUI.Label(rect, node.Label, style);
@@ -355,7 +378,8 @@ namespace Asaki.Editor.Entities
         private void HandleGraphEvents(Rect rect)
         {
             var e = Event.current;
-            if (!rect.Contains(e.mousePosition)) return;
+            if (!rect.Contains(e.mousePosition))
+                return;
 
             var mousePos = (e.mousePosition - new Vector2(rect.x, rect.y)) / _zoom - _graphOffset;
 
@@ -403,7 +427,10 @@ namespace Asaki.Editor.Entities
 
             if (_selectedNode == null)
             {
-                GUILayout.Label("Select a node to view details", EditorStyles.centeredGreyMiniLabel);
+                GUILayout.Label(
+                    "Select a node to view details",
+                    EditorStyles.centeredGreyMiniLabel
+                );
             }
             else
             {
@@ -415,11 +442,17 @@ namespace Asaki.Editor.Entities
 
         private void DrawNodeDetails(Node node)
         {
-            GUILayout.Label($"<b>{node.Label}</b>", new GUIStyle(EditorStyles.label) { richText = true });
+            GUILayout.Label(
+                $"<b>{node.Label}</b>",
+                new GUIStyle(EditorStyles.label) { richText = true }
+            );
             GUILayout.Space(10);
 
             GUILayout.Label($"Type: {node.Type}", EditorStyles.miniLabel);
-            GUILayout.Label($"Position: ({node.Position.x:F0}, {node.Position.y:F0})", EditorStyles.miniLabel);
+            GUILayout.Label(
+                $"Position: ({node.Position.x:F0}, {node.Position.y:F0})",
+                EditorStyles.miniLabel
+            );
 
             if (node.Type == NodeType.Entity && node.Data is IEntity entity)
             {
@@ -439,7 +472,10 @@ namespace Asaki.Editor.Entities
                 GUILayout.Space(10);
                 GUILayout.Label("Component Info:", EditorStyles.miniBoldLabel);
                 GUILayout.Label($"Full Name: {compType.FullName}", EditorStyles.miniLabel);
-                GUILayout.Label($"Is Tag: {compType.IsSubclassOf(typeof(TagComponent))}", EditorStyles.miniLabel);
+                GUILayout.Label(
+                    $"Is Tag: {compType.IsSubclassOf(typeof(TagComponent))}",
+                    EditorStyles.miniLabel
+                );
 
                 var connectedEntities = node.ConnectedNodes.Count;
                 GUILayout.Label($"Used by: {connectedEntities} entities", EditorStyles.miniLabel);
