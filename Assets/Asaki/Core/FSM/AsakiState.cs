@@ -26,7 +26,7 @@
         /// </summary>
         /// <remarks>
         /// 状态可以通过此引用在内部切换到其他状态。
-        /// 例如：Machine.ChangeState<IdleState>();
+        /// 例如：Machine.ChangeState &lt; IdleState &gt; ();
         /// 此属性在Initialize方法中被设置，之后在状态的整个生命周期内保持不变。
         /// </remarks>
         protected AsakiStateMachine<TContext> Machine { get; private set; }
@@ -88,5 +88,15 @@
         /// 子类应重写此方法来实现特定状态的退出逻辑。
         /// </remarks>
         public virtual void OnExit() { }
+
+        /// <summary>
+        /// 检查是否应该转换到其他状态。
+        /// </summary>
+        /// <remarks>
+        /// 此方法在每帧更新时被调用，用于检查是否满足转换条件。
+        /// 如果满足条件，应调用Machine.ChangeState &lt; TNextState &gt; ()来切换到下一个状态。
+        /// 子类应重写此方法来实现特定状态的转换逻辑。
+        /// </remarks>
+        protected virtual void CheckTransition(float deltaTime) { }
     }
 }

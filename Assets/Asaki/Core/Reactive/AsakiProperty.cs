@@ -77,6 +77,8 @@ namespace Asaki.Core.Reactive
         [NonSerialized]
         private readonly List<IAsakiObserver<T>> _observers = new List<IAsakiObserver<T>>();
 
+        private object _valueLock = new object();
+
         /// <summary>
         /// 订阅凭证，实现IDisposable接口，用于自动取消订阅或解绑。
         /// </summary>
@@ -281,11 +283,27 @@ namespace Asaki.Core.Reactive
         /// </example>
         public IDisposable Bind(IAsakiObserver<T> observer)
         {
-            if (_observers.Contains(observer))
+            bool emptyObserver;
+            lock (_valueLock)
+            {
+                emptyObserver = _observers.Contains(observer);
+            }
+            if (emptyObserver)
+            {
                 return new Subscription(this, () => { });
-            _observers.Add(observer);
+            }
+            lock (_valueLock)
+            {
+                _observers.Add(observer);
+            }
             observer.OnValueChange(_value);
-            return new Subscription(this, () => _observers.Remove(observer));
+            return new Subscription(this, () =>
+            {
+                lock (_valueLock)
+                {
+                    _observers.Remove(observer);
+                }
+            });
         }
 
         /// <summary>
@@ -310,7 +328,10 @@ namespace Asaki.Core.Reactive
         /// </example>
         public void Unbind(IAsakiObserver<T> observer)
         {
-            _observers.Remove(observer);
+            lock (_valueLock)
+            {
+                _observers.Remove(observer);
+            }
         }
 
         /// <summary>
@@ -345,7 +366,7 @@ namespace Asaki.Core.Reactive
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AsakiProperty] 通知观察者时发生错误: {ex.Message}");
+                    ALog.Error($"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}");
                 }
             }
         }
@@ -377,7 +398,7 @@ namespace Asaki.Core.Reactive
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[AsakiProperty] 通知观察者时发生错误: {ex.Message}");
+                    ALog.Error($"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}");
                 }
             }
         }
@@ -443,14 +464,14 @@ namespace Asaki.Core.Reactive
         public override bool Equals(object obj)
         {
             return obj switch
-            {
-                // 相同类型，使用类型安全的 Equals 方法
-                AsakiProperty<T> other => Equals(other),
-                // T 类型，直接比较值
-                T val => EqualityComparer<T>.Default.Equals(_value, val),
-                // 其他类型不相等
-                _ => false,
-            };
+                   {
+                       // 相同类型，使用类型安全的 Equals 方法
+                       AsakiProperty<T> other => Equals(other),
+                       // T 类型，直接比较值
+                       T val => EqualityComparer<T>.Default.Equals(_value, val),
+                       // 其他类型不相等
+                       _ => false,
+                   };
         }
 
         // ========================================================================
