@@ -1,0 +1,16 @@
+{
+    "mcpServers": {
+        "ai-game-developer": {
+            "type": "stdio",
+            "command": "E:/Projects/UnityGame/Asaki/Library/mcp-server/win-x64/unity-mcp-server.exe",
+            "args": [
+                "--port",
+                "59001",
+                "--plugin-timeout",
+                "10000",
+                "--client-transport",
+                "stdio"
+            ]
+        }
+    }
+}
