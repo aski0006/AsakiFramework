@@ -59,6 +59,18 @@ namespace Asaki.Core.FSM
             _stateCache = new Dictionary<Type, AsakiState<TContext>>();
         }
 
+        public TState GetState<TState>() where TState : AsakiState<TContext>, new()
+        {
+            Type type = typeof(TState);
+            if (!_stateCache.TryGetValue(type, out AsakiState<TContext> state))
+            {
+                state = new TState();
+                state.Initialize(this, Context);
+                _stateCache.Add(type, state);
+            }
+            return (TState)state;
+        }
+
         /// <summary>
         /// 切换到指定类型的状态。
         /// </summary>

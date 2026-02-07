@@ -204,7 +204,7 @@ namespace Asaki.Editor.GraphEditors
             schedule.Execute(PopulateView);
         }
 
-        private void PopulateView()
+        protected void PopulateView()
         {
             graphViewChanged -= OnGraphViewChanged;
             DeleteElements(graphElements.ToList());
@@ -242,7 +242,7 @@ namespace Asaki.Editor.GraphEditors
             graphViewChanged += OnGraphViewChanged;
         }
 
-        public void CreateNodeView(AsakiNodeBase node)
+        public virtual void CreateNodeView(AsakiNodeBase node)
         {
             // 传入 SerializedObject，以便 NodeView 能够绘制 Inspector
             AsakiNodeView nodeView = new AsakiNodeView(node, _serializedGraph);
