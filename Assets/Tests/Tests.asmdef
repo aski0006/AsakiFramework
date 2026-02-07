@@ -8,11 +8,11 @@
         "Asaki.Core",
         "Asaki.Editor",
         "Asaki.Generated",
-        "Asaki.Plungins",
         "Asaki.Unity",
         "Unity.Addressables",
         "Unity.TextMeshPro",
-        "UniTask"
+        "UniTask",
+        "Asaki.Plungin.Combo.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
