@@ -1,12 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Asaki.Core.UI;
+using Asaki.Unity;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Asaki.Unity.Services.UI
 {
-    public class AsakiUIRoot : MonoBehaviour
+    public class AsakiUIRoot : AsakiMono
     {
         // 存储层级节点
         private readonly Dictionary<AsakiUILayer, Transform> _layers =

@@ -87,6 +87,16 @@ namespace Asaki.Core.Configs
         public List<WidgetTemplate> Templates = new List<WidgetTemplate>();
 
         /// <summary>
+        /// 资源释放延迟时间（秒），默认值为5秒。
+        /// 当UI窗口关闭后，资源会保留这段时间再释放，避免玩家快速开关同一个窗口造成重复加载。
+        /// 设置为0表示立即释放（不延迟）。
+        /// </summary>
+        [Header("Resource Management")]
+        [Tooltip("UI关闭后资源保留时间（秒），用于避免快速开关造成的重复加载开销")]
+        [Min(0)]
+        public float ResourceReleaseDelaySeconds = 5f;
+
+        /// <summary>
         /// 根据给定的UI小部件类型获取对应的预制体。
         /// 通过线性查找Templates列表来找到匹配的预制体。
         /// </summary>

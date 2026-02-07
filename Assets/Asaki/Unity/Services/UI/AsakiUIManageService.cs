@@ -3,18 +3,15 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Asaki.Core.Broker;
 using Asaki.Core.Configs;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
-using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Factories;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Asaki.Core.Simulation;
 using Asaki.Core.UI;
-using Asaki.Unity.Extensions;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -50,6 +47,17 @@ namespace Asaki.Unity.Services.UI
         // 线程安全的销毁队列
         private readonly ConcurrentQueue<IAsakiWindow> _pendingDestroyQueue =
             new ConcurrentQueue<IAsakiWindow>();
+
+        // [新增] 延迟释放资源管理
+        private class PendingReleaseInfo
+        {
+            public string AssetPath;
+            public AsakiUIResourceHandleAdapter Handle;
+            public float RemainingSeconds;
+        }
+
+        private readonly Dictionary<string, PendingReleaseInfo> _pendingReleaseHandles =
+            new Dictionary<string, PendingReleaseInfo>();
 
         public AsakiUIManageService(
             AsakiUIConfig configAsset,
@@ -167,24 +175,39 @@ namespace Asaki.Unity.Services.UI
                 // === V5.1 普通分支 ===
                 else
                 {
-                    // [Step 1] 异步加载
-                    rawHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
-                    if (!rawHandle.IsValid)
-                        return null;
-                    if (token.IsCancellationRequested)
+                    // [Step 1] 检查是否有可复用的延迟释放资源
+                    if (TryGetReusableHandle(info.AssetPath, out AsakiUIResourceHandleAdapter reusableHandle))
                     {
-                        rawHandle.Dispose();
-                        return null;
+                        // 复用已有资源，无需重新加载
+                        instance = Object.Instantiate(reusableHandle.Asset, parent);
+                        window = instance.GetComponent<T>();
+                        if (window is AsakiUIWindow baseWindow)
+                        {
+                            baseWindow.IsPooled = false;
+                            baseWindow.ResHandle = reusableHandle;
+                        }
                     }
-
-                    // [Step 2] 实例化
-                    instance = Object.Instantiate(rawHandle.Asset, parent);
-                    window = instance.GetComponent<T>();
-                    if (window is AsakiUIWindow baseWindow)
+                    else
                     {
-                        baseWindow.IsPooled = false;
-                        baseWindow.ResHandle = new AsakiUIResourceHandleAdapter(rawHandle);
-                        rawHandle = null;
+                        // [Step 1] 异步加载
+                        rawHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
+                        if (!rawHandle.IsValid)
+                            return null;
+                        if (token.IsCancellationRequested)
+                        {
+                            rawHandle.Dispose();
+                            return null;
+                        }
+
+                        // [Step 2] 实例化
+                        instance = Object.Instantiate(rawHandle.Asset, parent);
+                        window = instance.GetComponent<T>();
+                        if (window is AsakiUIWindow baseWindow)
+                        {
+                            baseWindow.IsPooled = false;
+                            baseWindow.ResHandle = new AsakiUIResourceHandleAdapter(rawHandle);
+                            rawHandle = null;
+                        }
                     }
                 }
 
@@ -280,10 +303,62 @@ namespace Asaki.Unity.Services.UI
         // [新增] 心跳驱动，处理销毁列表
         public void Tick(float deltaTime)
         {
+            // 处理待关闭窗口
             while (_pendingDestroyQueue.TryDequeue(out IAsakiWindow window))
             {
                 ProcessCloseRequest(window);
             }
+
+            // [新增] 处理延迟释放的资源
+            ProcessDelayedRelease(deltaTime);
+        }
+
+        /// <summary>
+        /// 处理延迟释放的资源，每帧调用
+        /// </summary>
+        private void ProcessDelayedRelease(float deltaTime)
+        {
+            if (_pendingReleaseHandles.Count == 0)
+                return;
+
+            var keysToRemove = new List<string>();
+
+            foreach (var kvp in _pendingReleaseHandles)
+            {
+                var info = kvp.Value;
+                info.RemainingSeconds -= deltaTime;
+
+                if (info.RemainingSeconds <= 0)
+                {
+                    // 时间到，真正释放资源
+                    ALog.Info($"[AsakiUI] Delay the expiration of the released resource: {info.AssetPath}");
+                    info.Handle.Dispose();
+                    keysToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (string key in keysToRemove)
+            {
+                _pendingReleaseHandles.Remove(key);
+            }
+        }
+
+        /// <summary>
+        /// 尝试获取可复用的待释放资源句柄
+        /// </summary>
+        private bool TryGetReusableHandle(string assetPath, out AsakiUIResourceHandleAdapter handle)
+        {
+            handle = default(AsakiUIResourceHandleAdapter);
+            if (_pendingReleaseHandles.TryGetValue(assetPath, out PendingReleaseInfo info))
+            {
+                // 复用该句柄
+                info.Handle.UnmarkForRelease();
+                handle = info.Handle;
+                _pendingReleaseHandles.Remove(assetPath);
+                ALog.Info($"[AsakiUI] Reuse deferred resources: {assetPath}");
+                return true;
+            }
+            return false;
         }
 
         #region 查询接口实现
@@ -464,8 +539,8 @@ namespace Asaki.Unity.Services.UI
                 _windowLayerMap.Remove(window); // 清理映射
             }
 
-            // 3. 执行关闭
-            HandleCloseAsync(window).Forget();
+            // 3. 执行关闭（传入延迟释放配置）
+            HandleCloseAsync(window, _uiConfig?.ResourceReleaseDelaySeconds ?? 0f).Forget();
 
             foreach (var pair in _windowInstanceMap)
             {
@@ -494,22 +569,89 @@ namespace Asaki.Unity.Services.UI
             }
         }
 
-        private async UniTask HandleCloseAsync(IAsakiWindow window)
+        private async UniTask HandleCloseAsync(IAsakiWindow window, float releaseDelaySeconds)
         {
-            // Window 内部处理回收/销毁
+            // 获取窗口的资源句柄（用于延迟释放）
+            AsakiUIResourceHandleAdapter handle = default(AsakiUIResourceHandleAdapter);
+            string assetPath = null;
+            bool isPooled = false;
+
+            if (window is AsakiUIWindow uiWindow && uiWindow != null)
+            {
+                handle = (AsakiUIResourceHandleAdapter)uiWindow.ResHandle;
+                assetPath = handle.Location;
+                isPooled = uiWindow.IsPooled;
+
+                // [关键] 先备份资源句柄，然后清空，防止 CloseInternal 重复释放
+                uiWindow.ResHandle = null;
+            }
+
+            // Window 内部处理回收/销毁（此时 ResHandle 已为 null，不会释放资源）
             await window.OnCloseAsync(CancellationToken.None);
+
+            // [新增] 资源释放逻辑
+            if (!isPooled && handle.HasResource && !string.IsNullOrEmpty(assetPath))
+            {
+                if (releaseDelaySeconds > 0)
+                {
+                    // 延迟释放：检查是否已有相同资源的待释放项
+                    if (_pendingReleaseHandles.ContainsKey(assetPath))
+                    {
+                        // 已存在，先释放旧的
+                        _pendingReleaseHandles[assetPath].Handle.Dispose();
+                        _pendingReleaseHandles.Remove(assetPath);
+                    }
+
+                    // 标记为待释放并加入队列
+                    handle.MarkForRelease();
+                    _pendingReleaseHandles[assetPath] = new PendingReleaseInfo
+                    {
+                        AssetPath = assetPath,
+                        Handle = handle,
+                        RemainingSeconds = releaseDelaySeconds
+                    };
+
+                    ALog.Info($"[AsakiUI] The resource enters the delayed release queue: {assetPath}, delay: {releaseDelaySeconds}s");
+                }
+                else
+                {
+                    // 立即释放资源（releaseDelaySeconds == 0）
+                    handle.Dispose();
+                }
+            }
         }
 
         public void OnDispose()
         {
-            // 1. 关闭所有窗口
+            // 1. 同步关闭所有窗口（避免异步操作访问已销毁的资源）
             while (_normalStack.Count > 0)
             {
-                HandleCloseAsync(_normalStack.Pop()).Forget();
+                IAsakiWindow window = _normalStack.Pop();
+                // 同步执行关闭，不等待动画
+                if (window is AsakiUIWindow uiWindow && uiWindow != null)
+                {
+                    uiWindow.DisposeImmediately();
+                }
             }
             _normalStack.Clear();
 
-            // 2. 释放池
+            // 2. 清空待销毁队列
+            while (_pendingDestroyQueue.TryDequeue(out IAsakiWindow window))
+            {
+                if (window is AsakiUIWindow uiWindow && uiWindow != null)
+                {
+                    uiWindow.DisposeImmediately();
+                }
+            }
+
+            // 3. 立即释放所有延迟释放队列中的资源
+            foreach (var kvp in _pendingReleaseHandles)
+            {
+                kvp.Value.Handle.Dispose();
+            }
+            _pendingReleaseHandles.Clear();
+
+            // 4. 释放池
             if (_poolService != null)
             {
                 foreach (string assetPath in _pooledAssets)
@@ -519,14 +661,16 @@ namespace Asaki.Unity.Services.UI
             }
             _pooledAssets.Clear();
             _windowLayerMap.Clear();
+            _windowInstanceMap.Clear();
+            _typeToIdCache.Clear();
 
-            // 3. 注销 Tick
+            // 5. 注销 Tick
             if (_asakiSimulationService != null)
             {
                 _asakiSimulationService.Unregister(this);
             }
 
-            // 4. 销毁 Root
+            // 6. 销毁 Root
             if (_asakiUIRoot != null)
             {
                 Object.Destroy(_asakiUIRoot.gameObject);

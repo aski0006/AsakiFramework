@@ -1,22 +1,20 @@
-﻿using System.Threading;
+using System.Threading;
 using System.Threading.Tasks;
-using Asaki.Core.Context; // [新增] 用于获取服务
+using Asaki.Core.Context;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.UI;
+using Asaki.Unity;
 using Asaki.Unity.Extensions;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-// [移除] 旧的静态引用
-// using AsakiSmartPool = Asaki.Core.Pooling.AsakiSmartPool;
-
 namespace Asaki.Unity.Services.UI
 {
     [RequireComponent(typeof(CanvasGroup))]
-    public abstract class AsakiUIWindow : MonoBehaviour, IAsakiWindow, IAsakiPoolable
+    public abstract class AsakiUIWindow : AsakiMono, IAsakiWindow, IAsakiPoolable
     {
         [Header("Focus Management")]
         [SerializeField]
@@ -33,7 +31,7 @@ namespace Asaki.Unity.Services.UI
         // 标记是否是池化对象 (由 UIManager 在 Spawn 后赋值)
         public bool IsPooled { get; set; }
 
-        protected virtual void Awake()
+        protected override void OnAwake()
         {
             CanvasGroup = GetComponent<CanvasGroup>();
         }
@@ -168,7 +166,9 @@ namespace Asaki.Unity.Services.UI
                     if (pool != null)
                         pool.Return(gameObject);
                     else
+                        {
                         Destroy(gameObject);
+                    }
                 }
                 else
                 {
@@ -187,6 +187,38 @@ namespace Asaki.Unity.Services.UI
                 // 2. 销毁 GameObject
                 Destroy(gameObject);
             }
+        }
+
+        /// <summary>
+        /// 立即释放资源（用于服务销毁时，跳过动画）
+        /// </summary>
+        internal void DisposeImmediately()
+        {
+            // 清理资源引用
+            _previousFocus = null;
+
+            // 如果是池化对象，归还到对象池
+            if (IsPooled && !string.IsNullOrEmpty(PoolKey))
+            {
+                if (AsakiContext.TryGet<IAsakiPoolService>(out IAsakiPoolService poolService))
+                {
+                    var pool = poolService.GetPool<GameObject>(PoolKey);
+                    if (pool != null)
+                    {
+                        pool.Return(gameObject);
+                        return;
+                    }
+                }
+            }
+            else
+            {
+                // 非池化对象，释放资源句柄
+                ResHandle?.Dispose();
+                ResHandle = null;
+            }
+
+            // 销毁 GameObject
+            Destroy(gameObject);
         }
 
         // 栈管理行为：被覆盖时
