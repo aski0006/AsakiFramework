@@ -32,12 +32,12 @@ MonoBehaviour:
     - Key: "Sihan_\u4E09Z_STUDIO_HOYO_MiX___DAMIDAMI"
       ID: 1215100009
       Clip: {fileID: 8300000, guid: 75249e7005272fa46b917646e087deba, type: 3}
-      AssetPath: "Assets/Asset/Sihan,\u4E09Z-STUDIO,HOYO-MiX - DAMIDAMI.mp3"
+      AssetPath: "Assets/Assets/Music/Sihan,\u4E09Z-STUDIO,HOYO-MiX - DAMIDAMI.mp3"
       Volume: 1
       Pitch: 1
       Loop: 0
       RandomPitch: 0
-      Group: 1
+      Group: 0
       Position: {x: 0, y: 0, z: 0}
       SpatialBlend: 0
       Priority: 128

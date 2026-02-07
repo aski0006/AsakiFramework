@@ -10,14 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: Default Local Group
+  m_Name: Music
   m_EditorClassIdentifier: 
-  m_GroupName: Default Local Group
-  m_GUID: 7d0f52f7b49c55f44b91ea4fb7a100f4
-  m_SerializeEntries: []
+  m_GroupName: Music
+  m_GUID: 9229dc1a4c04985478878a1a61e7de55
+  m_SerializeEntries:
+  - m_GUID: 75249e7005272fa46b917646e087deba
+    m_Address: "Assets/Assets/Music/Sihan,\u4E09Z-STUDIO,HOYO-MiX - DAMIDAMI.mp3"
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 7b3ecd7d009a85d4e9fd2ed5568dbccc, type: 2}
   m_SchemaSet:
     m_Schemas:
-    - {fileID: 11400000, guid: ff7662034d9db2e43ad3630cd1e90e4e, type: 2}
-    - {fileID: 11400000, guid: e674d7041c18dd3469c36a44c828a0fe, type: 2}
+    - {fileID: 11400000, guid: 4a429ece2de1744478bd16730c7362e3, type: 2}
+    - {fileID: 11400000, guid: e319fcbf442c8b445a71f93c4784bbaa, type: 2}
