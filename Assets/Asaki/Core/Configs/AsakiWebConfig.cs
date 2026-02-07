@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Asaki.Core.Attributes;
 using Asaki.Core.Network;
 using UnityEngine;

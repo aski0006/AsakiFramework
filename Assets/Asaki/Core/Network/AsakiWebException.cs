@@ -22,7 +22,7 @@
         /// <param name="code">HTTP响应状态码</param>
         /// <param name="url">请求的目标URL</param>
         public AsakiWebException(string message, long code, string url)
-            : base(message)
+            : base(message ?? string.Empty)
         {
             ResponseCode = code;
             Url = url;

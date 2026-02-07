@@ -21,7 +21,72 @@ namespace Asaki.Editor.UI
 
         // ========================= 主入口 =========================
 
-        [MenuItem("Asaki/UI/Generate UI Script &#g", false, 11)] // Alt+Shift+G
+        [MenuItem("Asaki/UI/Ignore/Add [Ignore] Prefix", false, 10)]
+        public static void AddIgnorePrefix()
+        {
+            GameObject[] selectedObjects = Selection.gameObjects;
+            if (selectedObjects.Length == 0)
+            {
+                EditorUtility.DisplayDialog("Error", "Please select at least one GameObject.", "OK");
+                return;
+            }
+
+            Undo.RecordObjects(selectedObjects.Select(go => go.transform).ToArray(), "Add [Ignore] Prefix");
+            int count = 0;
+
+            foreach (GameObject go in selectedObjects)
+            {
+                if (!ShouldIgnore(go.name))
+                {
+                    go.name = "[Ignore] " + go.name;
+                    count++;
+                    EditorUtility.SetDirty(go);
+                }
+            }
+
+            Debug.Log($"[AsakiUI] Added [Ignore] prefix to {count} GameObject(s).");
+        }
+
+        [MenuItem("Asaki/UI/Ignore/Remove [Ignore] Prefix", false, 11)]
+        public static void RemoveIgnorePrefix()
+        {
+            GameObject[] selectedObjects = Selection.gameObjects;
+            if (selectedObjects.Length == 0)
+            {
+                EditorUtility.DisplayDialog("Error", "Please select at least one GameObject.", "OK");
+                return;
+            }
+
+            Undo.RecordObjects(selectedObjects.Select(go => go.transform).ToArray(), "Remove [Ignore] Prefix");
+            int count = 0;
+
+            foreach (GameObject go in selectedObjects)
+            {
+                string newName = RemoveIgnorePrefixFromName(go.name);
+                if (newName != go.name)
+                {
+                    go.name = newName;
+                    count++;
+                    EditorUtility.SetDirty(go);
+                }
+            }
+
+            Debug.Log($"[AsakiUI] Removed [Ignore] prefix from {count} GameObject(s).");
+        }
+
+        [MenuItem("Asaki/UI/Ignore/Add [Ignore] Prefix", true, 10)]
+        private static bool ValidateAddIgnorePrefix()
+        {
+            return Selection.gameObjects.Length > 0;
+        }
+
+        [MenuItem("Asaki/UI/Ignore/Remove [Ignore] Prefix", true, 11)]
+        private static bool ValidateRemoveIgnorePrefix()
+        {
+            return Selection.gameObjects.Length > 0;
+        }
+
+        [MenuItem("Asaki/UI/Generate UI Script &#g", false, 20)] // Alt+Shift+G
         public static void GenerateScript()
         {
             GameObject selected = Selection.activeGameObject;
@@ -162,7 +227,23 @@ namespace Asaki.Editor.UI
             var components = new List<ComponentInfo>();
             var usedNames = new HashSet<string>();
 
-            // 深度优先遍历（跳过根节点）
+            // 首先检查根节点本身是否包含UI组件
+            if (!ShouldIgnore(root.name))
+            {
+                if (TryIdentifyComponent(root, out ComponentInfo rootInfo))
+                {
+                    rootInfo.ParentPath = "";
+                    rootInfo.OriginalName = root.name;
+
+                    // 生成唯一字段名
+                    string baseName = GenerateFieldName(root.name);
+                    rootInfo.FieldName = MakeUniqueFieldName(baseName, usedNames);
+
+                    components.Add(rootInfo);
+                }
+            }
+
+            // 深度优先遍历子节点
             foreach (Transform child in root)
             {
                 Traverse(child, root, "", components, usedNames);
@@ -223,54 +304,44 @@ namespace Asaki.Editor.UI
             return false;
         }
 
+        private static string RemoveIgnorePrefixFromName(string gameObjectName)
+        {
+            if (string.IsNullOrWhiteSpace(gameObjectName))
+                return gameObjectName;
+
+            // 移除各种形式的[Ignore]前缀
+            string[] prefixes = { "[Ignore] ", "[ignore] ", "[Ignore]", "[ignore]" };
+            foreach (var prefix in prefixes)
+            {
+                if (gameObjectName.StartsWith(prefix))
+                {
+                    return gameObjectName.Substring(prefix.Length).TrimStart();
+                }
+            }
+
+            // 移除下划线形式的前缀
+            if (gameObjectName.StartsWith("_Ignore") || gameObjectName.StartsWith("_ignore"))
+            {
+                return gameObjectName.Substring(1).TrimStart('_');
+            }
+
+            return gameObjectName;
+        }
+
         private static bool TryIdentifyComponent(Transform transform, out ComponentInfo info)
         {
             info = new ComponentInfo();
 
-            // 优先级：Button > TMP > Legacy > 其他
+            // 优先级：Button > TMP_InputField > TMP_Dropdown > TMP_Text > Legacy > 其他
+            // Button优先级最高，因为其他组件可能也包含Button
             if (transform.TryGetComponent<Button>(out _))
             {
                 info.WidgetType = AsakiUIWidgetType.Button;
                 info.TypeName = "Button";
                 return true;
             }
-            if (transform.TryGetComponent<TMP_Text>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.TextMeshPro;
-                info.TypeName = "TMP_Text";
-                info.RequiresTMPro = true;
-                return true;
-            }
-            if (transform.TryGetComponent<Text>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.Text;
-                info.TypeName = "Text";
-                return true;
-            }
-            if (transform.TryGetComponent<Image>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.Image;
-                info.TypeName = "Image";
-                return true;
-            }
-            if (transform.TryGetComponent<Slider>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.Slider;
-                info.TypeName = "Slider";
-                return true;
-            }
-            if (transform.TryGetComponent<Toggle>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.Toggle;
-                info.TypeName = "Toggle";
-                return true;
-            }
-            if (transform.TryGetComponent<ScrollRect>(out _))
-            {
-                info.WidgetType = AsakiUIWidgetType.ScrollView;
-                info.TypeName = "ScrollRect";
-                return true;
-            }
+
+            // TextMeshPro Input Field（必须在TMP_Text之前检查，因为InputField也包含TMP_Text）
             if (transform.TryGetComponent<TMP_InputField>(out _))
             {
                 info.WidgetType = AsakiUIWidgetType.InputField;
@@ -278,10 +349,78 @@ namespace Asaki.Editor.UI
                 info.RequiresTMPro = true;
                 return true;
             }
+
+            // TextMeshPro Dropdown
+            if (transform.TryGetComponent<TMP_Dropdown>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Dropdown;
+                info.TypeName = "TMP_Dropdown";
+                info.RequiresTMPro = true;
+                return true;
+            }
+
+            // TextMeshPro Text
+            if (transform.TryGetComponent<TMP_Text>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.TextMeshPro;
+                info.TypeName = "TMP_Text";
+                info.RequiresTMPro = true;
+                return true;
+            }
+
+            // Legacy Text
+            if (transform.TryGetComponent<Text>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Text;
+                info.TypeName = "Text";
+                return true;
+            }
+
+            // Image
+            if (transform.TryGetComponent<Image>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Image;
+                info.TypeName = "Image";
+                return true;
+            }
+
+            // Slider
+            if (transform.TryGetComponent<Slider>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Slider;
+                info.TypeName = "Slider";
+                return true;
+            }
+
+            // Toggle
+            if (transform.TryGetComponent<Toggle>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Toggle;
+                info.TypeName = "Toggle";
+                return true;
+            }
+
+            // ScrollRect
+            if (transform.TryGetComponent<ScrollRect>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.ScrollView;
+                info.TypeName = "ScrollRect";
+                return true;
+            }
+
+            // Legacy Input Field
             if (transform.TryGetComponent<InputField>(out _))
             {
                 info.WidgetType = AsakiUIWidgetType.InputField;
                 info.TypeName = "InputField";
+                return true;
+            }
+
+            // Legacy Dropdown
+            if (transform.TryGetComponent<Dropdown>(out _))
+            {
+                info.WidgetType = AsakiUIWidgetType.Dropdown;
+                info.TypeName = "Dropdown";
                 return true;
             }
 
@@ -420,7 +559,12 @@ namespace Asaki.Editor.UI
                 "the", "a", "an",      // 冠词
                 "ui", "ui_",           // 重复的UI前缀
                 "game", "object",      // 通用词汇
-                "component", "element" // 过于通用的后缀
+                "component", "element", // 过于通用的后缀
+                // UI组件类型名称（避免字段名中出现冗余的组件类型后缀）
+                "image", "text", "button", "btn",
+                "input", "inputfield", "dropdown",
+                "slider", "toggle", "scroll", "scrollrect",
+                "scrollbar", "mask", "rawimage"
             };
 
             return noiseWords.Contains(lowerWord);

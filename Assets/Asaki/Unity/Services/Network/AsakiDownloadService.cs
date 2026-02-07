@@ -264,19 +264,26 @@ namespace Asaki.Unity.Services.Network
             CancellationToken token = default(CancellationToken)
         )
         {
-            using UnityWebRequest uwr = UnityWebRequest.Head(url);
-            if (token.IsCancellationRequested)
-                return -1;
-            await uwr.SendWebRequest();
-
-            if (uwr.result != UnityWebRequest.Result.Success)
-                return -1;
-            string lenHeader = uwr.GetResponseHeader("Content-Length");
-            if (long.TryParse(lenHeader, out long size))
+            try
             {
-                return size;
+                using UnityWebRequest uwr = UnityWebRequest.Head(url);
+                if (token.IsCancellationRequested)
+                    return -1;
+                await uwr.SendWebRequest();
+
+                if (uwr.result != UnityWebRequest.Result.Success)
+                    return -1;
+                string lenHeader = uwr.GetResponseHeader("Content-Length");
+                if (long.TryParse(lenHeader, out long size))
+                {
+                    return size;
+                }
+                return -1;
             }
-            return -1;
+            catch
+            {
+                return -1;
+            }
         }
 
         /// <summary>
