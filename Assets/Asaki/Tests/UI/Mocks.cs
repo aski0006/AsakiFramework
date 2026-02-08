@@ -126,6 +126,14 @@ namespace Asaki.Tests.UI
             return _loadedAssets.ContainsKey(location);
         }
 
+        /// <summary>
+        /// 注册外部创建的资源（用于测试）
+        /// </summary>
+        public void RegisterAsset(string location, GameObject asset)
+        {
+            _loadedAssets[location] = asset;
+        }
+
         public UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(
             IEnumerable<string> locations,
             Action<float> onProgress,
@@ -146,6 +154,10 @@ namespace Asaki.Tests.UI
         }
 
         public void ReleaseBatch(IEnumerable<string> locations)
+        {
+            throw new NotImplementedException();
+        }
+        public void ReleaseBatch<T>(IEnumerable<string> locations) where T : class
         {
             throw new NotImplementedException();
         }
@@ -242,7 +254,7 @@ namespace Asaki.Tests.UI
     {
         private string _assetPath;
 
-        public void Setup(string assetPath, bool isPooled, IAsakiResourceService resourceService)
+        public void Setup(string assetPath, bool isPooled, MockResourceService resourceService)
         {
             _assetPath = assetPath;
             IsPooled = isPooled;
@@ -252,6 +264,8 @@ namespace Asaki.Tests.UI
             {
                 // 非池化对象加载资源
                 var asset = new GameObject($"Asset_{assetPath.Replace('/', '_')}");
+                // 注册资源到MockResourceService，使其能够被追踪
+                resourceService.RegisterAsset(assetPath, asset);
                 var resHandle = new ResHandle<GameObject>(assetPath, asset, resourceService);
                 ResHandle = new AsakiUIResourceHandleAdapter(resHandle);
             }

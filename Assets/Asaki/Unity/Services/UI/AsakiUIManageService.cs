@@ -351,8 +351,7 @@ namespace Asaki.Unity.Services.UI
             handle = default(AsakiUIResourceHandleAdapter);
             if (_pendingReleaseHandles.TryGetValue(assetPath, out PendingReleaseInfo info))
             {
-                // 复用该句柄
-                info.Handle.UnmarkForRelease();
+                // 复用该句柄，取消延迟释放
                 handle = info.Handle;
                 _pendingReleaseHandles.Remove(assetPath);
                 ALog.Info($"[AsakiUI] Reuse deferred resources: {assetPath}");
@@ -578,8 +577,12 @@ namespace Asaki.Unity.Services.UI
 
             if (window is AsakiUIWindow uiWindow && uiWindow != null)
             {
-                handle = (AsakiUIResourceHandleAdapter)uiWindow.ResHandle;
-                assetPath = handle.Location;
+                // [修复] 安全获取句柄，避免null引用
+                if (uiWindow.ResHandle is AsakiUIResourceHandleAdapter adapter)
+                {
+                    handle = adapter;
+                    assetPath = handle.Location;
+                }
                 isPooled = uiWindow.IsPooled;
 
                 // [关键] 先备份资源句柄，然后清空，防止 CloseInternal 重复释放
@@ -594,16 +597,15 @@ namespace Asaki.Unity.Services.UI
             {
                 if (releaseDelaySeconds > 0)
                 {
-                    // 延迟释放：检查是否已有相同资源的待释放项
-                    if (_pendingReleaseHandles.ContainsKey(assetPath))
+                    // 延迟释放：检查是否已有相同资源的待释放项（快速重开重关场景）
+                    if (_pendingReleaseHandles.TryGetValue(assetPath, out PendingReleaseInfo existingInfo))
                     {
-                        // 已存在，先释放旧的
-                        _pendingReleaseHandles[assetPath].Handle.Dispose();
+                        // 已存在，说明是快速重开重关，释放旧的句柄（防止重复释放同一句柄）
+                        existingInfo.Handle.Dispose();
                         _pendingReleaseHandles.Remove(assetPath);
                     }
 
-                    // 标记为待释放并加入队列
-                    handle.MarkForRelease();
+                    // 加入延迟释放队列
                     _pendingReleaseHandles[assetPath] = new PendingReleaseInfo
                     {
                         AssetPath = assetPath,

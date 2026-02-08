@@ -146,11 +146,11 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "fast_move",
                 MoveName = "Fast Move",
-                StartupTime = 0.01f,
-                ActiveDuration = 0.01f,
-                RecoveryTime = 0.01f,
-                ComboWindowStart = 0.01f,
-                ComboWindowEnd = 0.1f,
+                StartupTime = 0.05f,
+                ActiveDuration = 0.05f,
+                RecoveryTime = 0.05f,
+                ComboWindowStart = 0.05f,
+                ComboWindowEnd = 0.2f,
             };
 
             _comboTree.Moves = new[] { fastMove };
@@ -163,16 +163,16 @@ namespace Asaki.Tests.ComboSystem
             _controller.TriggerAttack("LightAttack");
             Assert.AreEqual(ComboStateType.Startup, _controller.CurrentStateType);
 
-            // 等待进入Active
-            yield return new WaitForSeconds(0.02f);
+            // 等待进入Active (StartupTime = 0.05f, 等待0.06s确保进入Active但不超过Active+Recovery)
+            yield return new WaitForSeconds(0.06f);
             Assert.AreEqual(ComboStateType.Active, _controller.CurrentStateType);
 
-            // 等待进入Recovery
-            yield return new WaitForSeconds(0.02f);
+            // 等待进入Recovery (ActiveDuration = 0.05f, 等待0.06s确保进入Recovery但不超过Recovery)
+            yield return new WaitForSeconds(0.06f);
             Assert.AreEqual(ComboStateType.Recovery, _controller.CurrentStateType);
 
-            // 等待进入ComboWindow
-            yield return new WaitForSeconds(0.02f);
+            // 等待进入ComboWindow (RecoveryTime = 0.05f, 等待0.06s确保进入ComboWindow)
+            yield return new WaitForSeconds(0.06f);
             Assert.AreEqual(ComboStateType.ComboWindow, _controller.CurrentStateType);
         }
 

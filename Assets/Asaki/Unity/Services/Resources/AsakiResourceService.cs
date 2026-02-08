@@ -291,7 +291,9 @@ namespace Asaki.Unity.Services.Resources
                             timeoutTask
                         );
 
-                        if (finishedIndex.hasResultLeft)
+                        // hasResultLeft == true 表示左边的 dependencyTask 先完成（加载成功）
+                        // hasResultLeft == false 表示右边的 timeoutTask 先完成（超时）
+                        if (!finishedIndex.hasResultLeft)
                         {
                             throw new TimeoutException($"[Resources] Dependency Timeout: {depLoc}");
                         }
@@ -473,17 +475,23 @@ namespace Asaki.Unity.Services.Resources
         }
 
         /// <summary>
-        /// [API变更] 批量释放现在建议显式指定类型，或者修改接口
-        /// 这里为了兼容 Interface 暂时回退到 Object 类型，如果有问题请改为 LoadBatchAsync<T> 对应的 ReleaseBatch<T>
+        /// [已弃用] 批量释放资源
+        /// 此方法使用 typeof(Object) 作为默认类型，可能无法正确释放用具体类型加载的资源
+        /// 请使用 ReleaseBatch&lt;T&gt; 方法显式指定资源类型
         /// </summary>
+        [Obsolete("请使用 ReleaseBatch<T> 方法显式指定资源类型，以确保正确释放资源")]
         public void ReleaseBatch(IEnumerable<string> locations)
         {
             foreach (string location in locations)
                 Release(location, typeof(Object));
         }
 
-        // 建议新增的泛型批量释放
+        /// <summary>
+        /// 批量释放资源，显式指定资源类型
+        /// 与 LoadBatchAsync&lt;T&gt; 对应，确保使用正确的类型释放资源
+        /// </summary>
         public void ReleaseBatch<T>(IEnumerable<string> locations)
+            where T : class
         {
             foreach (string location in locations)
                 Release(location, typeof(T));

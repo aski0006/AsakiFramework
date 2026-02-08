@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -61,6 +61,12 @@ namespace Asaki.Core.Resources
         )
             where T : class;
         public void ReleaseBatch(IEnumerable<string> locations);
+
+        /// <summary>
+        /// 批量释放资源，显式指定资源类型
+        /// 与 LoadBatchAsync&lt;T&gt; 对应，确保使用正确的类型释放资源
+        /// </summary>
+        void ReleaseBatch<T>(IEnumerable<string> locations) where T : class;
 
         UniTask UnloadUnusedAssets(CancellationToken token = default(CancellationToken));
         public void SetTimeoutSeconds(int timeoutSeconds);

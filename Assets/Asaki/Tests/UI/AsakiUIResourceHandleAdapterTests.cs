@@ -56,7 +56,7 @@ namespace Asaki.Tests.UI
             Assert.IsTrue(adapter.HasResource, "新创建的句柄应持有资源");
             Assert.AreEqual("Test/Path/Asset", adapter.Location, "路径应正确");
             Assert.AreSame(_testAsset, adapter.Asset, "资源引用应正确");
-            Assert.IsFalse(adapter.IsMarkedForRelease, "初始不应标记为待释放");
+            Assert.IsFalse(adapter.IsDisposed, "初始不应被释放");
         }
 
         [Test]
@@ -70,90 +70,6 @@ namespace Asaki.Tests.UI
             Assert.IsFalse(adapter.IsValid, "null句柄应无效");
             Assert.IsFalse(adapter.HasResource, "null句柄不应持有资源");
             Assert.IsNull(adapter.Asset, "null句柄的资源应为null");
-        }
-
-        #endregion
-
-        #region 标记释放测试
-
-        [Test]
-        [Description("MarkForRelease后IsMarkedForRelease应为true")]
-        public void MarkForRelease_SetsIsMarkedForReleaseToTrue()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-
-            // Act
-            adapter.MarkForRelease();
-
-            // Assert
-            Assert.IsTrue(adapter.IsMarkedForRelease, "应标记为待释放");
-        }
-
-        [Test]
-        [Description("MarkForRelease后IsValid应为false")]
-        public void MarkForRelease_IsValidBecomesFalse()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-
-            // Act
-            adapter.MarkForRelease();
-
-            // Assert
-            Assert.IsFalse(adapter.IsValid, "标记后应无效");
-            Assert.IsTrue(adapter.HasResource, "但资源仍应持有");
-        }
-
-        [Test]
-        [Description("UnmarkForRelease可以取消待释放标记")]
-        public void UnmarkForRelease_ClearsMarkedFlag()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-            adapter.MarkForRelease();
-            Assert.IsTrue(adapter.IsMarkedForRelease, "先确认已标记");
-
-            // Act
-            adapter.UnmarkForRelease();
-
-            // Assert
-            Assert.IsFalse(adapter.IsMarkedForRelease, "应取消待释放标记");
-            Assert.IsTrue(adapter.IsValid, "取消后应恢复有效");
-        }
-
-        [Test]
-        [Description("多次MarkForRelease状态应保持一致")]
-        public void MarkForRelease_MultipleTimes_StateConsistent()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-
-            // Act
-            adapter.MarkForRelease();
-            adapter.MarkForRelease();
-            adapter.MarkForRelease();
-
-            // Assert
-            Assert.IsTrue(adapter.IsMarkedForRelease, "应标记为待释放");
-            Assert.IsFalse(adapter.IsValid, "应无效");
-        }
-
-        [Test]
-        [Description("多次UnmarkForRelease状态应保持一致")]
-        public void UnmarkForRelease_MultipleTimes_StateConsistent()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-            adapter.MarkForRelease();
-
-            // Act
-            adapter.UnmarkForRelease();
-            adapter.UnmarkForRelease();
-
-            // Assert
-            Assert.IsFalse(adapter.IsMarkedForRelease, "应取消待释放标记");
-            Assert.IsTrue(adapter.IsValid, "应恢复有效");
         }
 
         #endregion
@@ -174,28 +90,13 @@ namespace Asaki.Tests.UI
             Assert.IsFalse(adapter.IsValid, "释放后应无效");
             Assert.IsFalse(adapter.HasResource, "释放后不应持有资源");
             Assert.IsNull(adapter.Asset, "释放后资源应为null");
+            Assert.IsTrue(adapter.IsDisposed, "应标记为已释放");
             Assert.AreEqual(1, _mockResourceService.ReleaseCallCount, "应调用Release");
         }
 
         [Test]
-        [Description("Dispose后IsMarkedForRelease应为false")]
-        public void Dispose_ClearsMarkedFlag()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-            adapter.MarkForRelease();
-            Assert.IsTrue(adapter.IsMarkedForRelease);
-
-            // Act
-            adapter.Dispose();
-
-            // Assert
-            Assert.IsFalse(adapter.IsMarkedForRelease, "释放后应清除标记");
-        }
-
-        [Test]
-        [Description("多次Dispose不应抛出异常")]
-        public void Dispose_MultipleTimes_DoesNotThrow()
+        [Description("多次Dispose不应抛出异常且只释放一次")]
+        public void Dispose_MultipleTimes_DoesNotThrowAndReleasesOnce()
         {
             // Arrange
             var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
@@ -207,6 +108,63 @@ namespace Asaki.Tests.UI
                 adapter.Dispose();
                 adapter.Dispose();
             });
+
+            // Assert - 只应释放一次
+            Assert.AreEqual(1, _mockResourceService.ReleaseCallCount, "多次Dispose应只释放一次");
+            Assert.IsTrue(adapter.IsDisposed, "应标记为已释放");
+        }
+
+        [Test]
+        [Description("Dispose后IsDisposed应为true")]
+        public void Dispose_SetsIsDisposedToTrue()
+        {
+            // Arrange
+            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
+            Assert.IsFalse(adapter.IsDisposed);
+
+            // Act
+            adapter.Dispose();
+
+            // Assert
+            Assert.IsTrue(adapter.IsDisposed, "释放后应标记为已释放");
+        }
+
+        #endregion
+
+        #region 重复释放保护测试
+
+        [Test]
+        [Description("重复Dispose不应重复减少引用计数")]
+        public void MultipleDispose_ReferenceCountNotDecreasedMultipleTimes()
+        {
+            // Arrange
+            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
+
+            // Act
+            adapter.Dispose();
+            int countAfterFirstDispose = _mockResourceService.ReleaseCallCount;
+            
+            adapter.Dispose();
+            adapter.Dispose();
+            int countAfterMultipleDispose = _mockResourceService.ReleaseCallCount;
+
+            // Assert
+            Assert.AreEqual(1, countAfterFirstDispose, "第一次Dispose应释放资源");
+            Assert.AreEqual(1, countAfterMultipleDispose, "多次Dispose不应重复释放");
+        }
+
+        [Test]
+        [Description("已释放的句柄IsValid和HasResource都应为false")]
+        public void DisposedHandle_IsValidAndHasResourceAreFalse()
+        {
+            // Arrange
+            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
+            adapter.Dispose();
+
+            // Assert
+            Assert.IsFalse(adapter.IsValid, "已释放句柄应无效");
+            Assert.IsFalse(adapter.HasResource, "已释放句柄不应持有资源");
+            Assert.IsTrue(adapter.IsDisposed, "应标记为已释放");
         }
 
         #endregion
@@ -214,35 +172,14 @@ namespace Asaki.Tests.UI
         #region 延迟释放场景测试
 
         [Test]
-        [Description("延迟释放流程：标记后取消，资源仍可用")]
-        public void DelayReleaseScenario_MarkThenUnmark_ResourceStillAvailable()
-        {
-            // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-
-            // Act - 模拟延迟释放流程
-            adapter.MarkForRelease(); // 关闭窗口，进入延迟释放队列
-            Assert.IsFalse(adapter.IsValid, "标记后应无效（不可被新窗口使用）");
-
-            adapter.UnmarkForRelease(); // 快速重新打开，复用资源
-
-            // Assert
-            Assert.IsTrue(adapter.IsValid, "取消标记后应恢复有效");
-            Assert.IsTrue(adapter.HasResource, "资源仍应持有");
-            Assert.AreSame(_testAsset, adapter.Asset, "资源引用应正确");
-            Assert.AreEqual(0, _mockResourceService.ReleaseCallCount, "不应调用Release");
-        }
-
-        [Test]
-        [Description("延迟释放流程：标记后Dispose，资源被释放")]
-        public void DelayReleaseScenario_MarkThenDispose_ResourceReleased()
+        [Description("延迟释放流程：Dispose后资源被释放")]
+        public void DelayReleaseScenario_Dispose_ResourceReleased()
         {
             // Arrange
             var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
 
             // Act - 模拟延迟释放到期
-            adapter.MarkForRelease(); // 标记待释放
-            adapter.Dispose(); // 延迟时间到，真正释放
+            adapter.Dispose();
 
             // Assert
             Assert.IsFalse(adapter.IsValid, "应无效");
@@ -250,40 +187,47 @@ namespace Asaki.Tests.UI
             Assert.AreEqual(1, _mockResourceService.ReleaseCallCount, "应调用Release");
         }
 
+        [Test]
+        [Description("延迟释放流程：复用后Dispose，资源被正确释放")]
+        public void DelayReleaseScenario_ReuseThenDispose_ResourceReleased()
+        {
+            // Arrange
+            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
+
+            // Act - 模拟复用后释放
+            // （复用逻辑由UI服务管理，这里只测试句柄本身行为）
+            adapter.Dispose();
+
+            // Assert
+            Assert.IsFalse(adapter.IsValid, "应无效");
+            Assert.AreEqual(1, _mockResourceService.ReleaseCallCount, "应调用Release一次");
+        }
+
         #endregion
 
         #region 边界条件测试
 
         [Test]
-        [Description("对已标记的句柄再次标记状态不变")]
-        public void MarkForRelease_AlreadyMarked_StateUnchanged()
+        [Description("对已释放的句柄再次释放不会抛出异常")]
+        public void Dispose_AlreadyDisposed_DoesNotThrow()
         {
             // Arrange
             var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-            adapter.MarkForRelease();
-            bool firstCheck = adapter.IsMarkedForRelease;
+            adapter.Dispose();
 
-            // Act
-            adapter.MarkForRelease();
-
-            // Assert
-            Assert.AreEqual(firstCheck, adapter.IsMarkedForRelease, "状态应不变");
+            // Act & Assert
+            Assert.DoesNotThrow(() => adapter.Dispose(), "对已释放句柄再次释放不应抛出异常");
         }
 
         [Test]
-        [Description("对未标记的句柄取消标记状态不变")]
-        public void UnmarkForRelease_NotMarked_StateUnchanged()
+        [Description("null句柄Dispose不会抛出异常")]
+        public void Dispose_NullHandle_DoesNotThrow()
         {
             // Arrange
-            var adapter = new AsakiUIResourceHandleAdapter(_resHandle);
-            Assert.IsFalse(adapter.IsMarkedForRelease);
+            var adapter = new AsakiUIResourceHandleAdapter(null);
 
-            // Act
-            adapter.UnmarkForRelease();
-
-            // Assert
-            Assert.IsFalse(adapter.IsMarkedForRelease, "状态应不变");
-            Assert.IsTrue(adapter.IsValid, "仍应有效");
+            // Act & Assert
+            Assert.DoesNotThrow(() => adapter.Dispose(), "null句柄Dispose不应抛出异常");
         }
 
         #endregion

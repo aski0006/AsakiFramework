@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Resources;
+using Asaki.Core.Resources;
 using UnityEngine;
 
 namespace Asaki.Core.UI
@@ -9,23 +9,23 @@ namespace Asaki.Core.UI
     public struct AsakiUIResourceHandleAdapter : IUIResourceHandle
     {
         private ResHandle<GameObject> _handle;
-        private bool _isMarkedForRelease;
+        private bool _isDisposed;
 
         public AsakiUIResourceHandleAdapter(ResHandle<GameObject> handle)
         {
             _handle = handle;
-            _isMarkedForRelease = false;
+            _isDisposed = false;
         }
 
         /// <summary>
-        /// 是否有效（句柄有效且未被标记为待释放）
+        /// 是否有效（句柄有效且未被释放）
         /// </summary>
-        public bool IsValid => _handle is { IsValid: true } && !_isMarkedForRelease;
+        public bool IsValid => _handle is { IsValid: true } && !_isDisposed;
 
         /// <summary>
         /// 句柄是否仍持有资源（即使被标记为待释放）
         /// </summary>
-        public bool HasResource => _handle is { IsValid: true };
+        public bool HasResource => _handle is { IsValid: true } && !_isDisposed;
 
         // 获取原始资源 (仅 Unity 层可见)
         public GameObject Asset => _handle?.Asset;
@@ -36,31 +36,18 @@ namespace Asaki.Core.UI
         public string Location => _handle?.Location;
 
         /// <summary>
-        /// 是否已被标记为待释放
+        /// 是否已被释放
         /// </summary>
-        public bool IsMarkedForRelease => _isMarkedForRelease;
-
-        /// <summary>
-        /// 标记为待释放（延迟释放机制使用）
-        /// </summary>
-        public void MarkForRelease()
-        {
-            _isMarkedForRelease = true;
-        }
-
-        /// <summary>
-        /// 取消待释放标记（当资源被复用时调用）
-        /// </summary>
-        public void UnmarkForRelease()
-        {
-            _isMarkedForRelease = false;
-        }
+        public bool IsDisposed => _isDisposed;
 
         public void Dispose()
         {
+            if (_isDisposed)
+                return;
+
             _handle?.Dispose();
             _handle = null;
-            _isMarkedForRelease = false;
+            _isDisposed = true;
         }
     }
 }

@@ -261,7 +261,7 @@ namespace Game.Scripts.UI.LoginScene
                 ALog.Error($"[{nameof(RegisterPanelWindow)}] UIService not available.");
                 return;
             }
-
+            _asakiUIService.Close<RegisterPanelWindow>();
             _asakiUIService.OpenAsync<LoginPanelWindow>((int)WindowAssetId.LoginPanel).Forget();
         }
 

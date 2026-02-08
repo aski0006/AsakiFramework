@@ -273,6 +273,7 @@ namespace Game.Scripts.UI.LoginScene
 
         private async void OnRegisterBtnClick()
         {
+            _asakiUIService.Close<LoginPanelWindow>();
             await _asakiUIService.OpenAsync<RegisterPanelWindow>((int)WindowAssetId.RegisterPanel);
         }
 
