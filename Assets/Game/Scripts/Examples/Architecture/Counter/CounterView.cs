@@ -6,6 +6,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.UI;
+using Asaki.Generated;
 using Game.Scripts.Examples.Architecture.Counter.Commands;
 using Game.Scripts.Examples.Architecture.Counter.Events;
 using Game.Scripts.Examples.Architecture.Counter.Queries;

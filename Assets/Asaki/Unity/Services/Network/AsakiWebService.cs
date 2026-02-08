@@ -299,7 +299,25 @@ namespace Asaki.Unity.Services.Network
         private void ConfigureRequest(UnityWebRequest uwr)
         {
             uwr.timeout = _timeout;
+            
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // 开发环境：禁用HTTPS证书验证（仅用于本地测试）
+            uwr.certificateHandler = new BypassCertificateHandler();
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        /// <summary>
+        /// 证书验证绕过处理器（仅用于开发测试）
+        /// </summary>
+        private class BypassCertificateHandler : CertificateHandler
+        {
+            protected override bool ValidateCertificate(byte[] certificateData)
+            {
+                return true; // 接受所有证书
+            }
+        }
+#endif
 
         /// <summary>
         /// 序列化请求体为字节数组

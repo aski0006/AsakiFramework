@@ -65,37 +65,4 @@ namespace Asaki.Core.Broker
             }
         }
     }
-
-    /// <summary>
-    /// 为 <see cref="IAsakiHandler{T}"/> 接口提供扩展方法。
-    /// 这些扩展方法简化了事件处理程序的订阅和取消订阅操作。
-    /// </summary>
-    public static class AsakiBrokerExtensions
-    {
-        /// <summary>
-        /// 注册事件处理程序。
-        /// 此扩展方法调用 <see cref="AsakiBroker.Subscribe{T}(IAsakiHandler{T})"/> 方法，
-        /// 方便地将当前事件处理程序订阅到事件总线上。
-        /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
-        /// <param name="handler">要注册的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
-        public static void AsakiRegister<T>(this IAsakiHandler<T> handler)
-            where T : IAsakiEvent
-        {
-            AsakiBroker.Subscribe(handler);
-        }
-
-        /// <summary>
-        /// 取消注册事件处理程序。
-        /// 此扩展方法调用 <see cref="AsakiBroker.Unsubscribe{T}(IAsakiHandler{T})"/> 方法，
-        /// 方便地将当前事件处理程序从事件总线上取消订阅。
-        /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
-        /// <param name="handler">要取消注册的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
-        public static void AsakiUnregister<T>(this IAsakiHandler<T> handler)
-            where T : IAsakiEvent
-        {
-            AsakiBroker.Unsubscribe(handler);
-        }
-    }
 }

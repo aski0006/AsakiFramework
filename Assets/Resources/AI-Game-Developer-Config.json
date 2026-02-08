@@ -1,5 +1,5 @@
 {
-  "logLevel": 3,
+  "logLevel": 4,
   "tools": [
     {
       "name": "assets-copy",
@@ -404,5 +404,5 @@
   ],
   "host": "http://localhost:59001",
   "timeoutMs": 10000,
-  "keepConnected": true
+  "keepConnected": false
 }

@@ -1,5 +1,6 @@
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
+using Asaki.Generated;
 using UnityEngine;
 
 namespace Game.Test

@@ -19,7 +19,7 @@ MonoBehaviour:
     MaxFileSizeKB: 10240
     MaxHistoryFiles: 10
     FilePrefix: GameLog
-    OutputToUnityConsole: 0
+    OutputToUnityConsole: 1
     DashboardRefreshInterval: 0.05
   resConfig:
     Mode: 1
@@ -44,8 +44,18 @@ MonoBehaviour:
       _editorExpanded: 0
   uiConfig:
     ReferenceResolution: {x: 1920, y: 1080}
-    MatchWidthOrHeight: 0.5
-    UIList: []
+    MatchWidthOrHeight: 1
+    UIList:
+    - Name: LoginPanel
+      ID: -1218050939
+      Layer: 1
+      AssetPath: Assets/Assets/UI/LoginScene/LoginPanel.prefab
+      UsePool: 0
+    - Name: RegisterPanel
+      ID: 1498470213
+      Layer: 1
+      AssetPath: Assets/Assets/UI/LoginScene/RegisterPanel.prefab
+      UsePool: 0
     Templates:
     - Type: 0
       Prefab: {fileID: 4410224524190982207, guid: 4799acb4c51450a4d8aac915422899dd, type: 3}
@@ -65,8 +75,9 @@ MonoBehaviour:
       Prefab: {fileID: 4030152919494512186, guid: 08b88ef801ae61c4fb9e1c51587575c0, type: 3}
     - Type: 8
       Prefab: {fileID: 6122941550189681422, guid: 70f12dba17614b34bb2804a2c1edf107, type: 3}
+    ResourceReleaseDelaySeconds: 5
   webConfig:
-    <BaseUrl>k__BackingField: 
+    <BaseUrl>k__BackingField: http://localhost:5000
     <TimeoutSeconds>k__BackingField: 3
     InitialInterceptors: []
   saveConfig:

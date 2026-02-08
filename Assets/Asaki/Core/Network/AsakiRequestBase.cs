@@ -65,9 +65,11 @@ namespace Asaki.Core.Network
         /// </remarks>
         public void Serialize(IAsakiWriter writer)
         {
+            writer.BeginObject(null);
             writer.WriteString("requestId", _requestId);
             writer.WriteLong("timestamp", _timestamp);
             SerializeCore(writer);
+            writer.EndObject();
         }
 
         /// <summary>

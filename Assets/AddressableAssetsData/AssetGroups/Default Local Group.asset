@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_GroupName: Default Local Group
   m_GUID: 7d0f52f7b49c55f44b91ea4fb7a100f4
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: 8f41535020dc9e2428c835081c8660d1
+    m_Address: Assets/Assets/UI/LoginScene/RegisterPanel.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fa51c0c604c49f7459b9ba3fcd217f02
+    m_Address: Assets/Assets/UI/LoginScene/LoginPanel.prefab
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 7b3ecd7d009a85d4e9fd2ed5568dbccc, type: 2}
   m_SchemaSet:
