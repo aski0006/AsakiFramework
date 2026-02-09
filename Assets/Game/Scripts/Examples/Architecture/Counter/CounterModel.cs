@@ -2,7 +2,7 @@
 using Asaki.Core.Attributes;
 using Asaki.Core.Reactive;
 
-namespace Game.Scripts.Examples.Architecture.Counter
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter
 {
     [AsakiBind]
     public partial class CounterModel : IAsakiModel

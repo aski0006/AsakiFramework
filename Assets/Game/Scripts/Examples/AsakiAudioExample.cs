@@ -4,7 +4,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     public class AsakiAudioExample : MonoBehaviour, IAsakiInit<IAsakiAudioService>, IAsakiAutoInject
     {

@@ -4,7 +4,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Reactive;
 using UnityEngine;
 
-namespace Game.Test
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 {
     [AsakiBind]
     public partial class AsakiMVVMExampleModel

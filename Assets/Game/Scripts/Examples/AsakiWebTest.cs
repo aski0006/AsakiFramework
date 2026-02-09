@@ -4,7 +4,7 @@ using Asaki.Core.Network;
 using Asaki.Core.Serialization;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     // =========================================================
     // 1. 定义 DTO (模拟 Roslyn 生成的代码)

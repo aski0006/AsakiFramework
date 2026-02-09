@@ -6,6 +6,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Asaki.Core.Scene;
+using Asaki.Unity.Services.Scene.SceneManagement;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -87,12 +88,18 @@ namespace Asaki.Unity.Services.Scene
         )
         {
             if (_isLoading)
+            {
+                transition?.Dispose();
                 return AsakiSceneResult.Failed(targetScene, "Another scene load is in progress");
+            }
             if (!IsSceneValid(targetScene))
+            {
+                transition?.Dispose();
                 return AsakiSceneResult.Failed(
                     targetScene,
                     $"Scene '{targetScene}' not found in BuildSettings."
                 );
+            }
             _isLoading = true;
             _asakiEventService.Publish(
                 new AsakiSceneStateEvent(targetScene, AsakiSceneStateEvent.State.Started)
@@ -200,6 +207,72 @@ namespace Asaki.Unity.Services.Scene
         public void ActivateScene()
         {
             _activationTaskSignal?.TrySetResult(true);
+        }
+
+        public async UniTask<AsakiSceneResult> LoadSceneWithPreloadAsync(
+            string targetSceneName,
+            string loadingSceneName = "LoadingScene",
+            CancellationToken token = default(CancellationToken)
+        )
+        {
+            if (_isLoading)
+                return AsakiSceneResult.Failed(
+                    targetSceneName,
+                    "Another scene load is in progress"
+                );
+
+            if (!IsSceneValid(targetSceneName))
+                return AsakiSceneResult.Failed(
+                    targetSceneName,
+                    $"Scene '{targetSceneName}' not found in BuildSettings."
+                );
+
+            if (!IsSceneValid(loadingSceneName))
+                return AsakiSceneResult.Failed(
+                    loadingSceneName,
+                    $"Loading scene '{loadingSceneName}' not found in BuildSettings."
+                );
+
+            _isLoading = true;
+
+            try
+            {
+                ALog.Info(
+                    $"[SceneService] Starting preload scene transition: Current -> {loadingSceneName} -> {targetSceneName}"
+                );
+
+                var payload = SceneLoadPayload.Create(targetSceneName, loadingSceneName);
+                SceneLoadStateService.SetPayload(payload);
+
+                var result = await LoadSceneAsync(
+                    loadingSceneName,
+                    AsakiLoadSceneMode.Single,
+                    AsakiSceneActivation.Immediate,
+                    null,
+                    token
+                );
+
+                if (!result.IsSuccess)
+                {
+                    SceneLoadStateService.ClearPayload();
+                    return AsakiSceneResult.Failed(
+                        targetSceneName,
+                        $"Failed to load loading scene: {result.ErrorMessage}"
+                    );
+                }
+
+                return AsakiSceneResult.Ok(targetSceneName);
+            }
+            catch (Exception e)
+            {
+                SceneLoadStateService.ClearPayload();
+                ALog.Error("[SceneService] Preload scene transition failed.", e);
+                return AsakiSceneResult.Failed(targetSceneName, e.Message);
+            }
+            finally
+            {
+                _isLoading = false;
+            }
         }
 
         public void Dispose()

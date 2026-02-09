@@ -1,6 +1,6 @@
 ﻿using Asaki.Core.Architecture.Queries;
 
-namespace Game.Scripts.Examples.Architecture.Counter.Queries
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Queries
 {
     /// <summary>
     /// 获取计数器当前值的查询

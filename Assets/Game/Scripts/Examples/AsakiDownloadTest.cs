@@ -8,7 +8,7 @@ using Asaki.Core.Network;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     public class AsakiDownloadTest : MonoBehaviour
     {

@@ -6,7 +6,7 @@ using Cysharp.Threading.Tasks;
 using JetBrains.Annotations;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     public class AsakiSceneTest : MonoBehaviour
     {

@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Game.Scripts.Examples.SafeCoroutine
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.SafeCoroutine
 {
     /// <summary>
     /// 示例8: 测试入口

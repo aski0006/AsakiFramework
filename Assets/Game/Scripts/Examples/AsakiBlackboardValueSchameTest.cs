@@ -3,7 +3,7 @@ using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Blackboard.Variables;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     [Serializable]
     [AsakiBlackboardValueSchema]

@@ -6,7 +6,7 @@ using Asaki.Core.Serialization;
 using Asaki.Unity.Utils;
 using UnityEngine;
 
-namespace Game.Scripts.Examples.Architecture.Counter
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter
 {
     [Serializable]
     public class CounterArchitecture : AsakiArchitecture

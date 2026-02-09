@@ -11,7 +11,7 @@ using Asaki.Unity.Services.UI;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Scripts.UI.LoginScene
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.UI.LoginScene
 {
     /// <summary>
     /// 登录场景流程管理器

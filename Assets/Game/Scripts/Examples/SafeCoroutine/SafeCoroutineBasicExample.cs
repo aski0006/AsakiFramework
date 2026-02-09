@@ -9,7 +9,7 @@ using System.Collections;
 using Asaki.Unity.Services.SafeCoroutine;
 using UnityEngine;
 
-namespace Game.Scripts.Examples.SafeCoroutine
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.SafeCoroutine
 {
     /// <summary>
     /// 示例1: 基础用法 - 在MonoBehaviour中使用

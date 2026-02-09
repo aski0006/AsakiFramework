@@ -3,7 +3,7 @@ using Asaki.Core.Context;
 using Asaki.Generated;
 using UnityEngine;
 
-namespace Game.Test
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 {
     public struct AsakiPlayerJumpExampleEvent : IAsakiEvent { }
 

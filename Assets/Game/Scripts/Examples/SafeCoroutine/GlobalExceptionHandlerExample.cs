@@ -3,7 +3,7 @@ using System.Collections;
 using Asaki.Unity.Services.SafeCoroutine;
 using UnityEngine;
 
-namespace Game.Scripts.Examples.SafeCoroutine
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.SafeCoroutine
 {
     /// <summary>
     /// 示例7: 全局异常处理

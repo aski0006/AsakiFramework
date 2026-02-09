@@ -3,7 +3,7 @@ using Asaki.Core.Attributes;
 using Asaki.Core.Serialization;
 using Asaki.Core.Serialization.Migration;
 
-namespace Game.Test.Migration
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test.Migration
 {
     /// <summary>
     /// 示例：玩家数据 V1 - 原始版本

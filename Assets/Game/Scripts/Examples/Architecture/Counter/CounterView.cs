@@ -7,14 +7,14 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.UI;
 using Asaki.Generated;
-using Game.Scripts.Examples.Architecture.Counter.Commands;
-using Game.Scripts.Examples.Architecture.Counter.Events;
-using Game.Scripts.Examples.Architecture.Counter.Queries;
+using Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Commands;
+using Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Events;
+using Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Queries;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Game.Scripts.Examples.Architecture.Counter
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter
 {
     /// <summary>
     /// Counter 视图 - 使用最新架构

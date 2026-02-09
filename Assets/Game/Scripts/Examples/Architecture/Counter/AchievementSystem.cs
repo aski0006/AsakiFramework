@@ -3,9 +3,9 @@ using Asaki.Core.Architecture;
 using Asaki.Core.Audio;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
-using Game.Scripts.Examples.Architecture.Counter.Events;
+using Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Events;
 
-namespace Game.Scripts.Examples.Architecture.Counter
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter
 {
     public class AchievementSystem : IAsakiSystem
     {

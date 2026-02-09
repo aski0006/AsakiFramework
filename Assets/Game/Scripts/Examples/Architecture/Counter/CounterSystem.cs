@@ -2,7 +2,7 @@
 using Asaki.Core.Logging;
 using Asaki.Core.Simulation;
 
-namespace Game.Scripts.Examples.Architecture.Counter
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter
 {
     public class CounterSystem : IAsakiSystem
     {

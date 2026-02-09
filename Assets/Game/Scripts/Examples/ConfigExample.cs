@@ -5,7 +5,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using UnityEngine;
 
-namespace Game.Test
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 {
     [AsakiSave]
     public partial class AsakiWeaponConfigExample : IAsakiConfig

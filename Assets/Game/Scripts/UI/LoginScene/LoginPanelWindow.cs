@@ -20,7 +20,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-namespace Game.Scripts.UI.LoginScene
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.UI.LoginScene
 {
     /// <summary>
     /// 登录数据模型
@@ -310,7 +310,7 @@ namespace Game.Scripts.UI.LoginScene
 
                 while (elapsed < duration && !token.IsCancellationRequested)
                 {
-                    elapsed += Time.deltaTime;
+                    elapsed += UnityEngine.Time.deltaTime;
                     CanvasGroup.alpha = Mathf.Clamp01(elapsed / duration);
                     await UniTask.Yield(PlayerLoopTiming.PostLateUpdate, token);
                 }
@@ -332,7 +332,7 @@ namespace Game.Scripts.UI.LoginScene
 
                 while (elapsed < duration && !token.IsCancellationRequested)
                 {
-                    elapsed += Time.deltaTime;
+                    elapsed += UnityEngine.Time.deltaTime;
                     CanvasGroup.alpha = 1 - Mathf.Clamp01(elapsed / duration);
                     await UniTask.Yield(PlayerLoopTiming.PostLateUpdate, token);
                 }

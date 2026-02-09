@@ -3,7 +3,7 @@ using Asaki.Core.Graphs;
 using Asaki.Editor.GraphEditors.Impl;
 using UnityEngine;
 
-namespace Game.Editor
+namespace Asaki.Unity.Services.Scene.SceneManagement.Editor
 {
     [AsakiGraphContext(typeof(ExampleGraph), "ExampleGraph")]
     public class ExampleNode : AsakiNodeBase

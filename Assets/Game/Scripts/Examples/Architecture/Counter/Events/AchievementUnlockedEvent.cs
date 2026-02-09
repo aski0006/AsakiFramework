@@ -1,6 +1,6 @@
 ﻿using Asaki.Core.Broker;
 
-namespace Game.Scripts.Examples.Architecture.Counter.Events
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Events
 {
     public struct AchievementUnlockedEvent : IAsakiEvent
     {

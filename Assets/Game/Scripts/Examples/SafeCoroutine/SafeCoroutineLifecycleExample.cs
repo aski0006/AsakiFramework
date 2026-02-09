@@ -2,7 +2,7 @@
 using Asaki.Unity.Services.SafeCoroutine;
 using UnityEngine;
 
-namespace Game.Scripts.Examples.SafeCoroutine
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.SafeCoroutine
 {
     /// <summary>
     /// 示例4: 协程生命周期控制 - 暂停、恢复、停止

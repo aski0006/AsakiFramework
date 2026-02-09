@@ -1,10 +1,15 @@
-﻿namespace Asaki.Core.Scene
+namespace Asaki.Core.Scene
 {
     public readonly struct AsakiSceneResult
     {
         public readonly bool Success;
         public readonly string SceneName;
         public readonly string ErrorMessage;
+
+        /// <summary>
+        /// 是否加载成功
+        /// </summary>
+        public bool IsSuccess => Success;
 
         public AsakiSceneResult(bool success, string sceneName, string errorMessage = null)
         {

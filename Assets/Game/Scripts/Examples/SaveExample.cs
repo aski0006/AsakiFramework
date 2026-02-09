@@ -8,7 +8,7 @@ using Asaki.Core.Serialization;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Test
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 {
     [AsakiSave]
     public partial class AsakiSaveExampleModel

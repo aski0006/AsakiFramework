@@ -1,7 +1,7 @@
 using Asaki.Core.Logging;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     /// <summary>
     /// ALog Unity 控制台桥接测试脚本
@@ -14,7 +14,7 @@ namespace Game.Scripts.Examples
 
         void Update()
         {
-            _timer += Time.deltaTime;
+            _timer += UnityEngine.Time.deltaTime;
 
             // 每秒输出一次日志
             if (_timer >= 1f)
@@ -23,7 +23,7 @@ namespace Game.Scripts.Examples
                 _counter++;
 
                 // 测试 1：普通日志
-                ALog.Info($"测试计数: {_counter}", new { Time = Time.time });
+                ALog.Info($"测试计数: {_counter}", new { Time = UnityEngine.Time.time });
 
                 // 测试 2：警告日志
                 if (_counter % 3 == 0)
@@ -74,7 +74,7 @@ namespace Game.Scripts.Examples
             // 测试高频日志（会被聚合）
             for (int i = 0; i < 100; i++)
             {
-                ALog.Trace($"高频追踪消息 #{i}", new { Index = i, Time = Time.time });
+                ALog.Trace($"高频追踪消息 #{i}", new { Index = i, Time = UnityEngine.Time.time });
             }
 
             ALog.Info("已发送 100 条高频追踪消息，检查 Unity 控制台和 Dashboard");

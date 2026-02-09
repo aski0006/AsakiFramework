@@ -5,7 +5,7 @@ using Asaki.Core.Attributes;
 using Asaki.Unity.Services.Serialization;
 using UnityEngine;
 
-namespace Game.Scripts.Examples
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples
 {
     [AsakiSave]
     public partial class TestConfig

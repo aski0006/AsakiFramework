@@ -1,7 +1,7 @@
 ﻿using Asaki.Core.Architecture.Command;
 using Asaki.Core.Logging;
 
-namespace Game.Scripts.Examples.Architecture.Counter.Commands
+namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architecture.Counter.Commands
 {
     /// <summary>
     /// 可撤销的增加计数器命令

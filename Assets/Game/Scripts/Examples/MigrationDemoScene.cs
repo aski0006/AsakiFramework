@@ -9,7 +9,7 @@ using Asaki.Unity.Bootstrapper;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-namespace Game.Test.Migration
+namespace Asaki.Unity.Services.Scene.SceneManagement.Test.Migration
 {
     /// <summary>
     /// 端到端迁移演示场景
