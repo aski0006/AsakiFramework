@@ -24,7 +24,8 @@ namespace Asaki.Editor.Bootstrapper
 
             // 初始化状态
             _lastSceneName = SceneManager.GetActiveScene().name;
-            _lastSceneHadBootstrapper = Object.FindFirstObjectByType<Asaki.Unity.Bootstrapper.AsakiBootstrapper>() != null;
+            _lastSceneHadBootstrapper =
+                Object.FindFirstObjectByType<Asaki.Unity.Bootstrapper.AsakiBootstrapper>() != null;
         }
 
         /// <summary>
@@ -45,7 +46,8 @@ namespace Asaki.Editor.Bootstrapper
         private static void OnSceneClosing(Scene scene, bool removingScene)
         {
             _lastSceneName = scene.name;
-            _lastSceneHadBootstrapper = Object.FindFirstObjectByType<Asaki.Unity.Bootstrapper.AsakiBootstrapper>() != null;
+            _lastSceneHadBootstrapper =
+                Object.FindFirstObjectByType<Asaki.Unity.Bootstrapper.AsakiBootstrapper>() != null;
         }
 
         /// <summary>
@@ -69,7 +71,10 @@ namespace Asaki.Editor.Bootstrapper
         /// <summary>
         /// 显示场景警告
         /// </summary>
-        private static void ShowSceneWarning(Scene scene, AsakiBootstrapperEditor.ValidationResult result)
+        private static void ShowSceneWarning(
+            Scene scene,
+            AsakiBootstrapperEditor.ValidationResult result
+        )
         {
             // 使用延迟调用避免在场景加载过程中弹出对话框
             EditorApplication.delayCall += () =>
@@ -81,9 +86,10 @@ namespace Asaki.Editor.Bootstrapper
 
                 int option = EditorUtility.DisplayDialogComplex(
                     "Asaki Framework - 场景配置检查",
-                    $"场景 '{scene.name}' 缺少必要的 Asaki 框架配置：\n\n" +
-                    result.GetErrorMessage() + "\n" +
-                    "是否自动修复？",
+                    $"场景 '{scene.name}' 缺少必要的 Asaki 框架配置：\n\n"
+                        + result.GetErrorMessage()
+                        + "\n"
+                        + "是否自动修复？",
                     "自动修复",
                     "忽略此场景",
                     "打开配置窗口"
@@ -98,7 +104,9 @@ namespace Asaki.Editor.Bootstrapper
 
                     case 1: // 忽略此场景
                         EditorPrefs.SetBool(ignoreKey, true);
-                        Debug.Log($"[Asaki] 已忽略场景 '{scene.name}' 的配置警告。可以在 EditorPrefs 中删除键 '{ignoreKey}' 来恢复。");
+                        Debug.Log(
+                            $"[Asaki] 已忽略场景 '{scene.name}' 的配置警告。可以在 EditorPrefs 中删除键 '{ignoreKey}' 来恢复。"
+                        );
                         break;
 
                     case 2: // 打开配置窗口

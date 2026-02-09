@@ -147,7 +147,7 @@ namespace Asaki.Core.Network
                 ServerError => "服务器内部错误",
                 ServiceUnavailable => "服务暂不可用",
                 ServerMaintenance => "服务器维护中",
-                _ => "未知错误"
+                _ => "未知错误",
             };
         }
     }

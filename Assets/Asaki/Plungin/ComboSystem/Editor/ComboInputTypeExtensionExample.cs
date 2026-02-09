@@ -14,51 +14,61 @@ namespace Asaki.Plungin.ComboSystem.Editor
         {
             // 示例：添加格斗游戏特有的输入类型
 
-            register(new ComboInputTypeDefinition
-            {
-                Id = "Punch",
-                DisplayName = "Punch",
-                Category = "Fighting",
-                Color = new Color(1f, 0.7f, 0.3f),
-                Priority = 50
-            });
+            register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Punch",
+                    DisplayName = "Punch",
+                    Category = "Fighting",
+                    Color = new Color(1f, 0.7f, 0.3f),
+                    Priority = 50,
+                }
+            );
 
-            register(new ComboInputTypeDefinition
-            {
-                Id = "Kick",
-                DisplayName = "Kick",
-                Category = "Fighting",
-                Color = new Color(0.8f, 0.4f, 0.3f),
-                Priority = 51
-            });
+            register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Kick",
+                    DisplayName = "Kick",
+                    Category = "Fighting",
+                    Color = new Color(0.8f, 0.4f, 0.3f),
+                    Priority = 51,
+                }
+            );
 
-            register(new ComboInputTypeDefinition
-            {
-                Id = "Throw",
-                DisplayName = "Throw",
-                Category = "Fighting",
-                Color = new Color(0.6f, 0.4f, 0.8f),
-                Priority = 52
-            });
+            register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Throw",
+                    DisplayName = "Throw",
+                    Category = "Fighting",
+                    Color = new Color(0.6f, 0.4f, 0.8f),
+                    Priority = 52,
+                }
+            );
 
             // 示例：添加连招派生类型
-            register(new ComboInputTypeDefinition
-            {
-                Id = "SpecialCancel",
-                DisplayName = "Special Cancel",
-                Category = "Advanced",
-                Color = new Color(0.3f, 0.9f, 0.9f),
-                Priority = 100
-            });
+            register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "SpecialCancel",
+                    DisplayName = "Special Cancel",
+                    Category = "Advanced",
+                    Color = new Color(0.3f, 0.9f, 0.9f),
+                    Priority = 100,
+                }
+            );
 
-            register(new ComboInputTypeDefinition
-            {
-                Id = "JumpCancel",
-                DisplayName = "Jump Cancel",
-                Category = "Advanced",
-                Color = new Color(0.4f, 0.9f, 0.4f),
-                Priority = 101
-            });
+            register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "JumpCancel",
+                    DisplayName = "Jump Cancel",
+                    Category = "Advanced",
+                    Color = new Color(0.4f, 0.9f, 0.4f),
+                    Priority = 101,
+                }
+            );
         }
     }
 

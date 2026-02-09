@@ -83,13 +83,14 @@ namespace Asaki.Tests.Network
 
             // Act
             var task = service.DownloadAsync("https://example.com/file.txt", "");
-            yield return task.ToCoroutine(
-                exceptionHandler: ex => capturedException = ex
-            );
+            yield return task.ToCoroutine(exceptionHandler: ex => capturedException = ex);
 
             // Assert
             Assert.IsNotNull(capturedException, "Expected exception was not thrown");
-            Assert.IsInstanceOf<ArgumentException>(capturedException, "Should throw ArgumentException for empty path");
+            Assert.IsInstanceOf<ArgumentException>(
+                capturedException,
+                "Should throw ArgumentException for empty path"
+            );
         }
 
         [UnityTest]
@@ -108,13 +109,16 @@ namespace Asaki.Tests.Network
                 null,
                 new CancellationTokenSource(100).Token
             );
-            yield return task.ToCoroutine(
-                exceptionHandler: ex => capturedException = ex
-            );
+            yield return task.ToCoroutine(exceptionHandler: ex => capturedException = ex);
 
             // Assert - 验证不是路径验证异常
-            bool isPathValidationError = capturedException is UnauthorizedAccessException || capturedException is ArgumentException;
-            Assert.IsFalse(isPathValidationError, "Path validation should pass for persistentDataPath");
+            bool isPathValidationError =
+                capturedException is UnauthorizedAccessException
+                || capturedException is ArgumentException;
+            Assert.IsFalse(
+                isPathValidationError,
+                "Path validation should pass for persistentDataPath"
+            );
 
             // Cleanup
             if (File.Exists(validPath))
@@ -133,7 +137,10 @@ namespace Asaki.Tests.Network
         {
             // Arrange
             var service = new AsakiDownloadService(_mockAsyncService, _mockEventService);
-            string localPath = Path.Combine(Application.temporaryCachePath, $"test_cancel_{Guid.NewGuid()}.txt");
+            string localPath = Path.Combine(
+                Application.temporaryCachePath,
+                $"test_cancel_{Guid.NewGuid()}.txt"
+            );
             var cts = new CancellationTokenSource();
             Exception capturedException = null;
 
@@ -145,9 +152,7 @@ namespace Asaki.Tests.Network
                 null,
                 cts.Token
             );
-            yield return task.ToCoroutine(
-                exceptionHandler: ex => capturedException = ex
-            );
+            yield return task.ToCoroutine(exceptionHandler: ex => capturedException = ex);
 
             // Assert
             Assert.Pass("Cancellation token mechanism tested");
@@ -193,7 +198,9 @@ namespace Asaki.Tests.Network
                 var service = new AsakiDownloadService(_mockAsyncService, _mockEventService);
 
                 // Act - 使用本地无效端口确保连接失败
-                long fileSize = await service.GetFileSizeAsync("http://localhost:1/invalid-file.txt");
+                long fileSize = await service.GetFileSizeAsync(
+                    "http://localhost:1/invalid-file.txt"
+                );
 
                 // Assert
                 Assert.AreEqual(-1, fileSize, "Invalid URL should return -1");

@@ -54,7 +54,12 @@ namespace Asaki.Plungin.ComboSystem.Editor
         public string Category { get; private set; }
         public int Priority { get; private set; }
 
-        public ComboInputTypeAttribute(string id, string displayName, string category = "General", int priority = 0)
+        public ComboInputTypeAttribute(
+            string id,
+            string displayName,
+            string category = "General",
+            int priority = 0
+        )
         {
             Id = id;
             DisplayName = displayName;
@@ -78,7 +83,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         /// </summary>
         public static void Initialize()
         {
-            if (_isInitialized) return;
+            if (_isInitialized)
+                return;
 
             // 清空现有定义
             _definitions.Clear();
@@ -104,86 +110,104 @@ namespace Asaki.Plungin.ComboSystem.Editor
         /// </summary>
         private static void RegisterBuiltInTypes()
         {
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "LightAttack",
-                DisplayName = "Light attack",
-                Category = "Basic attack",
-                Color = new Color(1f, 0.8f, 0.4f),
-                Priority = 0
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "LightAttack",
+                    DisplayName = "Light attack",
+                    Category = "Basic attack",
+                    Color = new Color(1f, 0.8f, 0.4f),
+                    Priority = 0,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "HeavyAttack",
-                DisplayName = "Heavy attack",
-                Category = "Basic attack",
-                Color = new Color(1f, 0.4f, 0.4f),
-                Priority = 1
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "HeavyAttack",
+                    DisplayName = "Heavy attack",
+                    Category = "Basic attack",
+                    Color = new Color(1f, 0.4f, 0.4f),
+                    Priority = 1,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Skill1",
-                DisplayName = "Skill 1",
-                Category = "Skill",
-                Color = new Color(0.4f, 0.8f, 1f),
-                Priority = 10
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Skill1",
+                    DisplayName = "Skill 1",
+                    Category = "Skill",
+                    Color = new Color(0.4f, 0.8f, 1f),
+                    Priority = 10,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Skill2",
-                DisplayName = "Skill 2",
-                Category = "Skill",
-                Color = new Color(0.4f, 0.6f, 1f),
-                Priority = 11
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Skill2",
+                    DisplayName = "Skill 2",
+                    Category = "Skill",
+                    Color = new Color(0.4f, 0.6f, 1f),
+                    Priority = 11,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Skill3",
-                DisplayName = "Skill 3",
-                Category = "Skill",
-                Color = new Color(0.4f, 0.4f, 1f),
-                Priority = 12
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Skill3",
+                    DisplayName = "Skill 3",
+                    Category = "Skill",
+                    Color = new Color(0.4f, 0.4f, 1f),
+                    Priority = 12,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Ultimate",
-                DisplayName = "Ultimate skill",
-                Category = "Skill",
-                Color = new Color(0.9f, 0.4f, 1f),
-                Priority = 20
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Ultimate",
+                    DisplayName = "Ultimate skill",
+                    Category = "Skill",
+                    Color = new Color(0.9f, 0.4f, 1f),
+                    Priority = 20,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Dodge",
-                DisplayName = "Dodge",
-                Category = "Action",
-                Color = new Color(0.4f, 1f, 0.6f),
-                Priority = 30
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Dodge",
+                    DisplayName = "Dodge",
+                    Category = "Action",
+                    Color = new Color(0.4f, 1f, 0.6f),
+                    Priority = 30,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Block",
-                DisplayName = "Block",
-                Category = "Action",
-                Color = new Color(0.6f, 0.6f, 0.6f),
-                Priority = 31
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Block",
+                    DisplayName = "Block",
+                    Category = "Action",
+                    Color = new Color(0.6f, 0.6f, 0.6f),
+                    Priority = 31,
+                }
+            );
 
-            Register(new ComboInputTypeDefinition
-            {
-                Id = "Parry",
-                DisplayName = "Parry",
-                Category = "Action",
-                Color = new Color(1f, 0.9f, 0.4f),
-                Priority = 32
-            });
+            Register(
+                new ComboInputTypeDefinition
+                {
+                    Id = "Parry",
+                    DisplayName = "Parry",
+                    Category = "Action",
+                    Color = new Color(1f, 0.9f, 0.4f),
+                    Priority = 32,
+                }
+            );
         }
 
         /// <summary>
@@ -200,32 +224,40 @@ namespace Asaki.Plungin.ComboSystem.Editor
                     {
                         foreach (var field in type.GetFields())
                         {
-                            var attr = field.GetCustomAttributes(typeof(ComboInputTypeAttribute), false)
-                                .FirstOrDefault() as ComboInputTypeAttribute;
+                            var attr =
+                                field
+                                    .GetCustomAttributes(typeof(ComboInputTypeAttribute), false)
+                                    .FirstOrDefault() as ComboInputTypeAttribute;
 
                             if (attr != null)
                             {
                                 // 检查是否已存在
                                 if (_definitions.ContainsKey(attr.Id))
                                 {
-                                    Debug.LogWarning($"[ComboInputTypeRegistry] Input type '{attr.Id}' is already registered. Skipping attribute from {type.Name}.{field.Name}");
+                                    Debug.LogWarning(
+                                        $"[ComboInputTypeRegistry] Input type '{attr.Id}' is already registered. Skipping attribute from {type.Name}.{field.Name}"
+                                    );
                                     continue;
                                 }
 
-                                Register(new ComboInputTypeDefinition
-                                {
-                                    Id = attr.Id,
-                                    DisplayName = attr.DisplayName,
-                                    Category = attr.Category,
-                                    Priority = attr.Priority
-                                });
+                                Register(
+                                    new ComboInputTypeDefinition
+                                    {
+                                        Id = attr.Id,
+                                        DisplayName = attr.DisplayName,
+                                        Category = attr.Category,
+                                        Priority = attr.Priority,
+                                    }
+                                );
                             }
                         }
                     }
                 }
                 catch (Exception e)
                 {
-                    Debug.LogWarning($"[ComboInputTypeRegistry] Failed to scan assembly {assembly.FullName}: {e.Message}");
+                    Debug.LogWarning(
+                        $"[ComboInputTypeRegistry] Failed to scan assembly {assembly.FullName}: {e.Message}"
+                    );
                 }
             }
         }
@@ -239,7 +271,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
             var extensionTypes = TypeCache.GetTypesDerivedFrom<ComboInputExtension>();
             foreach (var type in extensionTypes)
             {
-                if (type.IsAbstract) continue;
+                if (type.IsAbstract)
+                    continue;
 
                 try
                 {
@@ -248,7 +281,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 }
                 catch (Exception e)
                 {
-                    Debug.LogError($"[ComboInputTypeRegistry] Failed to initialize extension {type.Name}: {e.Message}");
+                    Debug.LogError(
+                        $"[ComboInputTypeRegistry] Failed to initialize extension {type.Name}: {e.Message}"
+                    );
                 }
             }
         }
@@ -276,7 +311,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[ComboInputTypeRegistry] Failed to load user defined types: {e.Message}");
+                Debug.LogWarning(
+                    $"[ComboInputTypeRegistry] Failed to load user defined types: {e.Message}"
+                );
             }
         }
 
@@ -286,9 +323,7 @@ namespace Asaki.Plungin.ComboSystem.Editor
         public static void SaveUserDefinedTypes()
         {
             // 筛选出用户自定义的类型（非内置）
-            var userTypes = _definitions.Values
-                .Where(d => !IsBuiltInType(d.Id))
-                .ToList();
+            var userTypes = _definitions.Values.Where(d => !IsBuiltInType(d.Id)).ToList();
 
             var list = new ComboInputTypeList { Types = userTypes };
             string json = JsonUtility.ToJson(list);
@@ -308,14 +343,18 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             if (_definitions.ContainsKey(definition.Id))
             {
-                Debug.LogWarning($"[ComboInputTypeRegistry] Input type '{definition.Id}' is already registered. Overwriting.");
+                Debug.LogWarning(
+                    $"[ComboInputTypeRegistry] Input type '{definition.Id}' is already registered. Overwriting."
+                );
                 _orderedIds.Remove(definition.Id);
             }
 
             _definitions[definition.Id] = definition;
 
             // 按优先级插入到有序列表
-            int insertIndex = _orderedIds.FindIndex(id => _definitions[id].Priority > definition.Priority);
+            int insertIndex = _orderedIds.FindIndex(id =>
+                _definitions[id].Priority > definition.Priority
+            );
             if (insertIndex < 0)
                 _orderedIds.Add(definition.Id);
             else
@@ -355,7 +394,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         public static Dictionary<string, List<ComboInputTypeDefinition>> GetDefinitionsByCategory()
         {
             EnsureInitialized();
-            return _definitions.Values.GroupBy(d => d.Category)
+            return _definitions
+                .Values.GroupBy(d => d.Category)
                 .ToDictionary(g => g.Key, g => g.OrderBy(d => d.Priority).ToList());
         }
 
@@ -366,8 +406,16 @@ namespace Asaki.Plungin.ComboSystem.Editor
         {
             return id switch
             {
-                "LightAttack" or "HeavyAttack" or "Skill1" or "Skill2" or "Skill3" or "Ultimate" or "Dodge" or "Block" or "Parry" => true,
-                _ => false
+                "LightAttack"
+                or "HeavyAttack"
+                or "Skill1"
+                or "Skill2"
+                or "Skill3"
+                or "Ultimate"
+                or "Dodge"
+                or "Block"
+                or "Parry" => true,
+                _ => false,
             };
         }
 

@@ -7,9 +7,7 @@ namespace Asaki.Core.Serialization
     /// 此接口继承自 <see cref="IAsakiSavable"/>，为网络请求/响应数据提供统一的序列化契约。
     /// 实现此接口的数据类可以被自动序列化为JSON或二进制格式。
     /// </remarks>
-    public interface IAsakiSerializable : IAsakiSavable
-    {
-    }
+    public interface IAsakiSerializable : IAsakiSavable { }
 
     /// <summary>
     /// 可序列化数据基类，提供默认的序列化实现

@@ -17,7 +17,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         public override void OnInspectorGUI()
         {
             var graph = target as ComboGraphAsset;
-            if (graph == null) return;
+            if (graph == null)
+                return;
 
             // 标题
             EditorGUILayout.Space(10);
@@ -84,22 +85,42 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             EditorGUI.indentLevel++;
 
-            EditorGUILayout.LabelField($"总节点数: {graph.Nodes?.Count ?? 0}", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"总边数: {graph.Edges?.Count ?? 0}", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(
+                $"总节点数: {graph.Nodes?.Count ?? 0}",
+                EditorStyles.boldLabel
+            );
+            EditorGUILayout.LabelField(
+                $"总边数: {graph.Edges?.Count ?? 0}",
+                EditorStyles.boldLabel
+            );
 
             if (graph.Nodes != null)
             {
-                int moveCount = 0, transitionCount = 0, entryCount = 0, endCount = 0, conditionCount = 0;
+                int moveCount = 0,
+                    transitionCount = 0,
+                    entryCount = 0,
+                    endCount = 0,
+                    conditionCount = 0;
 
                 foreach (var node in graph.Nodes)
                 {
                     switch (node)
                     {
-                        case MoveNode _: moveCount++; break;
-                        case TransitionNode _: transitionCount++; break;
-                        case EntryNode _: entryCount++; break;
-                        case EndNode _: endCount++; break;
-                        case ConditionNode _: conditionCount++; break;
+                        case MoveNode _:
+                            moveCount++;
+                            break;
+                        case TransitionNode _:
+                            transitionCount++;
+                            break;
+                        case EntryNode _:
+                            entryCount++;
+                            break;
+                        case EndNode _:
+                            endCount++;
+                            break;
+                        case ConditionNode _:
+                            conditionCount++;
+                            break;
                     }
                 }
 
@@ -156,12 +177,16 @@ namespace Asaki.Plungin.ComboSystem.Editor
         private void OpenGraphEditor(ComboGraphAsset graph)
         {
             // 使用 AsakiGraphWindow 打开
-            var window = EditorWindow.GetWindow<Asaki.Editor.GraphEditors.AsakiGraphWindow>("Asaki Graph Editor");
+            var window = EditorWindow.GetWindow<Asaki.Editor.GraphEditors.AsakiGraphWindow>(
+                "Asaki Graph Editor"
+            );
             if (window != null)
             {
                 // 通过反射调用 OpenInstance 方法
-                var method = typeof(Asaki.Editor.GraphEditors.AsakiGraphWindow)
-                    .GetMethod("OpenInstance", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                var method = typeof(Asaki.Editor.GraphEditors.AsakiGraphWindow).GetMethod(
+                    "OpenInstance",
+                    System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public
+                );
                 method?.Invoke(null, new object[] { graph });
             }
         }
@@ -186,7 +211,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
             {
                 var comboTree = graph.ExportToComboTree();
 
-                string fileName = string.IsNullOrEmpty(graph.ComboTreeId) ? graph.name : graph.ComboTreeId;
+                string fileName = string.IsNullOrEmpty(graph.ComboTreeId)
+                    ? graph.name
+                    : graph.ComboTreeId;
                 string path = System.IO.Path.Combine(graph.OutputPath, $"{fileName}.asset");
 
                 // 检查是否已存在
@@ -258,7 +285,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 {
                     if (!ComboInputTypeRegistry.HasType(transitionNode.InputType))
                     {
-                        warnings.Add($"TransitionNode '{transitionNode.Title}' uses unknown input type: {transitionNode.InputType}");
+                        warnings.Add(
+                            $"TransitionNode '{transitionNode.Title}' uses unknown input type: {transitionNode.InputType}"
+                        );
                     }
                 }
             }
@@ -266,18 +295,24 @@ namespace Asaki.Plungin.ComboSystem.Editor
             // 显示结果
             if (errors.Count == 0 && warnings.Count == 0)
             {
-                EditorUtility.DisplayDialog("Validation Complete", "ComboGraphAsset validation passed with no issues.", "OK");
+                EditorUtility.DisplayDialog(
+                    "Validation Complete",
+                    "ComboGraphAsset validation passed with no issues.",
+                    "OK"
+                );
             }
             else
             {
                 string message = "";
                 if (errors.Count > 0)
                 {
-                    message += $"Errors ({errors.Count}):\n" + string.Join("\n", errors.Take(5)) + "\n\n";
+                    message +=
+                        $"Errors ({errors.Count}):\n" + string.Join("\n", errors.Take(5)) + "\n\n";
                 }
                 if (warnings.Count > 0)
                 {
-                    message += $"Warnings ({warnings.Count}):\n" + string.Join("\n", warnings.Take(5));
+                    message +=
+                        $"Warnings ({warnings.Count}):\n" + string.Join("\n", warnings.Take(5));
                 }
                 EditorUtility.DisplayDialog("Validation Result", message, "OK");
             }

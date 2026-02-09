@@ -58,11 +58,13 @@ namespace Asaki.Core.Network
         /// <summary>
         /// 成功的验证结果
         /// </summary>
-        public static AsakiRequestValidationResult Success => new AsakiRequestValidationResult(true);
+        public static AsakiRequestValidationResult Success =>
+            new AsakiRequestValidationResult(true);
 
         /// <summary>
         /// 失败的验证结果
         /// </summary>
-        public static AsakiRequestValidationResult Failure(string message) => new AsakiRequestValidationResult(false, message);
+        public static AsakiRequestValidationResult Failure(string message) =>
+            new AsakiRequestValidationResult(false, message);
     }
 }

@@ -13,15 +13,18 @@ namespace Asaki.Tests.Resources.Mocks
         public int PublishCallCount { get; private set; }
         public object LastPublishedEvent { get; private set; }
 
-        public void Publish<T>(T eventData) where T : struct, IAsakiEvent
+        public void Publish<T>(T eventData)
+            where T : struct, IAsakiEvent
         {
             PublishCallCount++;
             LastPublishedEvent = eventData;
         }
 
-        public void Subscribe<T>(IAsakiHandler<T> handler) where T : IAsakiEvent { }
+        public void Subscribe<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent { }
 
-        public void Unsubscribe<T>(IAsakiHandler<T> handler) where T : IAsakiEvent { }
+        public void Unsubscribe<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent { }
 
         public void Dispose() { }
 

@@ -30,7 +30,8 @@ namespace Asaki.Unity
 
         private void RegisterWithLifecycleManager()
         {
-            if (_isRegisteredWithLifecycleManager) return;
+            if (_isRegisteredWithLifecycleManager)
+                return;
 
             try
             {
@@ -75,7 +76,8 @@ namespace Asaki.Unity
 
         internal void ActivateFrameworkReady()
         {
-            if (IsActivated) return;
+            if (IsActivated)
+                return;
 
             try
             {
@@ -91,24 +93,29 @@ namespace Asaki.Unity
 
         protected virtual void Update()
         {
-            if (!IsActivated) return;
+            if (!IsActivated)
+                return;
             OnUpdate();
         }
 
         protected virtual void FixedUpdate()
         {
-            if (!IsActivated) return;
+            if (!IsActivated)
+                return;
             OnFixedUpdate();
         }
 
         protected virtual void LateUpdate()
         {
-            if (!IsActivated) return;
+            if (!IsActivated)
+                return;
             OnLateUpdate();
         }
 
         protected virtual void OnUpdate() { }
+
         protected virtual void OnFixedUpdate() { }
+
         protected virtual void OnLateUpdate() { }
 
         protected virtual void OnDestroy()
@@ -121,7 +128,9 @@ namespace Asaki.Unity
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[{GetType().Name}] Error unregistering from lifecycle manager: {ex}");
+                    ALog.Error(
+                        $"[{GetType().Name}] Error unregistering from lifecycle manager: {ex}"
+                    );
                 }
             }
             Cleanup();
@@ -129,7 +138,8 @@ namespace Asaki.Unity
 
         protected virtual void Cleanup() { }
 
-        protected T GetCachedComponent<T>() where T : Component
+        protected T GetCachedComponent<T>()
+            where T : Component
         {
             var type = typeof(T);
             if (_componentCache.TryGetValue(type, out var cached))
@@ -142,7 +152,8 @@ namespace Asaki.Unity
             return component;
         }
 
-        protected T GetCachedComponentInChildren<T>() where T : Component
+        protected T GetCachedComponentInChildren<T>()
+            where T : Component
         {
             var type = typeof(T);
             if (_componentCache.TryGetValue(type, out var cached))
@@ -168,7 +179,10 @@ namespace Asaki.Unity
             }
             catch (Exception e)
             {
-                ALog.Error($"[{GetType().Name}] {(context != null ? $"[{context}] " : "")}Error: {e.Message}\n{e.StackTrace}", e);
+                ALog.Error(
+                    $"[{GetType().Name}] {(context != null ? $"[{context}] " : "")}Error: {e.Message}\n{e.StackTrace}",
+                    e
+                );
             }
         }
 
@@ -180,7 +194,10 @@ namespace Asaki.Unity
             }
             catch (Exception e)
             {
-                ALog.Error($"[{GetType().Name}] {(context != null ? $"[{context}] " : "")}Error: {e.Message}\n{e.StackTrace}", e);
+                ALog.Error(
+                    $"[{GetType().Name}] {(context != null ? $"[{context}] " : "")}Error: {e.Message}\n{e.StackTrace}",
+                    e
+                );
                 return defaultValue;
             }
         }
@@ -192,7 +209,8 @@ namespace Asaki.Unity
 
         protected void DestroySafely(UnityEngine.Object obj, float delay = 0f)
         {
-            if (IsNullOrDestroyed(obj)) return;
+            if (IsNullOrDestroyed(obj))
+                return;
 
             if (delay > 0)
                 Destroy(obj, delay);
@@ -202,19 +220,22 @@ namespace Asaki.Unity
 
         protected void Activate()
         {
-            if (IsActivated) return;
+            if (IsActivated)
+                return;
             IsActivated = true;
             OnActivated();
         }
 
         protected void Deactivate()
         {
-            if (!IsActivated) return;
+            if (!IsActivated)
+                return;
             IsActivated = false;
             OnDeactivated();
         }
 
         protected virtual void OnActivated() { }
+
         protected virtual void OnDeactivated() { }
 
         public static void WhenReady(Action action)

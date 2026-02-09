@@ -22,9 +22,13 @@ namespace Asaki.Plungin.ComboSystem
 
         // 预定义事件
         void OnStartupEnd() => _controller?.OnAnimationEvent("StartupEnd");
+
         void OnActiveStart() => _controller?.OnAnimationEvent("ActiveStart");
+
         void OnActiveEnd() => _controller?.OnAnimationEvent("ActiveEnd");
+
         void OnRecoveryEnd() => _controller?.OnAnimationEvent("RecoveryEnd");
+
         void OnComboWindowOpen() => _controller?.OnAnimationEvent("ComboWindowOpen");
     }
 }

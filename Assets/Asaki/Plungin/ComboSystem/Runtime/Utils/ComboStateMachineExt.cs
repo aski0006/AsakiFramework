@@ -17,8 +17,7 @@ namespace Asaki.Plungin.ComboSystem.States
             // 使用反射获取私有字段 _stateCache
             var cacheField = typeof(AsakiStateMachine<AsakiComboController>).GetField(
                 "_stateCache",
-                System.Reflection.BindingFlags.NonPublic |
-                System.Reflection.BindingFlags.Instance
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
             );
 
             if (cacheField == null)
@@ -29,7 +28,9 @@ namespace Asaki.Plungin.ComboSystem.States
                 return newState;
             }
 
-            var cache = cacheField.GetValue(machine) as System.Collections.Generic.Dictionary<Type, AsakiState<AsakiComboController>>;
+            var cache =
+                cacheField.GetValue(machine)
+                as System.Collections.Generic.Dictionary<Type, AsakiState<AsakiComboController>>;
             var type = typeof(TState);
 
             if (!cache.TryGetValue(type, out var state))
@@ -45,15 +46,23 @@ namespace Asaki.Plungin.ComboSystem.States
         /// <summary>
         /// 获取当前状态类型
         /// </summary>
-        public static ComboStateType GetCurrentStateType(this AsakiStateMachine<AsakiComboController> machine)
+        public static ComboStateType GetCurrentStateType(
+            this AsakiStateMachine<AsakiComboController> machine
+        )
         {
             var currentState = machine.CurrentState;
-            if (currentState is ComboIdleState) return ComboStateType.Idle;
-            if (currentState is ComboStartupState) return ComboStateType.Startup;
-            if (currentState is ComboActiveState) return ComboStateType.Active;
-            if (currentState is ComboRecoveryState) return ComboStateType.Recovery;
-            if (currentState is ComboWindowState) return ComboStateType.ComboWindow;
-            if (currentState is ComboInterruptedState) return ComboStateType.Interrupted;
+            if (currentState is ComboIdleState)
+                return ComboStateType.Idle;
+            if (currentState is ComboStartupState)
+                return ComboStateType.Startup;
+            if (currentState is ComboActiveState)
+                return ComboStateType.Active;
+            if (currentState is ComboRecoveryState)
+                return ComboStateType.Recovery;
+            if (currentState is ComboWindowState)
+                return ComboStateType.ComboWindow;
+            if (currentState is ComboInterruptedState)
+                return ComboStateType.Interrupted;
             return ComboStateType.Idle;
         }
     }

@@ -17,7 +17,13 @@ namespace Asaki.Editor.UI
         private const string DEFAULT_OUTPUT_PATH = "Assets/Asaki/Generated/UI/Windows";
 
         // 忽略标记：GameObject名称中包含这些标记的将被跳过
-        private static readonly string[] IgnoreMarkers = { "[Ignore]", "[ignore]", "_ignore", "_Ignore" };
+        private static readonly string[] IgnoreMarkers =
+        {
+            "[Ignore]",
+            "[ignore]",
+            "_ignore",
+            "_Ignore",
+        };
 
         // ========================= 主入口 =========================
 
@@ -27,11 +33,18 @@ namespace Asaki.Editor.UI
             GameObject[] selectedObjects = Selection.gameObjects;
             if (selectedObjects.Length == 0)
             {
-                EditorUtility.DisplayDialog("Error", "Please select at least one GameObject.", "OK");
+                EditorUtility.DisplayDialog(
+                    "Error",
+                    "Please select at least one GameObject.",
+                    "OK"
+                );
                 return;
             }
 
-            Undo.RecordObjects(selectedObjects.Select(go => go.transform).ToArray(), "Add [Ignore] Prefix");
+            Undo.RecordObjects(
+                selectedObjects.Select(go => go.transform).ToArray(),
+                "Add [Ignore] Prefix"
+            );
             int count = 0;
 
             foreach (GameObject go in selectedObjects)
@@ -53,11 +66,18 @@ namespace Asaki.Editor.UI
             GameObject[] selectedObjects = Selection.gameObjects;
             if (selectedObjects.Length == 0)
             {
-                EditorUtility.DisplayDialog("Error", "Please select at least one GameObject.", "OK");
+                EditorUtility.DisplayDialog(
+                    "Error",
+                    "Please select at least one GameObject.",
+                    "OK"
+                );
                 return;
             }
 
-            Undo.RecordObjects(selectedObjects.Select(go => go.transform).ToArray(), "Remove [Ignore] Prefix");
+            Undo.RecordObjects(
+                selectedObjects.Select(go => go.transform).ToArray(),
+                "Remove [Ignore] Prefix"
+            );
             int count = 0;
 
             foreach (GameObject go in selectedObjects)
@@ -507,32 +527,33 @@ namespace Asaki.Editor.UI
                 return input;
 
             // 替换常见分隔符为下划线
-            string result = input.Replace("-", "_")
-                                .Replace(".", "_")
-                                .Replace("/", "_")
-                                .Replace("\\", "_")
-                                .Replace("@", "_")
-                                .Replace("#", "_")
-                                .Replace("$", "_")
-                                .Replace("%", "_")
-                                .Replace("&", "_")
-                                .Replace("*", "_")
-                                .Replace("+", "_")
-                                .Replace("=", "_")
-                                .Replace("!", "_")
-                                .Replace("?", "_")
-                                .Replace(",", "_")
-                                .Replace(";", "_")
-                                .Replace(":", "_")
-                                .Replace("'", "")
-                                .Replace('"', '_')
-                                .Replace("<", "_")
-                                .Replace(">", "_")
-                                .Replace("[", "_")
-                                .Replace("]", "_")
-                                .Replace("{", "_")
-                                .Replace("}", "_")
-                                .Replace("|", "_");
+            string result = input
+                .Replace("-", "_")
+                .Replace(".", "_")
+                .Replace("/", "_")
+                .Replace("\\", "_")
+                .Replace("@", "_")
+                .Replace("#", "_")
+                .Replace("$", "_")
+                .Replace("%", "_")
+                .Replace("&", "_")
+                .Replace("*", "_")
+                .Replace("+", "_")
+                .Replace("=", "_")
+                .Replace("!", "_")
+                .Replace("?", "_")
+                .Replace(",", "_")
+                .Replace(";", "_")
+                .Replace(":", "_")
+                .Replace("'", "")
+                .Replace('"', '_')
+                .Replace("<", "_")
+                .Replace(">", "_")
+                .Replace("[", "_")
+                .Replace("]", "_")
+                .Replace("{", "_")
+                .Replace("}", "_")
+                .Replace("|", "_");
 
             // 合并多个连续的下划线
             result = Regex.Replace(result, @"_+", "_");
@@ -556,15 +577,30 @@ namespace Asaki.Editor.UI
             // 常见的无意义词汇列表
             string[] noiseWords =
             {
-                "the", "a", "an",      // 冠词
-                "ui", "ui_",           // 重复的UI前缀
-                "game", "object",      // 通用词汇
-                "component", "element", // 过于通用的后缀
+                "the",
+                "a",
+                "an", // 冠词
+                "ui",
+                "ui_", // 重复的UI前缀
+                "game",
+                "object", // 通用词汇
+                "component",
+                "element", // 过于通用的后缀
                 // UI组件类型名称（避免字段名中出现冗余的组件类型后缀）
-                "image", "text", "button", "btn",
-                "input", "inputfield", "dropdown",
-                "slider", "toggle", "scroll", "scrollrect",
-                "scrollbar", "mask", "rawimage"
+                "image",
+                "text",
+                "button",
+                "btn",
+                "input",
+                "inputfield",
+                "dropdown",
+                "slider",
+                "toggle",
+                "scroll",
+                "scrollrect",
+                "scrollbar",
+                "mask",
+                "rawimage",
             };
 
             return noiseWords.Contains(lowerWord);

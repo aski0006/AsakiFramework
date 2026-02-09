@@ -9,7 +9,5 @@ namespace Asaki.Core.Attributes
     /// 配合 [SerializeReference] 使用。
     /// </summary>
     [AttributeUsage(AttributeTargets.Field)]
-    public class AsakiResourceTypeAttribute : PropertyAttribute
-    {
-    }
+    public class AsakiResourceTypeAttribute : PropertyAttribute { }
 }

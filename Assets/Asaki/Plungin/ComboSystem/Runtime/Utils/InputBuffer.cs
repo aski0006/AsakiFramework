@@ -27,11 +27,9 @@ namespace Asaki.Plungin.ComboSystem
         /// <param name="inputTypeId">输入类型ID</param>
         public void PushInput(string inputTypeId)
         {
-            _inputs.Enqueue(new BufferedInput
-            {
-                InputTypeId = inputTypeId,
-                Timestamp = UnityEngine.Time.time
-            });
+            _inputs.Enqueue(
+                new BufferedInput { InputTypeId = inputTypeId, Timestamp = UnityEngine.Time.time }
+            );
         }
 
         /// <summary>

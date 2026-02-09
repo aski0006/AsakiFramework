@@ -43,7 +43,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             // 搜索栏
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
-            _searchFilter = EditorGUILayout.TextField(_searchFilter, EditorStyles.toolbarSearchField);
+            _searchFilter = EditorGUILayout.TextField(
+                _searchFilter,
+                EditorStyles.toolbarSearchField
+            );
             if (GUILayout.Button("×", EditorStyles.toolbarButton, GUILayout.Width(20)))
             {
                 _searchFilter = "";
@@ -54,8 +57,16 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             // 筛选选项
             EditorGUILayout.BeginHorizontal();
-            _showBuiltIn = GUILayout.Toggle(_showBuiltIn, "Show built-in", EditorStyles.miniButtonLeft);
-            _showCustom = GUILayout.Toggle(_showCustom, "Show custom", EditorStyles.miniButtonRight);
+            _showBuiltIn = GUILayout.Toggle(
+                _showBuiltIn,
+                "Show built-in",
+                EditorStyles.miniButtonLeft
+            );
+            _showCustom = GUILayout.Toggle(
+                _showCustom,
+                "Show custom",
+                EditorStyles.miniButtonRight
+            );
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space(10);
@@ -67,19 +78,24 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             foreach (var category in categories.OrderBy(c => c.Key))
             {
-                var types = category.Value.Where(t =>
-                {
-                    if (ComboInputTypeRegistry.IsBuiltInType(t.Id) && !_showBuiltIn) return false;
-                    if (!ComboInputTypeRegistry.IsBuiltInType(t.Id) && !_showCustom) return false;
-                    if (!string.IsNullOrEmpty(_searchFilter))
+                var types = category
+                    .Value.Where(t =>
                     {
-                        return t.Id.ToLower().Contains(_searchFilter.ToLower()) ||
-                               t.DisplayName.ToLower().Contains(_searchFilter.ToLower());
-                    }
-                    return true;
-                }).ToList();
+                        if (ComboInputTypeRegistry.IsBuiltInType(t.Id) && !_showBuiltIn)
+                            return false;
+                        if (!ComboInputTypeRegistry.IsBuiltInType(t.Id) && !_showCustom)
+                            return false;
+                        if (!string.IsNullOrEmpty(_searchFilter))
+                        {
+                            return t.Id.ToLower().Contains(_searchFilter.ToLower())
+                                || t.DisplayName.ToLower().Contains(_searchFilter.ToLower());
+                        }
+                        return true;
+                    })
+                    .ToList();
 
-                if (types.Count == 0) continue;
+                if (types.Count == 0)
+                    continue;
 
                 EditorGUILayout.LabelField(category.Key, EditorStyles.boldLabel);
                 EditorGUI.indentLevel++;
@@ -110,13 +126,23 @@ namespace Asaki.Plungin.ComboSystem.Editor
             EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
 
             // 颜色指示
-            EditorGUILayout.ColorField(GUIContent.none, type.Color, false, false, false, GUILayout.Width(30));
+            EditorGUILayout.ColorField(
+                GUIContent.none,
+                type.Color,
+                false,
+                false,
+                false,
+                GUILayout.Width(30)
+            );
 
             EditorGUILayout.BeginVertical();
 
             // ID和名称
             EditorGUILayout.LabelField(type.DisplayName, EditorStyles.boldLabel);
-            EditorGUILayout.LabelField($"ID: {type.Id} | Priority: {type.Priority}", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                $"ID: {type.Id} | Priority: {type.Priority}",
+                EditorStyles.miniLabel
+            );
 
             EditorGUILayout.EndVertical();
 
@@ -125,10 +151,15 @@ namespace Asaki.Plungin.ComboSystem.Editor
             {
                 if (GUILayout.Button("Delete", GUILayout.Width(60)))
                 {
-                    if (EditorUtility.DisplayDialog("Confirm Delete",
-                        $"Are you sure you want to delete the input type '{type.DisplayName}'?\n" +
-                        "Nodes using this type will become invalid.",
-                        "Delete", "Cancel"))
+                    if (
+                        EditorUtility.DisplayDialog(
+                            "Confirm Delete",
+                            $"Are you sure you want to delete the input type '{type.DisplayName}'?\n"
+                                + "Nodes using this type will become invalid.",
+                            "Delete",
+                            "Cancel"
+                        )
+                    )
                     {
                         ComboInputTypeRegistry.RemoveUserType(type.Id);
                         Repaint();
@@ -159,9 +190,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
             EditorGUILayout.Space(5);
 
             // 验证
-            bool isValid = !string.IsNullOrEmpty(_newTypeId) &&
-                           !string.IsNullOrEmpty(_newTypeName) &&
-                           !ComboInputTypeRegistry.HasType(_newTypeId);
+            bool isValid =
+                !string.IsNullOrEmpty(_newTypeId)
+                && !string.IsNullOrEmpty(_newTypeName)
+                && !ComboInputTypeRegistry.HasType(_newTypeId);
 
             EditorGUI.BeginDisabledGroup(!isValid);
 
@@ -173,7 +205,7 @@ namespace Asaki.Plungin.ComboSystem.Editor
                     DisplayName = _newTypeName,
                     Category = _newTypeCategory,
                     Color = _newTypeColor,
-                    Priority = _newTypePriority
+                    Priority = _newTypePriority,
                 };
 
                 ComboInputTypeRegistry.Register(definition);
@@ -200,7 +232,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 }
                 else if (ComboInputTypeRegistry.HasType(_newTypeId))
                 {
-                    EditorGUILayout.HelpBox($"Type ID '{_newTypeId}' already exists", MessageType.Error);
+                    EditorGUILayout.HelpBox(
+                        $"Type ID '{_newTypeId}' already exists",
+                        MessageType.Error
+                    );
                 }
             }
 
@@ -210,9 +245,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             // 帮助信息
             EditorGUILayout.HelpBox(
-                "Type ID is used to identify input types in code. Suggest using English and underscores.\n" +
-                "Lower priority values will be sorted higher in the list.\n" +
-                "Built-in types cannot be deleted but can be overridden by custom types.",
+                "Type ID is used to identify input types in code. Suggest using English and underscores.\n"
+                    + "Lower priority values will be sorted higher in the list.\n"
+                    + "Built-in types cannot be deleted but can be overridden by custom types.",
                 MessageType.Info
             );
         }

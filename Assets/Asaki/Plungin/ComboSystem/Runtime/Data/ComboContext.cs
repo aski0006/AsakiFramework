@@ -19,8 +19,7 @@ namespace Asaki.Plungin.ComboSystem
         public T GetData<T>(string key) =>
             Blackboard.TryGetValue(key, out var val) ? (T)val : default;
 
-        public void SetData<T>(string key, T value) =>
-            Blackboard[key] = value;
+        public void SetData<T>(string key, T value) => Blackboard[key] = value;
     }
 
     /// <summary>
@@ -48,6 +47,7 @@ namespace Asaki.Plungin.ComboSystem
     public class ResetToZeroStrategy : IComboResetStrategy
     {
         public int CalculateResetCount(int currentCount, ComboContext context) => 0;
+
         public bool ShouldReset(ComboContext context) => true;
     }
 
@@ -57,6 +57,7 @@ namespace Asaki.Plungin.ComboSystem
     public class KeepCountStrategy : IComboResetStrategy
     {
         public int CalculateResetCount(int currentCount, ComboContext context) => currentCount;
+
         public bool ShouldReset(ComboContext context) => false; // 不真正"重置"，只是保持
     }
 
@@ -101,6 +102,7 @@ namespace Asaki.Plungin.ComboSystem
         public int TargetCount = 0;
 
         public int CalculateResetCount(int currentCount, ComboContext context) => TargetCount;
+
         public bool ShouldReset(ComboContext context) => true;
     }
 
@@ -146,12 +148,14 @@ namespace Asaki.Plungin.ComboSystem
     /// </summary>
     public class CompositeResetStrategy : IComboResetStrategy
     {
-        public System.Collections.Generic.List<IComboResetStrategy> Strategies = new System.Collections.Generic.List<IComboResetStrategy>();
+        public System.Collections.Generic.List<IComboResetStrategy> Strategies =
+            new System.Collections.Generic.List<IComboResetStrategy>();
         public CompositeMode Mode = CompositeMode.Sequential;
 
         public int CalculateResetCount(int currentCount, ComboContext context)
         {
-            if (Strategies.Count == 0) return currentCount;
+            if (Strategies.Count == 0)
+                return currentCount;
 
             switch (Mode)
             {
@@ -170,7 +174,9 @@ namespace Asaki.Plungin.ComboSystem
                     return Strategies.Max(s => s.CalculateResetCount(currentCount, context));
 
                 case CompositeMode.Average:
-                    var results = Strategies.Select(s => s.CalculateResetCount(currentCount, context));
+                    var results = Strategies.Select(s =>
+                        s.CalculateResetCount(currentCount, context)
+                    );
                     return UnityEngine.Mathf.RoundToInt((float)results.Average());
 
                 default:

@@ -86,10 +86,15 @@ namespace Asaki.Plungin.ComboSystem.Editor
             }
 
             // 时间信息
-            float totalTime = moveNode.MoveData.StartupTime + moveNode.MoveData.ActiveDuration + moveNode.MoveData.RecoveryTime;
+            float totalTime =
+                moveNode.MoveData.StartupTime
+                + moveNode.MoveData.ActiveDuration
+                + moveNode.MoveData.RecoveryTime;
             if (totalTime > 0)
             {
-                var timeLabel = new Label($"⏱️ {totalTime:F2}s (前{moveNode.MoveData.StartupTime:F2}/判{moveNode.MoveData.ActiveDuration:F2}/后{moveNode.MoveData.RecoveryTime:F2})");
+                var timeLabel = new Label(
+                    $"⏱️ {totalTime:F2}s (前{moveNode.MoveData.StartupTime:F2}/判{moveNode.MoveData.ActiveDuration:F2}/后{moveNode.MoveData.RecoveryTime:F2})"
+                );
                 timeLabel.style.fontSize = 9;
                 timeLabel.style.color = new Color(0.6f, 0.6f, 0.6f);
                 previewContainer.Add(timeLabel);
@@ -205,7 +210,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         void RefreshConditionsList(TransitionNode transitionNode)
         {
             var listContainer = this.Q<VisualElement>("conditions-list");
-            if (listContainer == null) return;
+            if (listContainer == null)
+                return;
 
             listContainer.Clear();
 

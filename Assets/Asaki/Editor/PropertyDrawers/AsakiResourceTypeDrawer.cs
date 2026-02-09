@@ -56,7 +56,12 @@ namespace Asaki.Editor.PropertyDrawers
             }
 
             // 绘制标签
-            Rect labelRect = new Rect(position.x, position.y, EditorGUIUtility.labelWidth, EditorGUIUtility.singleLineHeight);
+            Rect labelRect = new Rect(
+                position.x,
+                position.y,
+                EditorGUIUtility.labelWidth,
+                EditorGUIUtility.singleLineHeight
+            );
             EditorGUI.LabelField(labelRect, label);
 
             // 绘制类型选择按钮
@@ -83,7 +88,10 @@ namespace Asaki.Editor.PropertyDrawers
                 );
 
                 EditorGUI.BeginChangeCheck();
-                string newTypeFullName = EditorGUI.TextField(customFieldRect, customType.TypeFullName);
+                string newTypeFullName = EditorGUI.TextField(
+                    customFieldRect,
+                    customType.TypeFullName
+                );
                 if (EditorGUI.EndChangeCheck())
                 {
                     customType.TypeFullName = newTypeFullName;
@@ -149,7 +157,8 @@ namespace Asaki.Editor.PropertyDrawers
             _resourceTypeCache.Clear();
 
             // 获取所有继承自 SerializableResourceType 的非抽象类
-            var types = AppDomain.CurrentDomain.GetAssemblies()
+            var types = AppDomain
+                .CurrentDomain.GetAssemblies()
                 .SelectMany(a =>
                 {
                     try
@@ -162,9 +171,9 @@ namespace Asaki.Editor.PropertyDrawers
                     }
                 })
                 .Where(t =>
-                    typeof(SerializableResourceType).IsAssignableFrom(t) &&
-                    t.IsClass &&
-                    !t.IsAbstract
+                    typeof(SerializableResourceType).IsAssignableFrom(t)
+                    && t.IsClass
+                    && !t.IsAbstract
                 )
                 .OrderBy(t => GetDisplayOrder(t))
                 .ThenBy(t => t.Name);
@@ -199,7 +208,7 @@ namespace Asaki.Editor.PropertyDrawers
                 _ when type == typeof(ShaderResourceType) => 8,
                 _ when type == typeof(MeshResourceType) => 9,
                 _ when type == typeof(CustomResourceType) => 100,
-                _ => 50
+                _ => 50,
             };
         }
 

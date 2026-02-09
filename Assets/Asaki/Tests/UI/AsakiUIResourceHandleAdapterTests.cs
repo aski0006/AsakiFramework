@@ -26,7 +26,11 @@ namespace Asaki.Tests.UI
         {
             _mockResourceService = new MockResourceService();
             _testAsset = new GameObject("TestUIAsset");
-            _resHandle = new ResHandle<GameObject>("Test/Path/Asset", _testAsset, _mockResourceService);
+            _resHandle = new ResHandle<GameObject>(
+                "Test/Path/Asset",
+                _testAsset,
+                _mockResourceService
+            );
         }
 
         [TearDown]
@@ -143,7 +147,7 @@ namespace Asaki.Tests.UI
             // Act
             adapter.Dispose();
             int countAfterFirstDispose = _mockResourceService.ReleaseCallCount;
-            
+
             adapter.Dispose();
             adapter.Dispose();
             int countAfterMultipleDispose = _mockResourceService.ReleaseCallCount;

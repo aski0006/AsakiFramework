@@ -60,8 +60,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
                         FromMoveId = fromNode.MoveData.MoveId,
                         ToMoveId = toNode.MoveData.MoveId,
                         InputType = transitionNode?.InputType ?? "LightAttack",
-                        Conditions = transitionNode?.Conditions ?? Array.Empty<TransitionCondition>(),
-                        ResetGroup = transitionNode?.ResetGroup ?? "default"
+                        Conditions =
+                            transitionNode?.Conditions ?? Array.Empty<TransitionCondition>(),
+                        ResetGroup = transitionNode?.ResetGroup ?? "default",
                     };
                     transitions.Add(transition);
                 }
@@ -69,15 +70,17 @@ namespace Asaki.Plungin.ComboSystem.Editor
             comboTree.Transitions = transitions.ToArray();
 
             // 转换重置策略
-            comboTree.ResetStrategies = ResetStrategies.Select(s => new ResetStrategyDefinition
-            {
-                GroupName = s.GroupName,
-                Mode = s.Mode,
-                DecayAmount = s.DecayAmount,
-                DecayPercent = s.DecayPercent,
-                MinCount = s.MinCount,
-                SpecificValue = s.SpecificValue
-            }).ToArray();
+            comboTree.ResetStrategies = ResetStrategies
+                .Select(s => new ResetStrategyDefinition
+                {
+                    GroupName = s.GroupName,
+                    Mode = s.Mode,
+                    DecayAmount = s.DecayAmount,
+                    DecayPercent = s.DecayPercent,
+                    MinCount = s.MinCount,
+                    SpecificValue = s.SpecificValue,
+                })
+                .ToArray();
 
             return comboTree;
         }
@@ -133,9 +136,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         [AsakiNodeOutput("Output", multiple: true)]
         public AsakiFlowPort OutputFlow;
 
-        public override string Title => string.IsNullOrEmpty(MoveData.MoveName)
-            ? "moves"
-            : $"{MoveData.MoveName}";
+        public override string Title =>
+            string.IsNullOrEmpty(MoveData.MoveName) ? "moves" : $"{MoveData.MoveName}";
 
         public override void OnCreated()
         {
@@ -212,7 +214,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
         /// </summary>
         public void RemoveCondition(int index)
         {
-            if (index < 0 || index >= Conditions.Length) return;
+            if (index < 0 || index >= Conditions.Length)
+                return;
 
             var newConditions = new TransitionCondition[Conditions.Length - 1];
             for (int i = 0, j = 0; i < Conditions.Length; i++)
@@ -274,15 +277,15 @@ namespace Asaki.Plungin.ComboSystem.Editor
         private string GetOperatorSymbol(ComparisonOperator op)
         {
             return op switch
-                   {
-                       ComparisonOperator.Equal => "=",
-                       ComparisonOperator.NotEqual => "≠",
-                       ComparisonOperator.Greater => ">",
-                       ComparisonOperator.GreaterOrEqual => "≥",
-                       ComparisonOperator.Less => "<",
-                       ComparisonOperator.LessOrEqual => "≤",
-                       _ => "?"
-                   };
+            {
+                ComparisonOperator.Equal => "=",
+                ComparisonOperator.NotEqual => "≠",
+                ComparisonOperator.Greater => ">",
+                ComparisonOperator.GreaterOrEqual => "≥",
+                ComparisonOperator.Less => "<",
+                ComparisonOperator.LessOrEqual => "≤",
+                _ => "?",
+            };
         }
 
         public override void OnCreated()
@@ -302,7 +305,7 @@ namespace Asaki.Plungin.ComboSystem.Editor
         Greater,
         GreaterOrEqual,
         Less,
-        LessOrEqual
+        LessOrEqual,
     }
 
     /// <summary>

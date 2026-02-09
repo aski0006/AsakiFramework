@@ -77,7 +77,8 @@ namespace Asaki.Plungin.ComboSystem
     /// </summary>
     public class HitBoxManager : MonoBehaviour
     {
-        [SerializeField] private Transform hitBoxRoot;
+        [SerializeField]
+        private Transform hitBoxRoot;
 
         private Dictionary<string, HitBox> _hitBoxes = new Dictionary<string, HitBox>();
         private List<HitBox> _activeHitBoxes = new List<HitBox>();
@@ -137,9 +138,7 @@ namespace Asaki.Plungin.ComboSystem
         /// </summary>
         public Collider GetCollider(string hitBoxId)
         {
-            return _hitBoxes.TryGetValue(hitBoxId, out var hitBox)
-                ? hitBox.Collider
-                : null;
+            return _hitBoxes.TryGetValue(hitBoxId, out var hitBox) ? hitBox.Collider : null;
         }
 
         HitBox GetOrCreateHitBox(string hitBoxId)

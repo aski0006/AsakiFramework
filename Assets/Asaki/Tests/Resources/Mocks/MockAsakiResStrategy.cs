@@ -75,7 +75,8 @@ namespace Asaki.Tests.Resources.Mocks
         /// 注册模拟资源
         /// 使用location和类型组合作为key，支持相同location但不同类型的资源
         /// </summary>
-        public void RegisterAsset<T>(string location, T asset) where T : Object
+        public void RegisterAsset<T>(string location, T asset)
+            where T : Object
         {
             string key = GetCompositeKey(location, typeof(T));
             _assetDatabase[key] = asset;
@@ -202,7 +203,8 @@ namespace Asaki.Tests.Resources.Mocks
 
             if (type == typeof(Material))
             {
-                return new Material(Shader.Find("Standard")) ?? new Material(Shader.Find("Diffuse"));
+                return new Material(Shader.Find("Standard"))
+                    ?? new Material(Shader.Find("Diffuse"));
             }
 
             if (type == typeof(AudioClip))

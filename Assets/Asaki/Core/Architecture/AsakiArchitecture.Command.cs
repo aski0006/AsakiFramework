@@ -24,7 +24,10 @@ namespace Asaki.Core.Architecture
         public void SendCommand<TCommand>()
             where TCommand : class, IAsakiCommand, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -89,14 +92,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public TResult SendCommand<TCommand, TResult>()
             where TCommand : class, IAsakiCommand<TResult>, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -167,14 +175,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public async UniTask SendCommandAsync<TCommand>()
             where TCommand : class, IAsakiCommandAsync, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -239,14 +252,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public async UniTask<TResult> SendCommandAsync<TCommand, TResult>()
             where TCommand : class, IAsakiCommandAsync<TResult>, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -317,14 +335,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public void SendCommand<TCommand>(Action<TCommand> configure)
             where TCommand : class, IAsakiCommand, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -385,14 +408,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public TResult SendCommand<TCommand, TResult>(Action<TCommand> configure)
             where TCommand : class, IAsakiCommand<TResult>, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -459,14 +487,19 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
         public async UniTask SendCommandAsync<TCommand>(Action<TCommand> configure)
             where TCommand : class, IAsakiCommandAsync, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -527,7 +560,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
 
@@ -536,7 +571,10 @@ namespace Asaki.Core.Architecture
         )
             where TCommand : class, IAsakiCommandAsync<TResult>, new()
         {
-            TCommand cmd = AsakiCommandPoolManager.Rent<TCommand>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = AsakiCommandPoolManager.TryRent<TCommand>(out TCommand cmd);
+            cmd ??= new TCommand();
+
             string commandType = typeof(TCommand).Name;
             long timestamp = DateTime.Now.Ticks;
             Stopwatch sw =
@@ -603,7 +641,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                AsakiCommandPoolManager.Return(cmd);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    AsakiCommandPoolManager.TryReturn(cmd);
             }
         }
     }

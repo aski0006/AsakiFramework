@@ -1,6 +1,6 @@
+using Asaki.Plungin.ComboSystem;
 using NUnit.Framework;
 using UnityEngine;
-using Asaki.Plungin.ComboSystem;
 
 namespace Asaki.Tests.ComboSystem
 {
@@ -45,7 +45,7 @@ namespace Asaki.Tests.ComboSystem
                 RecoveryTime = 0.4f,
                 MinComboCount = 1,
                 MaxComboCount = 5,
-                Cooldown = 2f
+                Cooldown = 2f,
             };
 
             // Assert
@@ -70,11 +70,7 @@ namespace Asaki.Tests.ComboSystem
         public void IsOnCooldown_NewMove_NotOnCooldown()
         {
             // Arrange
-            var move = new ComboMove
-            {
-                MoveId = "test",
-                Cooldown = 2f
-            };
+            var move = new ComboMove { MoveId = "test", Cooldown = 2f };
 
             // Act
             bool onCooldown = move.IsOnCooldown(Time.time);
@@ -92,7 +88,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "test",
                 Cooldown = 10f,
-                LastUsedTime = Time.time
+                LastUsedTime = Time.time,
             };
 
             // Act
@@ -111,7 +107,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "test",
                 Cooldown = 1f,
-                LastUsedTime = Time.time - 2f  // 2秒前使用
+                LastUsedTime = Time.time - 2f, // 2秒前使用
             };
 
             // Act
@@ -130,7 +126,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "test",
                 Cooldown = 0f,
-                LastUsedTime = Time.time
+                LastUsedTime = Time.time,
             };
 
             // Act
@@ -157,7 +153,7 @@ namespace Asaki.Tests.ComboSystem
                 Size = new Vector3(1, 1, 1),
                 Radius = 0.5f,
                 Height = 2f,
-                BoneName = "Hand_R"
+                BoneName = "Hand_R",
             };
 
             // Assert
@@ -178,7 +174,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 HitBoxId = "sword",
                 Shape = HitBoxShape.Box,
-                Size = new Vector3(0.5f, 2f, 0.2f)
+                Size = new Vector3(0.5f, 2f, 0.2f),
             };
 
             // Assert
@@ -196,7 +192,7 @@ namespace Asaki.Tests.ComboSystem
                 HitBoxId = "punch",
                 Shape = HitBoxShape.Capsule,
                 Radius = 0.3f,
-                Height = 1.5f
+                Height = 1.5f,
             };
 
             // Assert
@@ -218,7 +214,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 Type = ConditionType.ComboCount,
                 Parameter = "min_count",
-                Value = 5f
+                Value = 5f,
             };
 
             // Assert
@@ -238,7 +234,7 @@ namespace Asaki.Tests.ComboSystem
                 ConditionType.TimeWindow,
                 ConditionType.HealthPercent,
                 ConditionType.StaminaCost,
-                ConditionType.Custom
+                ConditionType.Custom,
             };
 
             Assert.AreEqual(5, types.Length, "应有5种条件类型");
@@ -260,7 +256,7 @@ namespace Asaki.Tests.ComboSystem
                 ComboStateType.Active,
                 ComboStateType.Recovery,
                 ComboStateType.ComboWindow,
-                ComboStateType.Interrupted
+                ComboStateType.Interrupted,
             };
 
             // Assert
@@ -281,7 +277,7 @@ namespace Asaki.Tests.ComboSystem
                 InterruptReason.Stunned,
                 InterruptReason.KnockedDown,
                 InterruptReason.Forced,
-                InterruptReason.UserCancel
+                InterruptReason.UserCancel,
             };
 
             // Assert
@@ -293,12 +289,7 @@ namespace Asaki.Tests.ComboSystem
         public void HitBoxShape_AllValues()
         {
             // Arrange & Act
-            var shapes = new[]
-            {
-                HitBoxShape.Box,
-                HitBoxShape.Sphere,
-                HitBoxShape.Capsule
-            };
+            var shapes = new[] { HitBoxShape.Box, HitBoxShape.Sphere, HitBoxShape.Capsule };
 
             // Assert
             Assert.AreEqual(3, shapes.Length, "应有3种判定框形状");
@@ -316,7 +307,7 @@ namespace Asaki.Tests.ComboSystem
                 ResetComboMode.Decay,
                 ResetComboMode.PercentageDecay,
                 ResetComboMode.SetToSpecific,
-                ResetComboMode.CustomFunction
+                ResetComboMode.CustomFunction,
             };
 
             // Assert
@@ -333,7 +324,7 @@ namespace Asaki.Tests.ComboSystem
                 CompositeMode.Sequential,
                 CompositeMode.Minimum,
                 CompositeMode.Maximum,
-                CompositeMode.Average
+                CompositeMode.Average,
             };
 
             // Assert
@@ -368,7 +359,7 @@ namespace Asaki.Tests.ComboSystem
                         Shape = HitBoxShape.Box,
                         Offset = new Vector3(0, 0, 1),
                         Size = new Vector3(0.3f, 0.1f, 1.5f),
-                        BoneName = "Weapon"
+                        BoneName = "Weapon",
                     },
                     new HitBoxDefinition
                     {
@@ -376,12 +367,12 @@ namespace Asaki.Tests.ComboSystem
                         Shape = HitBoxShape.Sphere,
                         Offset = new Vector3(0, 0, 2),
                         Radius = 0.2f,
-                        BoneName = "WeaponTip"
-                    }
+                        BoneName = "WeaponTip",
+                    },
                 },
                 MinComboCount = 3,
                 MaxComboCount = 10,
-                Cooldown = 5f
+                Cooldown = 5f,
             };
 
             // Assert
@@ -401,7 +392,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "dodge",
                 MoveName = "Dodge",
-                HitBoxes = null
+                HitBoxes = null,
             };
 
             // Assert
@@ -417,7 +408,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 MoveId = "taunt",
                 MoveName = "Taunt",
-                HitBoxes = new HitBoxDefinition[0]
+                HitBoxes = new HitBoxDefinition[0],
             };
 
             // Assert
@@ -452,18 +443,10 @@ namespace Asaki.Tests.ComboSystem
                 InputType = "LightAttack",
                 Conditions = new[]
                 {
-                    new TransitionCondition
-                    {
-                        Type = ConditionType.ComboCount,
-                        Value = 3f
-                    },
-                    new TransitionCondition
-                    {
-                        Type = ConditionType.HealthPercent,
-                        Value = 0.5f
-                    }
+                    new TransitionCondition { Type = ConditionType.ComboCount, Value = 3f },
+                    new TransitionCondition { Type = ConditionType.HealthPercent, Value = 0.5f },
                 },
-                ResetGroup = "special"
+                ResetGroup = "special",
             };
 
             // Assert

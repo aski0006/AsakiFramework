@@ -30,7 +30,7 @@ namespace Asaki.Plungin.ComboSystem.Editor
         {
             SelectedOnly,
             AllInProject,
-            MultipleSelection
+            MultipleSelection,
         }
 
         [MenuItem("Asaki/ComboSystem/导出ComboTree", priority = 22)]
@@ -48,8 +48,13 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
         private void RefreshGraphList()
         {
-            _allGraphs = AssetDatabase.FindAssets("t:ComboGraphAsset")
-                .Select(guid => AssetDatabase.LoadAssetAtPath<ComboGraphAsset>(AssetDatabase.GUIDToAssetPath(guid)))
+            _allGraphs = AssetDatabase
+                .FindAssets("t:ComboGraphAsset")
+                .Select(guid =>
+                    AssetDatabase.LoadAssetAtPath<ComboGraphAsset>(
+                        AssetDatabase.GUIDToAssetPath(guid)
+                    )
+                )
                 .Where(g => g != null)
                 .ToList();
 
@@ -111,10 +116,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             // 帮助信息
             EditorGUILayout.HelpBox(
-                "导出说明:\n" +
-                "1. ComboGraph 是编辑器中使用的可视化图表\n" +
-                "2. ComboTree 是运行时使用的轻量级数据资产\n" +
-                "3. 导出后会生成 .asset 文件，可直接用于 AsakiComboController",
+                "导出说明:\n"
+                    + "1. ComboGraph 是编辑器中使用的可视化图表\n"
+                    + "2. ComboTree 是运行时使用的轻量级数据资产\n"
+                    + "3. 导出后会生成 .asset 文件，可直接用于 AsakiComboController",
                 MessageType.Info
             );
         }
@@ -126,7 +131,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.PrefixLabel("选择图表");
-            _selectedGraph = EditorGUILayout.ObjectField(_selectedGraph, typeof(ComboGraphAsset), false) as ComboGraphAsset;
+            _selectedGraph =
+                EditorGUILayout.ObjectField(_selectedGraph, typeof(ComboGraphAsset), false)
+                as ComboGraphAsset;
             EditorGUILayout.EndHorizontal();
 
             if (_selectedGraph != null)
@@ -145,7 +152,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
         /// </summary>
         private void DrawAllInProjectMode()
         {
-            EditorGUILayout.LabelField($"项目中共找到 {_allGraphs.Count} 个 ComboGraph", EditorStyles.helpBox);
+            EditorGUILayout.LabelField(
+                $"项目中共找到 {_allGraphs.Count} 个 ComboGraph",
+                EditorStyles.helpBox
+            );
 
             if (_allGraphs.Count == 0)
             {
@@ -153,7 +163,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 return;
             }
 
-            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(150));
+            _scrollPosition = EditorGUILayout.BeginScrollView(
+                _scrollPosition,
+                GUILayout.Height(150)
+            );
             foreach (var graph in _allGraphs)
             {
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
@@ -173,7 +186,10 @@ namespace Asaki.Plungin.ComboSystem.Editor
         /// </summary>
         private void DrawMultipleSelectionMode()
         {
-            EditorGUILayout.LabelField($"项目中共找到 {_allGraphs.Count} 个 ComboGraph", EditorStyles.helpBox);
+            EditorGUILayout.LabelField(
+                $"项目中共找到 {_allGraphs.Count} 个 ComboGraph",
+                EditorStyles.helpBox
+            );
 
             if (_allGraphs.Count == 0)
             {
@@ -184,11 +200,13 @@ namespace Asaki.Plungin.ComboSystem.Editor
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button("全选"))
             {
-                for (int i = 0; i < _selectedFlags.Length; i++) _selectedFlags[i] = true;
+                for (int i = 0; i < _selectedFlags.Length; i++)
+                    _selectedFlags[i] = true;
             }
             if (GUILayout.Button("全不选"))
             {
-                for (int i = 0; i < _selectedFlags.Length; i++) _selectedFlags[i] = false;
+                for (int i = 0; i < _selectedFlags.Length; i++)
+                    _selectedFlags[i] = false;
             }
             if (GUILayout.Button("刷新列表"))
             {
@@ -196,13 +214,19 @@ namespace Asaki.Plungin.ComboSystem.Editor
             }
             EditorGUILayout.EndHorizontal();
 
-            _scrollPosition = EditorGUILayout.BeginScrollView(_scrollPosition, GUILayout.Height(150));
+            _scrollPosition = EditorGUILayout.BeginScrollView(
+                _scrollPosition,
+                GUILayout.Height(150)
+            );
             for (int i = 0; i < _allGraphs.Count; i++)
             {
                 EditorGUILayout.BeginHorizontal(EditorStyles.helpBox);
                 _selectedFlags[i] = EditorGUILayout.Toggle(_selectedFlags[i], GUILayout.Width(20));
                 EditorGUILayout.LabelField(_allGraphs[i].name, GUILayout.Width(180));
-                EditorGUILayout.LabelField($"{_allGraphs[i].Nodes.Count} 节点", GUILayout.Width(80));
+                EditorGUILayout.LabelField(
+                    $"{_allGraphs[i].Nodes.Count} 节点",
+                    GUILayout.Width(80)
+                );
                 if (GUILayout.Button("预览", GUILayout.Width(60)))
                 {
                     Selection.activeObject = _allGraphs[i];
@@ -310,7 +334,11 @@ namespace Asaki.Plungin.ComboSystem.Editor
             for (int i = 0; i < graphsToExport.Count; i++)
             {
                 var graph = graphsToExport[i];
-                EditorUtility.DisplayProgressBar("导出 ComboTree", $"正在导出: {graph.name}", (float)i / graphsToExport.Count);
+                EditorUtility.DisplayProgressBar(
+                    "导出 ComboTree",
+                    $"正在导出: {graph.name}",
+                    (float)i / graphsToExport.Count
+                );
 
                 try
                 {
@@ -354,7 +382,9 @@ namespace Asaki.Plungin.ComboSystem.Editor
         {
             var comboTree = graph.ExportToComboTree();
 
-            string fileName = string.IsNullOrEmpty(graph.ComboTreeId) ? graph.name : graph.ComboTreeId;
+            string fileName = string.IsNullOrEmpty(graph.ComboTreeId)
+                ? graph.name
+                : graph.ComboTreeId;
             string path = Path.Combine(_outputFolder, $"{fileName}.asset");
 
             // 检查是否已存在

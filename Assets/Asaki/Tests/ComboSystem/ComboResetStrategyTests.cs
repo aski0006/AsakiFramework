@@ -1,6 +1,6 @@
+using Asaki.Plungin.ComboSystem;
 using NUnit.Framework;
 using UnityEngine;
-using Asaki.Plungin.ComboSystem;
 
 namespace Asaki.Tests.ComboSystem
 {
@@ -17,11 +17,7 @@ namespace Asaki.Tests.ComboSystem
         [SetUp]
         public void Setup()
         {
-            _context = new ComboContext
-            {
-                ComboCount = 10,
-                ComboTimer = 5f
-            };
+            _context = new ComboContext { ComboCount = 10, ComboTimer = 5f };
         }
 
         #region ResetToZeroStrategy 测试
@@ -89,11 +85,7 @@ namespace Asaki.Tests.ComboSystem
         public void DecayCountStrategy_ReducesByFixedAmount()
         {
             // Arrange
-            var strategy = new DecayCountStrategy
-            {
-                DecayAmount = 2,
-                MinCount = 0
-            };
+            var strategy = new DecayCountStrategy { DecayAmount = 2, MinCount = 0 };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -107,11 +99,7 @@ namespace Asaki.Tests.ComboSystem
         public void DecayCountStrategy_RespectsMinCount()
         {
             // Arrange
-            var strategy = new DecayCountStrategy
-            {
-                DecayAmount = 5,
-                MinCount = 3
-            };
+            var strategy = new DecayCountStrategy { DecayAmount = 5, MinCount = 3 };
 
             // Act
             int result = strategy.CalculateResetCount(5, _context);
@@ -125,11 +113,7 @@ namespace Asaki.Tests.ComboSystem
         public void DecayCountStrategy_ZeroCount_ReturnsZero()
         {
             // Arrange
-            var strategy = new DecayCountStrategy
-            {
-                DecayAmount = 2,
-                MinCount = 0
-            };
+            var strategy = new DecayCountStrategy { DecayAmount = 2, MinCount = 0 };
 
             // Act
             int result = strategy.CalculateResetCount(0, _context);
@@ -147,11 +131,7 @@ namespace Asaki.Tests.ComboSystem
         public void PercentageDecayStrategy_ReducesByPercentage()
         {
             // Arrange
-            var strategy = new PercentageDecayStrategy
-            {
-                DecayPercent = 0.5f,
-                MinCount = 0
-            };
+            var strategy = new PercentageDecayStrategy { DecayPercent = 0.5f, MinCount = 0 };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -165,11 +145,7 @@ namespace Asaki.Tests.ComboSystem
         public void PercentageDecayStrategy_RoundsCorrectly()
         {
             // Arrange
-            var strategy = new PercentageDecayStrategy
-            {
-                DecayPercent = 0.33f,
-                MinCount = 0
-            };
+            var strategy = new PercentageDecayStrategy { DecayPercent = 0.33f, MinCount = 0 };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -183,11 +159,7 @@ namespace Asaki.Tests.ComboSystem
         public void PercentageDecayStrategy_RespectsMinCount()
         {
             // Arrange
-            var strategy = new PercentageDecayStrategy
-            {
-                DecayPercent = 0.9f,
-                MinCount = 2
-            };
+            var strategy = new PercentageDecayStrategy { DecayPercent = 0.9f, MinCount = 2 };
 
             // Act
             int result = strategy.CalculateResetCount(5, _context);
@@ -205,10 +177,7 @@ namespace Asaki.Tests.ComboSystem
         public void SetToSpecificStrategy_SetsToTargetCount()
         {
             // Arrange
-            var strategy = new SetToSpecificStrategy
-            {
-                TargetCount = 5
-            };
+            var strategy = new SetToSpecificStrategy { TargetCount = 5 };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -222,10 +191,7 @@ namespace Asaki.Tests.ComboSystem
         public void SetToSpecificStrategy_CanSetToZero()
         {
             // Arrange
-            var strategy = new SetToSpecificStrategy
-            {
-                TargetCount = 0
-            };
+            var strategy = new SetToSpecificStrategy { TargetCount = 0 };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -246,7 +212,7 @@ namespace Asaki.Tests.ComboSystem
             var strategy = new CustomResetStrategy
             {
                 ResetFunction = (count, ctx) => count * 2,
-                ShouldResetFunction = ctx => true
+                ShouldResetFunction = ctx => true,
             };
 
             // Act
@@ -263,12 +229,12 @@ namespace Asaki.Tests.ComboSystem
             // Arrange
             var strategy = new CustomResetStrategy
             {
-                ShouldResetFunction = ctx => ctx.ComboCount > 5
+                ShouldResetFunction = ctx => ctx.ComboCount > 5,
             };
 
             // Act & Assert
             Assert.IsTrue(strategy.ShouldReset(_context), "条件满足时应返回true");
-            
+
             _context.ComboCount = 3;
             Assert.IsFalse(strategy.ShouldReset(_context), "条件不满足时应返回false");
         }
@@ -278,10 +244,7 @@ namespace Asaki.Tests.ComboSystem
         public void CustomResetStrategy_NullFunction_ReturnsZero()
         {
             // Arrange
-            var strategy = new CustomResetStrategy
-            {
-                ResetFunction = null
-            };
+            var strategy = new CustomResetStrategy { ResetFunction = null };
 
             // Act
             int result = strategy.CalculateResetCount(10, _context);
@@ -303,7 +266,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 Condition = ctx => ctx.ComboCount > 5,
                 TrueStrategy = new ResetToZeroStrategy(),
-                FalseStrategy = new KeepCountStrategy()
+                FalseStrategy = new KeepCountStrategy(),
             };
 
             // Act
@@ -322,7 +285,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 Condition = ctx => ctx.ComboCount > 15,
                 TrueStrategy = new ResetToZeroStrategy(),
-                FalseStrategy = new KeepCountStrategy()
+                FalseStrategy = new KeepCountStrategy(),
             };
 
             // Act
@@ -346,9 +309,9 @@ namespace Asaki.Tests.ComboSystem
                 Mode = CompositeMode.Sequential,
                 Strategies = new System.Collections.Generic.List<IComboResetStrategy>
                 {
-                    new DecayCountStrategy { DecayAmount = 2, MinCount = 0 },  // 10 -> 8
-                    new DecayCountStrategy { DecayAmount = 3, MinCount = 0 }   // 8 -> 5
-                }
+                    new DecayCountStrategy { DecayAmount = 2, MinCount = 0 }, // 10 -> 8
+                    new DecayCountStrategy { DecayAmount = 3, MinCount = 0 }, // 8 -> 5
+                },
             };
 
             // Act
@@ -370,8 +333,8 @@ namespace Asaki.Tests.ComboSystem
                 {
                     new SetToSpecificStrategy { TargetCount = 8 },
                     new SetToSpecificStrategy { TargetCount = 3 },
-                    new SetToSpecificStrategy { TargetCount = 5 }
-                }
+                    new SetToSpecificStrategy { TargetCount = 5 },
+                },
             };
 
             // Act
@@ -393,8 +356,8 @@ namespace Asaki.Tests.ComboSystem
                 {
                     new SetToSpecificStrategy { TargetCount = 3 },
                     new SetToSpecificStrategy { TargetCount = 8 },
-                    new SetToSpecificStrategy { TargetCount = 5 }
-                }
+                    new SetToSpecificStrategy { TargetCount = 5 },
+                },
             };
 
             // Act
@@ -416,8 +379,8 @@ namespace Asaki.Tests.ComboSystem
                 {
                     new SetToSpecificStrategy { TargetCount = 4 },
                     new SetToSpecificStrategy { TargetCount = 6 },
-                    new SetToSpecificStrategy { TargetCount = 8 }
-                }
+                    new SetToSpecificStrategy { TargetCount = 8 },
+                },
             };
 
             // Act
@@ -435,7 +398,7 @@ namespace Asaki.Tests.ComboSystem
             var strategy = new CompositeResetStrategy
             {
                 Mode = CompositeMode.Sequential,
-                Strategies = new System.Collections.Generic.List<IComboResetStrategy>()
+                Strategies = new System.Collections.Generic.List<IComboResetStrategy>(),
             };
 
             // Act
@@ -454,9 +417,9 @@ namespace Asaki.Tests.ComboSystem
             {
                 Strategies = new System.Collections.Generic.List<IComboResetStrategy>
                 {
-                    new KeepCountStrategy(),      // ShouldReset = false
-                    new ResetToZeroStrategy()     // ShouldReset = true
-                }
+                    new KeepCountStrategy(), // ShouldReset = false
+                    new ResetToZeroStrategy(), // ShouldReset = true
+                },
             };
 
             // Act & Assert
@@ -508,7 +471,10 @@ namespace Asaki.Tests.ComboSystem
             context.InterruptReason = Asaki.Plungin.ComboSystem.InterruptReason.Damaged;
 
             // Assert
-            Assert.AreEqual(Asaki.Plungin.ComboSystem.InterruptReason.Damaged, context.InterruptReason);
+            Assert.AreEqual(
+                Asaki.Plungin.ComboSystem.InterruptReason.Damaged,
+                context.InterruptReason
+            );
         }
 
         #endregion

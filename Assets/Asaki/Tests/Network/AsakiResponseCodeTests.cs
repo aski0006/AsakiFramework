@@ -53,7 +53,9 @@ namespace Asaki.Tests.Network
             // Act & Assert
             Assert.IsTrue(AsakiResponseCode.IsClientError(AsakiResponseCode.InvalidParameter));
             Assert.IsTrue(AsakiResponseCode.IsClientError(AsakiResponseCode.MissingParameter));
-            Assert.IsTrue(AsakiResponseCode.IsClientError(AsakiResponseCode.InvalidParameterFormat));
+            Assert.IsTrue(
+                AsakiResponseCode.IsClientError(AsakiResponseCode.InvalidParameterFormat)
+            );
             Assert.IsTrue(AsakiResponseCode.IsClientError(1000));
             Assert.IsTrue(AsakiResponseCode.IsClientError(1999));
         }
@@ -105,7 +107,9 @@ namespace Asaki.Tests.Network
         {
             // Act & Assert
             Assert.IsTrue(AsakiResponseCode.IsResourceError(AsakiResponseCode.ResourceNotFound));
-            Assert.IsTrue(AsakiResponseCode.IsResourceError(AsakiResponseCode.ResourceAlreadyExists));
+            Assert.IsTrue(
+                AsakiResponseCode.IsResourceError(AsakiResponseCode.ResourceAlreadyExists)
+            );
             Assert.IsTrue(AsakiResponseCode.IsResourceError(AsakiResponseCode.ResourceBusy));
             Assert.IsTrue(AsakiResponseCode.IsResourceError(3000));
             Assert.IsTrue(AsakiResponseCode.IsResourceError(3999));
@@ -184,16 +188,46 @@ namespace Asaki.Tests.Network
         public void GetDefaultMessage_WithKnownCodes_ReturnsCorrectMessages()
         {
             // Act & Assert
-            Assert.AreEqual("操作成功", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.Success));
-            Assert.AreEqual("操作失败", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.GeneralError));
-            Assert.AreEqual("参数错误", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.InvalidParameter));
-            Assert.AreEqual("缺少必要参数", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.MissingParameter));
-            Assert.AreEqual("未授权", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.Unauthorized));
-            Assert.AreEqual("登录已过期，请重新登录", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.TokenExpired));
-            Assert.AreEqual("请求的资源不存在", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.ResourceNotFound));
-            Assert.AreEqual("网络连接失败", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.NetworkError));
-            Assert.AreEqual("请求超时，请稍后重试", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.RequestTimeout));
-            Assert.AreEqual("服务器内部错误", AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.ServerError));
+            Assert.AreEqual(
+                "操作成功",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.Success)
+            );
+            Assert.AreEqual(
+                "操作失败",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.GeneralError)
+            );
+            Assert.AreEqual(
+                "参数错误",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.InvalidParameter)
+            );
+            Assert.AreEqual(
+                "缺少必要参数",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.MissingParameter)
+            );
+            Assert.AreEqual(
+                "未授权",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.Unauthorized)
+            );
+            Assert.AreEqual(
+                "登录已过期，请重新登录",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.TokenExpired)
+            );
+            Assert.AreEqual(
+                "请求的资源不存在",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.ResourceNotFound)
+            );
+            Assert.AreEqual(
+                "网络连接失败",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.NetworkError)
+            );
+            Assert.AreEqual(
+                "请求超时，请稍后重试",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.RequestTimeout)
+            );
+            Assert.AreEqual(
+                "服务器内部错误",
+                AsakiResponseCode.GetDefaultMessage(AsakiResponseCode.ServerError)
+            );
         }
 
         [Test]

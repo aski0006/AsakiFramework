@@ -50,7 +50,7 @@ namespace Asaki.Tests.UI
             // AsakiUIConfig 是可序列化POCO类，不是ScriptableObject
             _config = new AsakiUIConfig
             {
-                ResourceReleaseDelaySeconds = 2f // 2秒延迟
+                ResourceReleaseDelaySeconds = 2f, // 2秒延迟
             };
         }
 
@@ -108,7 +108,11 @@ namespace Asaki.Tests.UI
             Assert.AreEqual(0, _mockResourceService.ReleaseCallCount, "应无释放");
 
             // Assert - 检查资源是否未释放（仍在延迟队列中）
-            Assert.AreEqual(0, _mockResourceService.ReleaseCallCount, "资源应仍在延迟队列中，未释放");
+            Assert.AreEqual(
+                0,
+                _mockResourceService.ReleaseCallCount,
+                "资源应仍在延迟队列中，未释放"
+            );
             bool canReuse = _mockResourceService.HasAsset(assetPath);
             Assert.IsTrue(canReuse, "资源应存在且可被复用");
         }
@@ -236,7 +240,11 @@ namespace Asaki.Tests.UI
 
             // Act - 第一次关闭
             yield return CloseWindowAsync(mockWindow).ToCoroutine();
-            Assert.AreEqual(0, _mockResourceService.ReleaseCallCount, "第一次关闭后应无释放（延迟中）");
+            Assert.AreEqual(
+                0,
+                _mockResourceService.ReleaseCallCount,
+                "第一次关闭后应无释放（延迟中）"
+            );
 
             // Act - 模拟快速再次关闭同一资源（模拟复用后快速关闭）
             // 创建一个新窗口但使用相同资源路径
@@ -244,7 +252,11 @@ namespace Asaki.Tests.UI
             yield return CloseWindowAsync(mockWindow2).ToCoroutine();
 
             // Assert - 此时应该已经释放了旧的句柄（因为同一资源路径），但只应释放一次
-            Assert.AreEqual(1, _mockResourceService.ReleaseCallCount, "快速关闭多次应只释放一次旧资源");
+            Assert.AreEqual(
+                1,
+                _mockResourceService.ReleaseCallCount,
+                "快速关闭多次应只释放一次旧资源"
+            );
 
             // Act - 等待延迟时间
             _mockSimulationService.SimulateTicks(2.5f);
@@ -275,13 +287,21 @@ namespace Asaki.Tests.UI
             yield return CloseWindowAsync(mockWindow3).ToCoroutine();
 
             // Assert - 由于每次关闭都会释放旧的并添加新的，应该只有2次释放（window1和window2的）
-            Assert.AreEqual(2, _mockResourceService.ReleaseCallCount, "三次快速关闭应只释放两次旧资源");
+            Assert.AreEqual(
+                2,
+                _mockResourceService.ReleaseCallCount,
+                "三次快速关闭应只释放两次旧资源"
+            );
 
             // Act - 等待延迟时间
             _mockSimulationService.SimulateTicks(2.5f);
 
             // Assert - 最后应该总共3次释放
-            Assert.AreEqual(3, _mockResourceService.ReleaseCallCount, "延迟到期后应释放最后一个资源");
+            Assert.AreEqual(
+                3,
+                _mockResourceService.ReleaseCallCount,
+                "延迟到期后应释放最后一个资源"
+            );
         }
 
         [UnityTest]
@@ -332,7 +352,7 @@ namespace Asaki.Tests.UI
                 _config,
                 new Vector2(1920, 1080),
                 0.5f,
-               null, // eventService
+                null, // eventService
                 _mockResourceService,
                 _mockPoolService
             );

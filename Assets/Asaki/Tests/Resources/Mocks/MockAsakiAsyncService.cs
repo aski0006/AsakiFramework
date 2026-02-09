@@ -28,14 +28,24 @@ namespace Asaki.Tests.Resources.Mocks
         {
             if (seconds <= 0)
                 return UniTask.CompletedTask;
-            return UniTask.Delay(TimeSpan.FromSeconds(seconds), false, PlayerLoopTiming.Update, token);
+            return UniTask.Delay(
+                TimeSpan.FromSeconds(seconds),
+                false,
+                PlayerLoopTiming.Update,
+                token
+            );
         }
 
         public UniTask WaitSecondsUnscaled(float seconds, CancellationToken token = default)
         {
             if (seconds <= 0)
                 return UniTask.CompletedTask;
-            return UniTask.Delay(TimeSpan.FromSeconds(seconds), true, PlayerLoopTiming.Update, token);
+            return UniTask.Delay(
+                TimeSpan.FromSeconds(seconds),
+                true,
+                PlayerLoopTiming.Update,
+                token
+            );
         }
 
         public UniTask WaitFrames(int count, CancellationToken token = default)
@@ -67,11 +77,16 @@ namespace Asaki.Tests.Resources.Mocks
             return UniTask.WaitWhile(predicate, PlayerLoopTiming.Update, token);
         }
 
-        public async UniTask<bool> WaitUntil(Func<bool> predicate, float timeoutSeconds, CancellationToken token = default)
+        public async UniTask<bool> WaitUntil(
+            Func<bool> predicate,
+            float timeoutSeconds,
+            CancellationToken token = default
+        )
         {
             try
             {
-                await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, token)
+                await UniTask
+                    .WaitUntil(predicate, PlayerLoopTiming.Update, token)
                     .Timeout(TimeSpan.FromSeconds(timeoutSeconds));
                 return true;
             }
@@ -85,7 +100,11 @@ namespace Asaki.Tests.Resources.Mocks
             }
         }
 
-        public UniTask<bool> WaitWhile(Func<bool> predicate, float timeoutSeconds, CancellationToken token = default)
+        public UniTask<bool> WaitWhile(
+            Func<bool> predicate,
+            float timeoutSeconds,
+            CancellationToken token = default
+        )
         {
             return WaitUntil(() => !predicate(), timeoutSeconds, token);
         }
@@ -106,7 +125,12 @@ namespace Asaki.Tests.Resources.Mocks
             return taskFunc();
         }
 
-        public async UniTask DelayedCall(float delaySeconds, Action action, CancellationToken token = default, bool unscaledTime = false)
+        public async UniTask DelayedCall(
+            float delaySeconds,
+            Action action,
+            CancellationToken token = default,
+            bool unscaledTime = false
+        )
         {
             if (delaySeconds <= 0)
             {
@@ -114,7 +138,12 @@ namespace Asaki.Tests.Resources.Mocks
                 return;
             }
 
-            await UniTask.Delay(TimeSpan.FromSeconds(delaySeconds), unscaledTime, PlayerLoopTiming.Update, token);
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(delaySeconds),
+                unscaledTime,
+                PlayerLoopTiming.Update,
+                token
+            );
 
             if (!token.IsCancellationRequested)
                 action?.Invoke();
@@ -128,7 +157,11 @@ namespace Asaki.Tests.Resources.Mocks
                 action?.Invoke();
         }
 
-        public async UniTask When(Func<bool> condition, Action action, CancellationToken token = default)
+        public async UniTask When(
+            Func<bool> condition,
+            Action action,
+            CancellationToken token = default
+        )
         {
             await UniTask.WaitUntil(condition, PlayerLoopTiming.Update, token);
 
@@ -146,7 +179,10 @@ namespace Asaki.Tests.Resources.Mocks
             return UniTask.WhenAny(tasks).AttachExternalCancellation(token);
         }
 
-        public async UniTask Sequence(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+        public async UniTask Sequence(
+            IEnumerable<Func<UniTask>> actions,
+            CancellationToken token = default
+        )
         {
             foreach (var action in actions)
             {
@@ -156,7 +192,10 @@ namespace Asaki.Tests.Resources.Mocks
             }
         }
 
-        public async UniTask Parallel(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+        public async UniTask Parallel(
+            IEnumerable<Func<UniTask>> actions,
+            CancellationToken token = default
+        )
         {
             var tasks = new List<UniTask>();
             foreach (var action in actions)
@@ -166,7 +205,12 @@ namespace Asaki.Tests.Resources.Mocks
             await UniTask.WhenAll(tasks).AttachExternalCancellation(token);
         }
 
-        public async UniTask Retry(Func<UniTask> action, int maxRetries = 3, float retryDelay = 1f, CancellationToken token = default)
+        public async UniTask Retry(
+            Func<UniTask> action,
+            int maxRetries = 3,
+            float retryDelay = 1f,
+            CancellationToken token = default
+        )
         {
             for (int i = 0; i < maxRetries; i++)
             {
@@ -181,12 +225,20 @@ namespace Asaki.Tests.Resources.Mocks
                         throw;
                     if (token.IsCancellationRequested)
                         return;
-                    await UniTask.Delay(TimeSpan.FromSeconds(retryDelay), true, PlayerLoopTiming.Update, token);
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(retryDelay),
+                        true,
+                        PlayerLoopTiming.Update,
+                        token
+                    );
                 }
             }
         }
 
-        public async UniTask WaitCustom(IAsakiWaitSource waitSource, CancellationToken token = default)
+        public async UniTask WaitCustom(
+            IAsakiWaitSource waitSource,
+            CancellationToken token = default
+        )
         {
             while (!waitSource.IsCompleted)
             {
@@ -200,9 +252,7 @@ namespace Asaki.Tests.Resources.Mocks
             return new MockWaitBuilder(this);
         }
 
-        public void CancelAllTasks()
-        {
-        }
+        public void CancelAllTasks() { }
 
         public CancellationToken CreateLinkedToken(CancellationToken externalToken = default)
         {

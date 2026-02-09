@@ -5,6 +5,7 @@ using System.Threading;
 using Asaki.Core.Async;
 using Asaki.Core.Broker;
 using Cysharp.Threading.Tasks;
+
 namespace Asaki.Tests.Network
 {
     /// <summary>
@@ -25,14 +26,24 @@ namespace Asaki.Tests.Network
         {
             if (seconds <= 0)
                 return UniTask.CompletedTask;
-            return UniTask.Delay(TimeSpan.FromSeconds(seconds), false, PlayerLoopTiming.Update, token);
+            return UniTask.Delay(
+                TimeSpan.FromSeconds(seconds),
+                false,
+                PlayerLoopTiming.Update,
+                token
+            );
         }
 
         public UniTask WaitSecondsUnscaled(float seconds, CancellationToken token = default)
         {
             if (seconds <= 0)
                 return UniTask.CompletedTask;
-            return UniTask.Delay(TimeSpan.FromSeconds(seconds), true, PlayerLoopTiming.Update, token);
+            return UniTask.Delay(
+                TimeSpan.FromSeconds(seconds),
+                true,
+                PlayerLoopTiming.Update,
+                token
+            );
         }
 
         public UniTask WaitFrames(int count, CancellationToken token = default)
@@ -64,11 +75,16 @@ namespace Asaki.Tests.Network
             return UniTask.WaitWhile(predicate, PlayerLoopTiming.Update, token);
         }
 
-        public async UniTask<bool> WaitUntil(Func<bool> predicate, float timeoutSeconds, CancellationToken token = default)
+        public async UniTask<bool> WaitUntil(
+            Func<bool> predicate,
+            float timeoutSeconds,
+            CancellationToken token = default
+        )
         {
             try
             {
-                await UniTask.WaitUntil(predicate, PlayerLoopTiming.Update, token)
+                await UniTask
+                    .WaitUntil(predicate, PlayerLoopTiming.Update, token)
                     .Timeout(TimeSpan.FromSeconds(timeoutSeconds));
                 return true;
             }
@@ -82,7 +98,11 @@ namespace Asaki.Tests.Network
             }
         }
 
-        public UniTask<bool> WaitWhile(Func<bool> predicate, float timeoutSeconds, CancellationToken token = default)
+        public UniTask<bool> WaitWhile(
+            Func<bool> predicate,
+            float timeoutSeconds,
+            CancellationToken token = default
+        )
         {
             return WaitUntil(() => !predicate(), timeoutSeconds, token);
         }
@@ -101,7 +121,12 @@ namespace Asaki.Tests.Network
             return taskFunc();
         }
 
-        public async UniTask DelayedCall(float delaySeconds, Action action, CancellationToken token = default, bool unscaledTime = false)
+        public async UniTask DelayedCall(
+            float delaySeconds,
+            Action action,
+            CancellationToken token = default,
+            bool unscaledTime = false
+        )
         {
             if (delaySeconds <= 0)
             {
@@ -109,7 +134,12 @@ namespace Asaki.Tests.Network
                 return;
             }
 
-            await UniTask.Delay(TimeSpan.FromSeconds(delaySeconds), unscaledTime, PlayerLoopTiming.Update, token);
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(delaySeconds),
+                unscaledTime,
+                PlayerLoopTiming.Update,
+                token
+            );
 
             if (!token.IsCancellationRequested)
                 action?.Invoke();
@@ -123,7 +153,11 @@ namespace Asaki.Tests.Network
                 action?.Invoke();
         }
 
-        public async UniTask When(Func<bool> condition, Action action, CancellationToken token = default)
+        public async UniTask When(
+            Func<bool> condition,
+            Action action,
+            CancellationToken token = default
+        )
         {
             await UniTask.WaitUntil(condition, PlayerLoopTiming.Update, token);
 
@@ -141,7 +175,10 @@ namespace Asaki.Tests.Network
             return UniTask.WhenAny(tasks.ToArray()).AttachExternalCancellation(token);
         }
 
-        public async UniTask Sequence(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+        public async UniTask Sequence(
+            IEnumerable<Func<UniTask>> actions,
+            CancellationToken token = default
+        )
         {
             foreach (var action in actions)
             {
@@ -151,13 +188,21 @@ namespace Asaki.Tests.Network
             }
         }
 
-        public async UniTask Parallel(IEnumerable<Func<UniTask>> actions, CancellationToken token = default)
+        public async UniTask Parallel(
+            IEnumerable<Func<UniTask>> actions,
+            CancellationToken token = default
+        )
         {
             var tasks = actions.Select(a => a()).ToArray();
             await UniTask.WhenAll(tasks).AttachExternalCancellation(token);
         }
 
-        public async UniTask Retry(Func<UniTask> action, int maxRetries = 3, float retryDelay = 1f, CancellationToken token = default)
+        public async UniTask Retry(
+            Func<UniTask> action,
+            int maxRetries = 3,
+            float retryDelay = 1f,
+            CancellationToken token = default
+        )
         {
             for (int i = 0; i < maxRetries; i++)
             {
@@ -172,12 +217,20 @@ namespace Asaki.Tests.Network
                         throw;
                     if (token.IsCancellationRequested)
                         return;
-                    await UniTask.Delay(TimeSpan.FromSeconds(retryDelay), true, PlayerLoopTiming.Update, token);
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(retryDelay),
+                        true,
+                        PlayerLoopTiming.Update,
+                        token
+                    );
                 }
             }
         }
 
-        public async UniTask WaitCustom(IAsakiWaitSource waitSource, CancellationToken token = default)
+        public async UniTask WaitCustom(
+            IAsakiWaitSource waitSource,
+            CancellationToken token = default
+        )
         {
             while (!waitSource.IsCompleted)
             {
@@ -191,9 +244,7 @@ namespace Asaki.Tests.Network
             return new MockWaitBuilder(this);
         }
 
-        public void CancelAllTasks()
-        {
-        }
+        public void CancelAllTasks() { }
 
         public CancellationToken CreateLinkedToken(CancellationToken externalToken = default)
         {
@@ -269,23 +320,20 @@ namespace Asaki.Tests.Network
         public int PublishCallCount { get; private set; }
         public object LastPublishedEvent { get; private set; }
 
-        public void Publish<T>(T eventData) where T : struct, IAsakiEvent
+        public void Publish<T>(T eventData)
+            where T : struct, IAsakiEvent
         {
             PublishCallCount++;
             LastPublishedEvent = eventData;
         }
 
-        public void Subscribe<T>(IAsakiHandler<T> handler) where T : IAsakiEvent
-        {
-        }
+        public void Subscribe<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent { }
 
-        public void Unsubscribe<T>(IAsakiHandler<T> handler) where T : IAsakiEvent
-        {
-        }
+        public void Unsubscribe<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent { }
 
-        public void Dispose()
-        {
-        }
+        public void Dispose() { }
 
         public void Reset()
         {

@@ -28,6 +28,7 @@ namespace Asaki.Core.Resources
     public class GameObjectResourceType : SerializableResourceType
     {
         public override string TypeName => "GameObject";
+
         public override Type GetResourceType() => typeof(GameObject);
     }
 
@@ -38,6 +39,7 @@ namespace Asaki.Core.Resources
     public class Texture2DResourceType : SerializableResourceType
     {
         public override string TypeName => "Texture2D";
+
         public override Type GetResourceType() => typeof(Texture2D);
     }
 
@@ -48,6 +50,7 @@ namespace Asaki.Core.Resources
     public class SpriteResourceType : SerializableResourceType
     {
         public override string TypeName => "Sprite";
+
         public override Type GetResourceType() => typeof(Sprite);
     }
 
@@ -58,6 +61,7 @@ namespace Asaki.Core.Resources
     public class MaterialResourceType : SerializableResourceType
     {
         public override string TypeName => "Material";
+
         public override Type GetResourceType() => typeof(Material);
     }
 
@@ -68,6 +72,7 @@ namespace Asaki.Core.Resources
     public class AudioClipResourceType : SerializableResourceType
     {
         public override string TypeName => "AudioClip";
+
         public override Type GetResourceType() => typeof(AudioClip);
     }
 
@@ -78,6 +83,7 @@ namespace Asaki.Core.Resources
     public class TextAssetResourceType : SerializableResourceType
     {
         public override string TypeName => "TextAsset";
+
         public override Type GetResourceType() => typeof(TextAsset);
     }
 
@@ -88,6 +94,7 @@ namespace Asaki.Core.Resources
     public class AnimationClipResourceType : SerializableResourceType
     {
         public override string TypeName => "AnimationClip";
+
         public override Type GetResourceType() => typeof(AnimationClip);
     }
 
@@ -98,6 +105,7 @@ namespace Asaki.Core.Resources
     public class ScriptableObjectResourceType : SerializableResourceType
     {
         public override string TypeName => "ScriptableObject";
+
         public override Type GetResourceType() => typeof(ScriptableObject);
     }
 
@@ -108,6 +116,7 @@ namespace Asaki.Core.Resources
     public class ShaderResourceType : SerializableResourceType
     {
         public override string TypeName => "Shader";
+
         public override Type GetResourceType() => typeof(Shader);
     }
 
@@ -118,6 +127,7 @@ namespace Asaki.Core.Resources
     public class MeshResourceType : SerializableResourceType
     {
         public override string TypeName => "Mesh";
+
         public override Type GetResourceType() => typeof(Mesh);
     }
 
@@ -127,7 +137,9 @@ namespace Asaki.Core.Resources
     [Serializable]
     public class CustomResourceType : SerializableResourceType
     {
-        [Tooltip("类型全名，格式: 命名空间.类型名, 程序集名\n例如: UnityEngine.Video.VideoClip, UnityEngine.VideoModule")]
+        [Tooltip(
+            "类型全名，格式: 命名空间.类型名, 程序集名\n例如: UnityEngine.Video.VideoClip, UnityEngine.VideoModule"
+        )]
         public string TypeFullName = "UnityEngine.Object, UnityEngine.CoreModule";
 
         public override string TypeName => $"Custom ({TypeFullName})";

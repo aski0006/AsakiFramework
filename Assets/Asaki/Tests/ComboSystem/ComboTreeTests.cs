@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using Asaki.Plungin.ComboSystem;
 using NUnit.Framework;
 using UnityEngine;
-using Asaki.Plungin.ComboSystem;
 
 namespace Asaki.Tests.ComboSystem
 {
@@ -62,9 +62,10 @@ namespace Asaki.Tests.ComboSystem
             _comboTree.Moves = new[] { move };
 
             // 触发OnEnable来重建查找表
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -82,9 +83,10 @@ namespace Asaki.Tests.ComboSystem
         {
             // Arrange
             _comboTree.Moves = new ComboMove[0];
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -104,9 +106,10 @@ namespace Asaki.Tests.ComboSystem
             var move3 = CreateTestMove("move_3", "Move 3");
             _comboTree.Moves = new[] { move1, move2, move3 };
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act & Assert
@@ -126,7 +129,7 @@ namespace Asaki.Tests.ComboSystem
             // Arrange
             var move1 = CreateTestMove("move_1", "Move 1");
             var move2 = CreateTestMove("move_2", "Move 2");
-            
+
             _comboTree.Moves = new[] { move1, move2 };
             _comboTree.Transitions = new[]
             {
@@ -134,13 +137,14 @@ namespace Asaki.Tests.ComboSystem
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_2",
-                    InputType = "LightAttack"
-                }
+                    InputType = "LightAttack",
+                },
             };
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -158,7 +162,7 @@ namespace Asaki.Tests.ComboSystem
             // Arrange
             var move1 = CreateTestMove("move_1", "Move 1");
             var move2 = CreateTestMove("move_2", "Move 2");
-            
+
             _comboTree.Moves = new[] { move1, move2 };
             _comboTree.Transitions = new[]
             {
@@ -166,13 +170,14 @@ namespace Asaki.Tests.ComboSystem
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_2",
-                    InputType = "LightAttack"
-                }
+                    InputType = "LightAttack",
+                },
             };
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -190,7 +195,7 @@ namespace Asaki.Tests.ComboSystem
             var move1 = CreateTestMove("move_1", "Move 1");
             var move2 = CreateTestMove("move_2", "Move 2");
             var move3 = CreateTestMove("move_3", "Move 3");
-            
+
             _comboTree.Moves = new[] { move1, move2, move3 };
             _comboTree.Transitions = new[]
             {
@@ -198,19 +203,20 @@ namespace Asaki.Tests.ComboSystem
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_2",
-                    InputType = "LightAttack"
+                    InputType = "LightAttack",
                 },
                 new ComboTransition
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_3",
-                    InputType = "LightAttack"
-                }
+                    InputType = "LightAttack",
+                },
             };
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -233,7 +239,7 @@ namespace Asaki.Tests.ComboSystem
             var move1 = CreateTestMove("move_1", "Move 1");
             var move2 = CreateTestMove("move_2", "Move 2");
             var move3 = CreateTestMove("move_3", "Move 3");
-            
+
             _comboTree.Moves = new[] { move1, move2, move3 };
             _comboTree.Transitions = new[]
             {
@@ -241,19 +247,20 @@ namespace Asaki.Tests.ComboSystem
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_2",
-                    InputType = "LightAttack"
+                    InputType = "LightAttack",
                 },
                 new ComboTransition
                 {
                     FromMoveId = "move_1",
                     ToMoveId = "move_3",
-                    InputType = "HeavyAttack"
-                }
+                    InputType = "HeavyAttack",
+                },
             };
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -271,9 +278,10 @@ namespace Asaki.Tests.ComboSystem
             _comboTree.Moves = new ComboMove[0];
             _comboTree.Transitions = new ComboTransition[0];
 
-            var method = typeof(ComboTree).GetMethod("OnEnable", 
-                System.Reflection.BindingFlags.NonPublic | 
-                System.Reflection.BindingFlags.Instance);
+            var method = typeof(ComboTree).GetMethod(
+                "OnEnable",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
             method?.Invoke(_comboTree, null);
 
             // Act
@@ -297,7 +305,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 FromMoveId = "",
                 ToMoveId = "move_2",
-                InputType = "LightAttack"
+                InputType = "LightAttack",
             };
 
             // Assert
@@ -313,7 +321,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 FromMoveId = "move_1",
                 ToMoveId = "",
-                InputType = "LightAttack"
+                InputType = "LightAttack",
             };
 
             // Assert
@@ -329,7 +337,7 @@ namespace Asaki.Tests.ComboSystem
             {
                 FromMoveId = "move_1",
                 ToMoveId = "move_2",
-                InputType = "LightAttack"
+                InputType = "LightAttack",
             };
 
             // Assert
@@ -349,7 +357,7 @@ namespace Asaki.Tests.ComboSystem
                 AnimationStateName = $"Anim_{moveId}",
                 StartupTime = 0.1f,
                 ActiveDuration = 0.2f,
-                RecoveryTime = 0.3f
+                RecoveryTime = 0.3f,
             };
         }
 

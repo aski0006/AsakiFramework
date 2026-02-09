@@ -176,7 +176,12 @@ namespace Asaki.Unity.Services.UI
                 else
                 {
                     // [Step 1] 检查是否有可复用的延迟释放资源
-                    if (TryGetReusableHandle(info.AssetPath, out AsakiUIResourceHandleAdapter reusableHandle))
+                    if (
+                        TryGetReusableHandle(
+                            info.AssetPath,
+                            out AsakiUIResourceHandleAdapter reusableHandle
+                        )
+                    )
                     {
                         // 复用已有资源，无需重新加载
                         instance = Object.Instantiate(reusableHandle.Asset, parent);
@@ -190,7 +195,10 @@ namespace Asaki.Unity.Services.UI
                     else
                     {
                         // [Step 1] 异步加载
-                        rawHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
+                        rawHandle = await _resourceService.LoadAsync<GameObject>(
+                            info.AssetPath,
+                            token
+                        );
                         if (!rawHandle.IsValid)
                             return null;
                         if (token.IsCancellationRequested)
@@ -331,7 +339,9 @@ namespace Asaki.Unity.Services.UI
                 if (info.RemainingSeconds <= 0)
                 {
                     // 时间到，真正释放资源
-                    ALog.Info($"[AsakiUI] Delay the expiration of the released resource: {info.AssetPath}");
+                    ALog.Info(
+                        $"[AsakiUI] Delay the expiration of the released resource: {info.AssetPath}"
+                    );
                     info.Handle.Dispose();
                     keysToRemove.Add(kvp.Key);
                 }
@@ -598,7 +608,12 @@ namespace Asaki.Unity.Services.UI
                 if (releaseDelaySeconds > 0)
                 {
                     // 延迟释放：检查是否已有相同资源的待释放项（快速重开重关场景）
-                    if (_pendingReleaseHandles.TryGetValue(assetPath, out PendingReleaseInfo existingInfo))
+                    if (
+                        _pendingReleaseHandles.TryGetValue(
+                            assetPath,
+                            out PendingReleaseInfo existingInfo
+                        )
+                    )
                     {
                         // 已存在，说明是快速重开重关，释放旧的句柄（防止重复释放同一句柄）
                         existingInfo.Handle.Dispose();
@@ -610,10 +625,12 @@ namespace Asaki.Unity.Services.UI
                     {
                         AssetPath = assetPath,
                         Handle = handle,
-                        RemainingSeconds = releaseDelaySeconds
+                        RemainingSeconds = releaseDelaySeconds,
                     };
 
-                    ALog.Info($"[AsakiUI] The resource enters the delayed release queue: {assetPath}, delay: {releaseDelaySeconds}s");
+                    ALog.Info(
+                        $"[AsakiUI] The resource enters the delayed release queue: {assetPath}, delay: {releaseDelaySeconds}s"
+                    );
                 }
                 else
                 {

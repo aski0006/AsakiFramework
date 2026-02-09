@@ -25,13 +25,17 @@ namespace Asaki.Unity
     /// <item><description>处理场景切换时的组件生命周期</description></item>
     /// </list>
     /// </remarks>
-    public sealed class AsakiMonoLifecycleManager : IAsakiHandler<OnAsakiFrameworkReadyEvent>, IDisposable
+    public sealed class AsakiMonoLifecycleManager
+        : IAsakiHandler<OnAsakiFrameworkReadyEvent>,
+            IDisposable
     {
         // ===================================================================
         // 单例模式
         // ===================================================================
 
-        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() => new AsakiMonoLifecycleManager());
+        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() =>
+            new AsakiMonoLifecycleManager()
+        );
         public static AsakiMonoLifecycleManager Instance => _instance.Value;
 
         // ===================================================================
@@ -53,7 +57,7 @@ namespace Asaki.Unity
             Activated,
 
             /// <summary>已销毁</summary>
-            Destroyed
+            Destroyed,
         }
 
         /// <summary>
@@ -139,7 +143,9 @@ namespace Asaki.Unity
         {
             if (_isDisposed)
             {
-                ALog.Error("[AsakiMonoLifecycleManager] Cannot register component - manager is disposed.");
+                ALog.Error(
+                    "[AsakiMonoLifecycleManager] Cannot register component - manager is disposed."
+                );
                 return -1;
             }
 
@@ -201,7 +207,9 @@ namespace Asaki.Unity
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiMonoLifecycleManager] Failed to process component {component.GetType().Name}: {ex}");
+                ALog.Error(
+                    $"[AsakiMonoLifecycleManager] Failed to process component {component.GetType().Name}: {ex}"
+                );
             }
         }
 
@@ -224,7 +232,9 @@ namespace Asaki.Unity
 
         public void OnEvent(OnAsakiFrameworkReadyEvent e)
         {
-            ALog.Info("[AsakiMonoLifecycleManager] Framework ready - processing pending components...");
+            ALog.Info(
+                "[AsakiMonoLifecycleManager] Framework ready - processing pending components..."
+            );
 
             _isFrameworkReady = true;
 
@@ -296,7 +306,9 @@ namespace Asaki.Unity
 
             if (count > 0)
             {
-                ALog.Info($"[AsakiMonoLifecycleManager] Registered and processed {count} components from new scene.");
+                ALog.Info(
+                    $"[AsakiMonoLifecycleManager] Registered and processed {count} components from new scene."
+                );
             }
         }
 
@@ -324,7 +336,9 @@ namespace Asaki.Unity
 
                 if (toRemove.Count > 0)
                 {
-                    ALog.Info($"[AsakiMonoLifecycleManager] Cleaned up {toRemove.Count} components from unloaded scene.");
+                    ALog.Info(
+                        $"[AsakiMonoLifecycleManager] Cleaned up {toRemove.Count} components from unloaded scene."
+                    );
                 }
             }
         }
@@ -363,7 +377,9 @@ namespace Asaki.Unity
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiMonoLifecycleManager] Injection failed for {state.Component.GetType().Name}: {ex}");
+                    ALog.Error(
+                        $"[AsakiMonoLifecycleManager] Injection failed for {state.Component.GetType().Name}: {ex}"
+                    );
                 }
             }
         }
@@ -393,7 +409,9 @@ namespace Asaki.Unity
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiMonoLifecycleManager] Activation failed for {state.Component.GetType().Name}: {ex}");
+                    ALog.Error(
+                        $"[AsakiMonoLifecycleManager] Activation failed for {state.Component.GetType().Name}: {ex}"
+                    );
                 }
             }
         }
@@ -435,7 +453,7 @@ namespace Asaki.Unity
                     TotalTracked = _trackedComponents.Count,
                     PendingInjection = 0,
                     PendingActivation = 0,
-                    Activated = 0
+                    Activated = 0,
                 };
 
                 foreach (var kvp in _trackedComponents)
@@ -475,9 +493,9 @@ namespace Asaki.Unity
 
             public override string ToString()
             {
-                return $"[LifecycleStats] Total: {TotalTracked}, PendingInject: {PendingInjection}, " +
-                       $"PendingActivate: {PendingActivation}, Activated: {Activated}, " +
-                       $"QueueInject: {QueueInjection}, QueueActivate: {QueueActivation}";
+                return $"[LifecycleStats] Total: {TotalTracked}, PendingInject: {PendingInjection}, "
+                    + $"PendingActivate: {PendingActivation}, Activated: {Activated}, "
+                    + $"QueueInject: {QueueInjection}, QueueActivate: {QueueActivation}";
             }
         }
     }

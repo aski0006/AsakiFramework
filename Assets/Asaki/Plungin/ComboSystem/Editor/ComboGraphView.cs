@@ -18,7 +18,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
     {
         public new ComboGraphAsset GraphAsset => base.GraphAsset as ComboGraphAsset;
 
-        public ComboGraphView(ComboGraphAsset graph) : base(graph)
+        public ComboGraphView(ComboGraphAsset graph)
+            : base(graph)
         {
             // 连招图特定的设置
             SetupComboToolbar();
@@ -35,28 +36,22 @@ namespace Asaki.Plungin.ComboSystem.Editor
             // 导出按钮
             var exportButton = new ToolbarButton(() => ExportComboTree())
             {
-                text = "导出 ComboTree"
+                text = "导出 ComboTree",
             };
             toolbar.Add(exportButton);
 
             // 验证按钮
-            var validateButton = new ToolbarButton(() => ValidateGraph())
-            {
-                text = "验证"
-            };
+            var validateButton = new ToolbarButton(() => ValidateGraph()) { text = "验证" };
             toolbar.Add(validateButton);
 
             // 自动布局按钮
-            var layoutButton = new ToolbarButton(() => AutoLayout())
-            {
-                text = "自动布局"
-            };
+            var layoutButton = new ToolbarButton(() => AutoLayout()) { text = "自动布局" };
             toolbar.Add(layoutButton);
 
             // 输入类型管理按钮
             var inputTypesButton = new ToolbarButton(() => ShowInputTypeManager())
             {
-                text = "输入类型"
+                text = "输入类型",
             };
             toolbar.Add(inputTypesButton);
 
@@ -131,7 +126,11 @@ namespace Asaki.Plungin.ComboSystem.Editor
             foreach (var node in GraphAsset.Nodes)
             {
                 // EntryNode 和 EndNode 可以是孤立节点（作为起点或终点）
-                if (!connectedNodes.Contains(node.GUID) && !(node is EntryNode) && !(node is EndNode))
+                if (
+                    !connectedNodes.Contains(node.GUID)
+                    && !(node is EntryNode)
+                    && !(node is EndNode)
+                )
                 {
                     warnings.Add($"孤立节点: {node.Title}");
                 }
@@ -156,7 +155,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 string message = "";
                 if (errors.Count > 0)
                 {
-                    message += $"错误 ({errors.Count}):\n" + string.Join("\n", errors.Take(10)) + "\n\n";
+                    message +=
+                        $"错误 ({errors.Count}):\n" + string.Join("\n", errors.Take(10)) + "\n\n";
                 }
                 if (warnings.Count > 0)
                 {
@@ -194,9 +194,16 @@ namespace Asaki.Plungin.ComboSystem.Editor
             PopulateView();
         }
 
-        void LayoutNodeRecursive(AsakiNodeBase node, ref float x, float y, float levelHeight, HashSet<string> visited)
+        void LayoutNodeRecursive(
+            AsakiNodeBase node,
+            ref float x,
+            float y,
+            float levelHeight,
+            HashSet<string> visited
+        )
         {
-            if (visited.Contains(node.GUID)) return;
+            if (visited.Contains(node.GUID))
+                return;
             visited.Add(node.GUID);
 
             node.Position = new Vector2(x, y);

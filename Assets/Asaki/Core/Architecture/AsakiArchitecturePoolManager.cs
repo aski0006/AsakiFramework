@@ -84,6 +84,77 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
+        /// 尝试从池租借对象，如果池不存在或池为空则返回false
+        /// 用于非预热类型的Command/Query，此时应使用new创建
+        /// 关键：即使池存在，如果池为空也不从工厂创建对象，确保行为可预测
+        /// </summary>
+        public static bool TryRent<T>(out T obj)
+            where T : class, new()
+        {
+            obj = null;
+
+            if (!_isInitialized)
+                return false;
+
+            string poolKey = GetPoolKey<T>();
+            IAsakiPool<T> pool;
+
+            try
+            {
+                pool = _poolService.GetPool<T>(poolKey);
+            }
+            catch (ObjectDisposedException)
+            {
+                return false;
+            }
+
+            if (pool == null)
+                return false;
+
+            // 关键：检查池中是否有可用对象
+            // 使用Statistics.InactiveCount（池内可用对象数量）
+            // 如果池为空，则返回false，让调用方使用new
+            if (pool.Statistics.InactiveCount <= 0)
+                return false;
+
+            obj = pool.Get();
+            return obj != null;
+        }
+
+        /// <summary>
+        /// 异步尝试从池租借对象
+        /// </summary>
+        public static async UniTask<(bool success, T obj)> TryRentAsync<T>(
+            CancellationToken token = default
+        )
+            where T : class, new()
+        {
+            EnsureInitialized();
+
+            string poolKey = GetPoolKey<T>();
+            IAsakiPool<T> pool;
+
+            try
+            {
+                pool = _poolService.GetPool<T>(poolKey);
+            }
+            catch (ObjectDisposedException)
+            {
+                return (false, null);
+            }
+
+            if (pool == null)
+                return (false, null);
+
+            // 关键：检查池中是否有可用对象
+            if (pool.Statistics.InactiveCount <= 0)
+                return (false, null);
+
+            T obj = await pool.GetAsync(token);
+            return (true, obj);
+        }
+
+        /// <summary>
         /// 归还对象到池
         /// </summary>
         public static bool Return<T>(T obj)
@@ -114,6 +185,36 @@ namespace Asaki.Core.Architecture
             }
 
             return pool.Return(obj);
+        }
+
+        /// <summary>
+        /// 尝试归还对象到池，如果池不存在则直接丢弃（由GC回收）
+        /// 用于非预热类型的Command/Query
+        /// </summary>
+        public static void TryReturn<T>(T obj)
+            where T : class
+        {
+            if (!_isInitialized || obj == null || _poolService == null)
+                return;
+
+            string poolKey = GetPoolKey<T>();
+            IAsakiPool<T> pool;
+
+            try
+            {
+                pool = _poolService.GetPool<T>(poolKey);
+            }
+            catch (ObjectDisposedException)
+            {
+                // 池服务已被处置，对象将由 GC 回收
+                return;
+            }
+
+            // 池不存在时不记录警告，直接让GC回收
+            if (pool == null)
+                return;
+
+            pool.Return(obj);
         }
 
         /// <summary>

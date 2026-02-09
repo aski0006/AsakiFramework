@@ -412,7 +412,8 @@ namespace Asaki.Unity.Services.UI
         /// <param name="parent">父变换</param>
         /// <param name="usePool">是否使用对象池</param>
         /// <returns>窗口实例</returns>
-        public static T Create<T>(T prefab, Transform parent, bool usePool = false) where T : AsakiUIWindow
+        public static T Create<T>(T prefab, Transform parent, bool usePool = false)
+            where T : AsakiUIWindow
         {
             if (prefab == null)
             {

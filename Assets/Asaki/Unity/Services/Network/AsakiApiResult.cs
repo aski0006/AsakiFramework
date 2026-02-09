@@ -102,7 +102,10 @@ namespace Asaki.Unity.Services.Network
         /// <summary>
         /// 匹配处理结果（带返回值）
         /// </summary>
-        public TResult Match<TResult>(Func<TResponse, TResult> onSuccess, Func<int, string, TResult> onFailure)
+        public TResult Match<TResult>(
+            Func<TResponse, TResult> onSuccess,
+            Func<int, string, TResult> onFailure
+        )
         {
             if (IsSuccess)
             {
@@ -161,7 +164,8 @@ namespace Asaki.Unity.Services.Network
         /// 将UniTask转换为API结果
         /// </summary>
         public static async UniTask<AsakiApiResult<TResponse>> ToApiResult<TResponse>(
-            this UniTask<TResponse> task)
+            this UniTask<TResponse> task
+        )
             where TResponse : IAsakiResponse
         {
             try

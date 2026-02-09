@@ -76,30 +76,31 @@ namespace Asaki.Editor.Bootstrapper
 
         private void InitStyles()
         {
-            if (_headerStyle != null) return;
+            if (_headerStyle != null)
+                return;
 
             _headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
                 fontSize = 14,
-                margin = new RectOffset(0, 0, 10, 5)
+                margin = new RectOffset(0, 0, 10, 5),
             };
 
             _boxStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 padding = new RectOffset(10, 10, 10, 10),
-                margin = new RectOffset(0, 0, 5, 10)
+                margin = new RectOffset(0, 0, 5, 10),
             };
 
             _warningStyle = new GUIStyle(EditorStyles.label)
             {
                 normal = { textColor = new Color(1f, 0.8f, 0.2f) },
-                wordWrap = true
+                wordWrap = true,
             };
 
             _successStyle = new GUIStyle(EditorStyles.label)
             {
                 normal = { textColor = new Color(0.2f, 0.8f, 0.2f) },
-                wordWrap = true
+                wordWrap = true,
             };
         }
 
@@ -119,7 +120,11 @@ namespace Asaki.Editor.Bootstrapper
             GUILayout.Space(10);
 
             // 验证状态
-            _showValidationSection = EditorGUILayout.Foldout(_showValidationSection, "📋 场景验证状态", true);
+            _showValidationSection = EditorGUILayout.Foldout(
+                _showValidationSection,
+                "📋 场景验证状态",
+                true
+            );
             if (_showValidationSection)
             {
                 DrawValidationStatus();
@@ -128,7 +133,11 @@ namespace Asaki.Editor.Bootstrapper
             GUILayout.Space(10);
 
             // Bootstrapper 部分
-            _showBootstrapperSection = EditorGUILayout.Foldout(_showBootstrapperSection, "🚀 Bootstrapper", true);
+            _showBootstrapperSection = EditorGUILayout.Foldout(
+                _showBootstrapperSection,
+                "🚀 Bootstrapper",
+                true
+            );
             if (_showBootstrapperSection)
             {
                 DrawBootstrapperSection();
@@ -137,7 +146,11 @@ namespace Asaki.Editor.Bootstrapper
             GUILayout.Space(10);
 
             // Config 部分
-            _showConfigSection = EditorGUILayout.Foldout(_showConfigSection, "⚙️ 配置资源 (AsakiConfig)", true);
+            _showConfigSection = EditorGUILayout.Foldout(
+                _showConfigSection,
+                "⚙️ 配置资源 (AsakiConfig)",
+                true
+            );
             if (_showConfigSection)
             {
                 DrawConfigSection();
@@ -146,7 +159,11 @@ namespace Asaki.Editor.Bootstrapper
             GUILayout.Space(10);
 
             // Scene Context 部分
-            _showSceneContextSection = EditorGUILayout.Foldout(_showSceneContextSection, "🎯 场景上下文 (SceneContext)", true);
+            _showSceneContextSection = EditorGUILayout.Foldout(
+                _showSceneContextSection,
+                "🎯 场景上下文 (SceneContext)",
+                true
+            );
             if (_showSceneContextSection)
             {
                 DrawSceneContextSection();
@@ -227,7 +244,10 @@ namespace Asaki.Editor.Bootstrapper
             }
             else
             {
-                GUILayout.Label(isOptional ? "可选（运行时自动创建）" : "缺失", isOptional ? EditorStyles.label : _warningStyle);
+                GUILayout.Label(
+                    isOptional ? "可选（运行时自动创建）" : "缺失",
+                    isOptional ? EditorStyles.label : _warningStyle
+                );
             }
 
             EditorGUILayout.EndHorizontal();
@@ -240,7 +260,12 @@ namespace Asaki.Editor.Bootstrapper
             if (_bootstrapper != null)
             {
                 GUILayout.Label("状态：已存在", _successStyle);
-                EditorGUILayout.ObjectField("Bootstrapper", _bootstrapper, typeof(AsakiBootstrapper), true);
+                EditorGUILayout.ObjectField(
+                    "Bootstrapper",
+                    _bootstrapper,
+                    typeof(AsakiBootstrapper),
+                    true
+                );
 
                 GUILayout.Space(10);
 
@@ -258,7 +283,10 @@ namespace Asaki.Editor.Bootstrapper
             else
             {
                 GUILayout.Label("状态：未添加", _warningStyle);
-                GUILayout.Label("Bootstrapper 可以在运行时自动创建，也可以手动添加到场景。", EditorStyles.wordWrappedLabel);
+                GUILayout.Label(
+                    "Bootstrapper 可以在运行时自动创建，也可以手动添加到场景。",
+                    EditorStyles.wordWrappedLabel
+                );
 
                 GUILayout.Space(10);
 
@@ -318,7 +346,12 @@ namespace Asaki.Editor.Bootstrapper
             if (_sceneContext != null)
             {
                 GUILayout.Label("状态：已存在", _successStyle);
-                EditorGUILayout.ObjectField("Scene Context", _sceneContext, typeof(AsakiSceneContext), true);
+                EditorGUILayout.ObjectField(
+                    "Scene Context",
+                    _sceneContext,
+                    typeof(AsakiSceneContext),
+                    true
+                );
 
                 GUILayout.Space(10);
 
@@ -337,7 +370,10 @@ namespace Asaki.Editor.Bootstrapper
             else
             {
                 GUILayout.Label("状态：未添加（可选）", EditorStyles.label);
-                GUILayout.Label("SceneContext 用于管理场景级别的服务。如果不需要场景特定服务，可以省略。", EditorStyles.wordWrappedLabel);
+                GUILayout.Label(
+                    "SceneContext 用于管理场景级别的服务。如果不需要场景特定服务，可以省略。",
+                    EditorStyles.wordWrappedLabel
+                );
 
                 GUILayout.Space(10);
 
@@ -357,11 +393,11 @@ namespace Asaki.Editor.Bootstrapper
 
             GUILayout.Label("关于场景切换", EditorStyles.boldLabel);
             GUILayout.Label(
-                "Bootstrapper 在首次创建时会调用 DontDestroyOnLoad()，因此它会一直存在于整个游戏生命周期中。\n\n" +
-                "当你在 A 场景添加了 Bootstrapper，切换到 B 场景开发时：\n" +
-                "• 如果 A 场景是首场景：Bootstrapper 会在场景切换后仍然存在\n" +
-                "• 如果直接从 B 场景开始 PlayMode：Bootstrapper 会自动创建\n\n" +
-                "建议：在首场景（如 Boot、Splash、MainMenu）添加 Bootstrapper，其他子场景不需要添加。",
+                "Bootstrapper 在首次创建时会调用 DontDestroyOnLoad()，因此它会一直存在于整个游戏生命周期中。\n\n"
+                    + "当你在 A 场景添加了 Bootstrapper，切换到 B 场景开发时：\n"
+                    + "• 如果 A 场景是首场景：Bootstrapper 会在场景切换后仍然存在\n"
+                    + "• 如果直接从 B 场景开始 PlayMode：Bootstrapper 会自动创建\n\n"
+                    + "建议：在首场景（如 Boot、Splash、MainMenu）添加 Bootstrapper，其他子场景不需要添加。",
                 EditorStyles.wordWrappedLabel
             );
 

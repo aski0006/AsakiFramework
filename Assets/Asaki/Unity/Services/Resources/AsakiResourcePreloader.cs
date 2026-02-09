@@ -28,9 +28,10 @@ namespace Asaki.Unity.Services.Resources
     /// <item><description>生命周期集成：与AsakiMono生命周期管理正确集成</description></item>
     /// </list>
     /// </remarks>
-    public class AsakiResourcePreloader : AsakiMono,
-        IAsakiAutoInject,
-        IAsakiInit<IAsakiResourceService>
+    public class AsakiResourcePreloader
+        : AsakiMono,
+            IAsakiAutoInject,
+            IAsakiInit<IAsakiResourceService>
     {
         #region Enums
 
@@ -49,7 +50,7 @@ namespace Asaki.Unity.Services.Resources
             Completed,
 
             /// <summary>加载失败</summary>
-            Failed
+            Failed,
         }
 
         #endregion
@@ -208,7 +209,9 @@ namespace Asaki.Unity.Services.Resources
                 }
                 else
                 {
-                    ALog.Warn($"[{nameof(AsakiResourcePreloader)}] No resources configured for preloading.");
+                    ALog.Warn(
+                        $"[{nameof(AsakiResourcePreloader)}] No resources configured for preloading."
+                    );
                 }
             }
         }
@@ -278,7 +281,9 @@ namespace Asaki.Unity.Services.Resources
                 State = PreloadState.Completed;
                 Progress = 1f;
 
-                ALog.Info($"[{nameof(AsakiResourcePreloader)}] Preload completed. Total resources: {LoadedResourceCount}");
+                ALog.Info(
+                    $"[{nameof(AsakiResourcePreloader)}] Preload completed. Total resources: {LoadedResourceCount}"
+                );
 
                 OnProgressChanged?.Invoke(1f);
                 OnCompleted?.Invoke();
@@ -339,7 +344,8 @@ namespace Asaki.Unity.Services.Resources
         /// <typeparam name="T">资源类型</typeparam>
         /// <param name="location">资源路径</param>
         /// <returns>资源实例，如果未找到则返回null</returns>
-        public T GetResource<T>(string location) where T : class
+        public T GetResource<T>(string location)
+            where T : class
         {
             if (!_resourceMap.TryGetValue(location, out var handle))
             {
@@ -349,7 +355,9 @@ namespace Asaki.Unity.Services.Resources
 
             if (!handle.IsValid)
             {
-                ALog.Warn($"[{nameof(AsakiResourcePreloader)}] Resource handle is invalid: {location}");
+                ALog.Warn(
+                    $"[{nameof(AsakiResourcePreloader)}] Resource handle is invalid: {location}"
+                );
                 return null;
             }
 
@@ -363,7 +371,8 @@ namespace Asaki.Unity.Services.Resources
         /// <param name="location">资源路径</param>
         /// <param name="resource">输出资源实例</param>
         /// <returns>是否成功获取</returns>
-        public bool TryGetResource<T>(string location, out T resource) where T : class
+        public bool TryGetResource<T>(string location, out T resource)
+            where T : class
         {
             resource = GetResource<T>(location);
             return resource != null;
@@ -387,7 +396,8 @@ namespace Asaki.Unity.Services.Resources
         public IReadOnlyList<string> GetGroupResourceLocations(string groupName)
         {
             var group = _resourceGroups.FirstOrDefault(g => g.GroupName == groupName);
-            if (group == null) return new List<string>();
+            if (group == null)
+                return new List<string>();
 
             return group.Resources.Select(r => r.Location).ToList();
         }
@@ -429,7 +439,10 @@ namespace Asaki.Unity.Services.Resources
 
             foreach (var handle in handles)
             {
-                if (_resourceMap.TryGetValue(handle.Location, out var mapHandle) && mapHandle == handle)
+                if (
+                    _resourceMap.TryGetValue(handle.Location, out var mapHandle)
+                    && mapHandle == handle
+                )
                 {
                     _resourceMap.Remove(handle.Location);
                 }
@@ -467,7 +480,10 @@ namespace Asaki.Unity.Services.Resources
 
         #region Private Methods - Loading Implementation
 
-        private async UniTask LoadGroupsSequentially(Action<float> onProgress, CancellationToken token)
+        private async UniTask LoadGroupsSequentially(
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             int totalGroups = _resourceGroups.Count;
             float[] groupProgresses = new float[totalGroups];
@@ -498,7 +514,10 @@ namespace Asaki.Unity.Services.Resources
             }
         }
 
-        private async UniTask LoadGroupsInParallel(Action<float> onProgress, CancellationToken token)
+        private async UniTask LoadGroupsInParallel(
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             int totalGroups = _resourceGroups.Count;
             float[] groupProgresses = new float[totalGroups];
@@ -535,7 +554,11 @@ namespace Asaki.Unity.Services.Resources
             }
         }
 
-        private async UniTask LoadGroupInternalAsync(ResourceGroup group, Action<float> onProgress, CancellationToken token)
+        private async UniTask LoadGroupInternalAsync(
+            ResourceGroup group,
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             var entries = group.Resources.Where(r => !string.IsNullOrEmpty(r.Location)).ToList();
 
@@ -545,10 +568,14 @@ namespace Asaki.Unity.Services.Resources
                 return;
             }
 
-            ALog.Info($"[{nameof(AsakiResourcePreloader)}] Loading group '{group.GroupName}' with {entries.Count} resources...");
+            ALog.Info(
+                $"[{nameof(AsakiResourcePreloader)}] Loading group '{group.GroupName}' with {entries.Count} resources..."
+            );
 
             var locations = entries.Select(e => e.Location).ToList();
-            var types = entries.Select(e => e.ResourceType?.GetResourceType() ?? typeof(Object)).ToList();
+            var types = entries
+                .Select(e => e.ResourceType?.GetResourceType() ?? typeof(Object))
+                .ToList();
 
             // 为每个资源单独加载以支持不同类型
             var handles = new List<ResHandle<Object>>();
@@ -575,7 +602,11 @@ namespace Asaki.Unity.Services.Resources
                     };
 
                     // 调用加载方法
-                    var task = (UniTask)genericMethod.Invoke(_resourceService, new object[] { entry.Location, itemProgress, token });
+                    var task = (UniTask)
+                        genericMethod.Invoke(
+                            _resourceService,
+                            new object[] { entry.Location, itemProgress, token }
+                        );
                     await task;
 
                     // 获取结果
@@ -596,7 +627,9 @@ namespace Asaki.Unity.Services.Resources
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[{nameof(AsakiResourcePreloader)}] Failed to load resource '{entry.Location}': {ex}");
+                    ALog.Error(
+                        $"[{nameof(AsakiResourcePreloader)}] Failed to load resource '{entry.Location}': {ex}"
+                    );
                     throw;
                 }
             }
@@ -613,7 +646,9 @@ namespace Asaki.Unity.Services.Resources
             onProgress?.Invoke(1f);
             OnGroupCompleted?.Invoke(group.GroupName);
 
-            ALog.Info($"[{nameof(AsakiResourcePreloader)}] Group '{group.GroupName}' loaded successfully.");
+            ALog.Info(
+                $"[{nameof(AsakiResourcePreloader)}] Group '{group.GroupName}' loaded successfully."
+            );
         }
 
         private void UpdateOverallProgress(float[] groupProgresses, Action<float> onProgress)
@@ -637,7 +672,9 @@ namespace Asaki.Unity.Services.Resources
         {
             if (host == null)
             {
-                ALog.Error($"[{nameof(AsakiResourcePreloader)}] Cannot create - host GameObject is null.");
+                ALog.Error(
+                    $"[{nameof(AsakiResourcePreloader)}] Cannot create - host GameObject is null."
+                );
                 return null;
             }
 

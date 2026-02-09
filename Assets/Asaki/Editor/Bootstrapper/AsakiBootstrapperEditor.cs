@@ -30,10 +30,10 @@ namespace Asaki.Editor.Bootstrapper
             {
                 EditorUtility.DisplayDialog(
                     "Asaki Framework",
-                    "当前场景配置正确！\n\n" +
-                    $"- Bootstrapper: {(result.HasBootstrapper ? "存在" : "不存在（运行时自动创建）")}\n" +
-                    $"- Config Asset: {(result.HasConfig ? "存在" : "不存在")}\n" +
-                    $"- Scene Context: {(result.HasSceneContext ? "存在" : "不存在（可选）")}",
+                    "当前场景配置正确！\n\n"
+                        + $"- Bootstrapper: {(result.HasBootstrapper ? "存在" : "不存在（运行时自动创建）")}\n"
+                        + $"- Config Asset: {(result.HasConfig ? "存在" : "不存在")}\n"
+                        + $"- Scene Context: {(result.HasSceneContext ? "存在" : "不存在（可选）")}",
                     "OK"
                 );
             }
@@ -77,17 +77,22 @@ namespace Asaki.Editor.Bootstrapper
 
             // 确保配置资源存在
             var config = GetOrCreateConfigAsset();
-            bootstrapper.GetType()
-                .GetField("_config", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+            bootstrapper
+                .GetType()
+                .GetField(
+                    "_config",
+                    System.Reflection.BindingFlags.NonPublic
+                        | System.Reflection.BindingFlags.Instance
+                )
                 ?.SetValue(bootstrapper, config);
 
             Undo.RegisterCreatedObjectUndo(go, "Add AsakiBootstrapper");
 
             EditorUtility.DisplayDialog(
                 "Asaki Framework",
-                "Bootstrapper 已添加到当前场景！\n\n" +
-                "注意：Bootstrapper 会在场景加载时自动设置为 DontDestroyOnLoad，\n" +
-                "切换到其他场景时无需再次添加。",
+                "Bootstrapper 已添加到当前场景！\n\n"
+                    + "注意：Bootstrapper 会在场景加载时自动设置为 DontDestroyOnLoad，\n"
+                    + "切换到其他场景时无需再次添加。",
                 "OK"
             );
 
@@ -124,8 +129,8 @@ namespace Asaki.Editor.Bootstrapper
 
             bool confirm = EditorUtility.DisplayDialog(
                 "Asaki Framework",
-                $"确定要删除 '{bootstrapper.gameObject.name}' 吗？\n\n" +
-                "这将从场景中移除 Bootstrapper 组件。",
+                $"确定要删除 '{bootstrapper.gameObject.name}' 吗？\n\n"
+                    + "这将从场景中移除 Bootstrapper 组件。",
                 "删除",
                 "取消"
             );
@@ -170,7 +175,8 @@ namespace Asaki.Editor.Bootstrapper
 
             public string GetErrorMessage()
             {
-                if (IsValid) return string.Empty;
+                if (IsValid)
+                    return string.Empty;
 
                 var sb = new System.Text.StringBuilder();
                 if (!HasConfig)
@@ -186,7 +192,7 @@ namespace Asaki.Editor.Bootstrapper
             {
                 HasBootstrapper = Object.FindFirstObjectByType<AsakiBootstrapper>() != null,
                 HasConfig = GetConfigAsset() != null,
-                HasSceneContext = Object.FindFirstObjectByType<AsakiSceneContext>() != null
+                HasSceneContext = Object.FindFirstObjectByType<AsakiSceneContext>() != null,
             };
 
             // 运行时只需要 Config 存在，Bootstrapper 可以自动创建
@@ -208,10 +214,10 @@ namespace Asaki.Editor.Bootstrapper
 
             EditorUtility.DisplayDialog(
                 "Asaki Framework",
-                "场景问题已修复！\n\n" +
-                "配置资源已创建。Bootstrapper 将在运行时自动创建。\n\n" +
-                "如需手动添加 Bootstrapper，请使用菜单：\n" +
-                "Asaki -> Bootstrapper -> Add Bootstrapper to Scene",
+                "场景问题已修复！\n\n"
+                    + "配置资源已创建。Bootstrapper 将在运行时自动创建。\n\n"
+                    + "如需手动添加 Bootstrapper，请使用菜单：\n"
+                    + "Asaki -> Bootstrapper -> Add Bootstrapper to Scene",
                 "OK"
             );
         }
@@ -274,7 +280,9 @@ namespace Asaki.Editor.Bootstrapper
         {
             if (GetConfigAsset() == null)
             {
-                Debug.Log("[AsakiBootstrapperEditor] Auto-creating config asset before entering PlayMode...");
+                Debug.Log(
+                    "[AsakiBootstrapperEditor] Auto-creating config asset before entering PlayMode..."
+                );
                 GetOrCreateConfigAsset();
             }
         }

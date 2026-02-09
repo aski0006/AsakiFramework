@@ -39,7 +39,11 @@ namespace Asaki.Tests.UI
         public void DefaultReferenceResolution_Is1920x1080()
         {
             // Assert
-            Assert.AreEqual(new Vector2(1920, 1080), _config.ReferenceResolution, "默认参考分辨率应为1920x1080");
+            Assert.AreEqual(
+                new Vector2(1920, 1080),
+                _config.ReferenceResolution,
+                "默认参考分辨率应为1920x1080"
+            );
         }
 
         [Test]
@@ -85,9 +89,30 @@ namespace Asaki.Tests.UI
         public void InitializeLookup_BuildsLookupCorrectly()
         {
             // Arrange
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "TestUI1", AssetPath = "Path/1" });
-            _config.UIList.Add(new UIInfo { ID = 2, Name = "TestUI2", AssetPath = "Path/2" });
-            _config.UIList.Add(new UIInfo { ID = 3, Name = "TestUI3", AssetPath = "Path/3" });
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "TestUI1",
+                    AssetPath = "Path/1",
+                }
+            );
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 2,
+                    Name = "TestUI2",
+                    AssetPath = "Path/2",
+                }
+            );
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 3,
+                    Name = "TestUI3",
+                    AssetPath = "Path/3",
+                }
+            );
 
             // Act
             _config.InitializeLookup();
@@ -108,7 +133,14 @@ namespace Asaki.Tests.UI
         public void InitializeLookup_CalledTwice_DoesNotDuplicate()
         {
             // Arrange
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "TestUI", AssetPath = "Path/1" });
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "TestUI",
+                    AssetPath = "Path/1",
+                }
+            );
             _config.InitializeLookup();
 
             // Act - 再次调用不应抛出异常
@@ -124,7 +156,14 @@ namespace Asaki.Tests.UI
         public void TryGet_NonExistentId_ReturnsFalse()
         {
             // Arrange
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "TestUI", AssetPath = "Path/1" });
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "TestUI",
+                    AssetPath = "Path/1",
+                }
+            );
             _config.InitializeLookup();
 
             // Act & Assert
@@ -137,7 +176,14 @@ namespace Asaki.Tests.UI
         public void TryGet_NotInitialized_AutoInitializes()
         {
             // Arrange
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "TestUI", AssetPath = "Path/1" });
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "TestUI",
+                    AssetPath = "Path/1",
+                }
+            );
             // 不调用InitializeLookup
 
             // Act
@@ -174,7 +220,7 @@ namespace Asaki.Tests.UI
                 Name = "TestWindow",
                 AssetPath = "UI/Prefabs/TestWindow",
                 Layer = AsakiUILayer.Popup,
-                UsePool = true
+                UsePool = true,
             };
 
             // Assert
@@ -210,11 +256,9 @@ namespace Asaki.Tests.UI
         {
             // Arrange
             var prefab = new GameObject("TestPrefab");
-            _config.Templates.Add(new WidgetTemplate
-            {
-                Type = AsakiUIWidgetType.Button,
-                Prefab = prefab
-            });
+            _config.Templates.Add(
+                new WidgetTemplate { Type = AsakiUIWidgetType.Button, Prefab = prefab }
+            );
 
             // Act
             GameObject result = _config.GetTemplate(AsakiUIWidgetType.Button);
@@ -255,8 +299,12 @@ namespace Asaki.Tests.UI
             // Arrange
             var prefab1 = new GameObject("Prefab1");
             var prefab2 = new GameObject("Prefab2");
-            _config.Templates.Add(new WidgetTemplate { Type = AsakiUIWidgetType.Button, Prefab = prefab1 });
-            _config.Templates.Add(new WidgetTemplate { Type = AsakiUIWidgetType.Button, Prefab = prefab2 });
+            _config.Templates.Add(
+                new WidgetTemplate { Type = AsakiUIWidgetType.Button, Prefab = prefab1 }
+            );
+            _config.Templates.Add(
+                new WidgetTemplate { Type = AsakiUIWidgetType.Button, Prefab = prefab2 }
+            );
 
             // Act
             GameObject result = _config.GetTemplate(AsakiUIWidgetType.Button);
@@ -318,12 +366,14 @@ namespace Asaki.Tests.UI
             const int count = 1000;
             for (int i = 0; i < count; i++)
             {
-                _config.UIList.Add(new UIInfo
-                {
-                    ID = i,
-                    Name = $"UI_{i}",
-                    AssetPath = $"Path/{i}"
-                });
+                _config.UIList.Add(
+                    new UIInfo
+                    {
+                        ID = i,
+                        Name = $"UI_{i}",
+                        AssetPath = $"Path/{i}",
+                    }
+                );
             }
 
             // Act
@@ -345,8 +395,22 @@ namespace Asaki.Tests.UI
         public void InitializeLookup_DuplicateIds_UsesLast()
         {
             // Arrange
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "First", AssetPath = "Path/1" });
-            _config.UIList.Add(new UIInfo { ID = 1, Name = "Second", AssetPath = "Path/2" });
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "First",
+                    AssetPath = "Path/1",
+                }
+            );
+            _config.UIList.Add(
+                new UIInfo
+                {
+                    ID = 1,
+                    Name = "Second",
+                    AssetPath = "Path/2",
+                }
+            );
 
             // Act
             _config.InitializeLookup();

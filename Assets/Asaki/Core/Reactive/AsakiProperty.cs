@@ -297,13 +297,16 @@ namespace Asaki.Core.Reactive
                 _observers.Add(observer);
             }
             observer.OnValueChange(_value);
-            return new Subscription(this, () =>
-            {
-                lock (_valueLock)
+            return new Subscription(
+                this,
+                () =>
                 {
-                    _observers.Remove(observer);
+                    lock (_valueLock)
+                    {
+                        _observers.Remove(observer);
+                    }
                 }
-            });
+            );
         }
 
         /// <summary>
@@ -366,7 +369,9 @@ namespace Asaki.Core.Reactive
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}");
+                    ALog.Error(
+                        $"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}"
+                    );
                 }
             }
         }
@@ -398,7 +403,9 @@ namespace Asaki.Core.Reactive
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}");
+                    ALog.Error(
+                        $"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}"
+                    );
                 }
             }
         }
@@ -464,14 +471,14 @@ namespace Asaki.Core.Reactive
         public override bool Equals(object obj)
         {
             return obj switch
-                   {
-                       // 相同类型，使用类型安全的 Equals 方法
-                       AsakiProperty<T> other => Equals(other),
-                       // T 类型，直接比较值
-                       T val => EqualityComparer<T>.Default.Equals(_value, val),
-                       // 其他类型不相等
-                       _ => false,
-                   };
+            {
+                // 相同类型，使用类型安全的 Equals 方法
+                AsakiProperty<T> other => Equals(other),
+                // T 类型，直接比较值
+                T val => EqualityComparer<T>.Default.Equals(_value, val),
+                // 其他类型不相等
+                _ => false,
+            };
         }
 
         // ========================================================================

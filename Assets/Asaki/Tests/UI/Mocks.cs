@@ -157,7 +157,9 @@ namespace Asaki.Tests.UI
         {
             throw new NotImplementedException();
         }
-        public void ReleaseBatch<T>(IEnumerable<string> locations) where T : class
+
+        public void ReleaseBatch<T>(IEnumerable<string> locations)
+            where T : class
         {
             throw new NotImplementedException();
         }

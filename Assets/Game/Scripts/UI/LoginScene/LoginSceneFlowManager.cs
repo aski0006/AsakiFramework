@@ -24,9 +24,11 @@ namespace Game.Scripts.UI.LoginScene
     /// <item><description>UI管理（通过IAsakiUIService）</description></item>
     /// </list>
     /// </summary>
-    public class LoginSceneFlowManager : AsakiMono, IAsakiAutoInject,
-        IAsakiInit<IAsakiUIService, IAsakiSceneManagerService>,
-        IAsakiHandler<UserLoginEvent>
+    public class LoginSceneFlowManager
+        : AsakiMono,
+            IAsakiAutoInject,
+            IAsakiInit<IAsakiUIService, IAsakiSceneManagerService>,
+            IAsakiHandler<UserLoginEvent>
     {
         #region Services
 
@@ -68,8 +70,10 @@ namespace Game.Scripts.UI.LoginScene
             // 验证服务是否已注入
             if (_asakiUIService == null)
             {
-                ALog.Error($"[{nameof(LoginSceneFlowManager)}] UIService not injected! " +
-                           "Make sure the manager is in a scene that gets properly initialized.");
+                ALog.Error(
+                    $"[{nameof(LoginSceneFlowManager)}] UIService not injected! "
+                        + "Make sure the manager is in a scene that gets properly initialized."
+                );
                 return;
             }
 
@@ -89,7 +93,9 @@ namespace Game.Scripts.UI.LoginScene
             }
             catch (System.Exception ex)
             {
-                ALog.Error($"[{nameof(LoginSceneFlowManager)}] Failed to open initial window: {ex}");
+                ALog.Error(
+                    $"[{nameof(LoginSceneFlowManager)}] Failed to open initial window: {ex}"
+                );
             }
         }
 
@@ -128,7 +134,9 @@ namespace Game.Scripts.UI.LoginScene
         /// </summary>
         public void OnEvent(UserLoginEvent e)
         {
-            ALog.Info($"[{nameof(LoginSceneFlowManager)}] User logged in: {e.UserData.UserNickname}");
+            ALog.Info(
+                $"[{nameof(LoginSceneFlowManager)}] User logged in: {e.UserData.UserNickname}"
+            );
 
             // 切换到主场景
             LoadMainScene().Forget();
@@ -169,7 +177,9 @@ namespace Game.Scripts.UI.LoginScene
         {
             if (host == null)
             {
-                ALog.Error("[{nameof(LoginSceneFlowManager)}] Cannot create - host GameObject is null.");
+                ALog.Error(
+                    "[{nameof(LoginSceneFlowManager)}] Cannot create - host GameObject is null."
+                );
                 return null;
             }
 

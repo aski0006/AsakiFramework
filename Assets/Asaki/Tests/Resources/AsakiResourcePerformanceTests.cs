@@ -75,7 +75,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             stopwatch.Start();
-            yield return _resourceService.LoadAsync<GameObject>("perf/test", CancellationToken.None)
+            yield return _resourceService
+                .LoadAsync<GameObject>("perf/test", CancellationToken.None)
                 .ToCoroutine();
             stopwatch.Stop();
 
@@ -85,8 +86,11 @@ namespace Asaki.Tests.Resources
             // Assert
             float elapsedMs = stopwatch.ElapsedMilliseconds;
             Debug.Log($"Single asset load time: {elapsedMs}ms");
-            Assert.Less(elapsedMs, SINGLE_LOAD_TIME_BUDGET_MS,
-                $"Single asset load took {elapsedMs}ms, exceeding budget of {SINGLE_LOAD_TIME_BUDGET_MS}ms");
+            Assert.Less(
+                elapsedMs,
+                SINGLE_LOAD_TIME_BUDGET_MS,
+                $"Single asset load took {elapsedMs}ms, exceeding budget of {SINGLE_LOAD_TIME_BUDGET_MS}ms"
+            );
         }
 
         [UnityTest]
@@ -110,7 +114,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             stopwatch.Start();
-            yield return _resourceService.LoadBatchAsync<GameObject>(locations, CancellationToken.None)
+            yield return _resourceService
+                .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
                 .ToCoroutine();
             stopwatch.Stop();
 
@@ -126,8 +131,11 @@ namespace Asaki.Tests.Resources
             // Assert
             float elapsedMs = stopwatch.ElapsedMilliseconds;
             Debug.Log($"Batch load ({assetCount} assets) time: {elapsedMs}ms");
-            Assert.Less(elapsedMs, BATCH_LOAD_TIME_BUDGET_MS,
-                $"Batch load took {elapsedMs}ms, exceeding budget of {BATCH_LOAD_TIME_BUDGET_MS}ms");
+            Assert.Less(
+                elapsedMs,
+                BATCH_LOAD_TIME_BUDGET_MS,
+                $"Batch load took {elapsedMs}ms, exceeding budget of {BATCH_LOAD_TIME_BUDGET_MS}ms"
+            );
         }
 
         [UnityTest]
@@ -151,7 +159,12 @@ namespace Asaki.Tests.Resources
             stopwatch.Start();
             for (int i = 0; i < concurrentCount; i++)
             {
-                tasks.Add(_resourceService.LoadAsync<GameObject>($"concurrent/asset_{i}", CancellationToken.None));
+                tasks.Add(
+                    _resourceService.LoadAsync<GameObject>(
+                        $"concurrent/asset_{i}",
+                        CancellationToken.None
+                    )
+                );
             }
             yield return UniTask.WhenAll(tasks).ToCoroutine();
             stopwatch.Stop();
@@ -159,8 +172,11 @@ namespace Asaki.Tests.Resources
             // Assert
             float elapsedMs = stopwatch.ElapsedMilliseconds;
             Debug.Log($"Concurrent load ({concurrentCount} assets) time: {elapsedMs}ms");
-            Assert.Less(elapsedMs, BATCH_LOAD_TIME_BUDGET_MS,
-                $"Concurrent load took {elapsedMs}ms, exceeding budget of {BATCH_LOAD_TIME_BUDGET_MS}ms");
+            Assert.Less(
+                elapsedMs,
+                BATCH_LOAD_TIME_BUDGET_MS,
+                $"Concurrent load took {elapsedMs}ms, exceeding budget of {BATCH_LOAD_TIME_BUDGET_MS}ms"
+            );
         }
 
         #endregion
@@ -181,7 +197,8 @@ namespace Asaki.Tests.Resources
                 var asset = new GameObject($"LeakTestAsset_{i}");
                 _mockStrategy.RegisterAsset($"leaktest/asset_{i}", asset);
 
-                yield return _resourceService.LoadAsync<GameObject>($"leaktest/asset_{i}", CancellationToken.None)
+                yield return _resourceService
+                    .LoadAsync<GameObject>($"leaktest/asset_{i}", CancellationToken.None)
                     .ToCoroutine();
 
                 _resourceService.Release($"leaktest/asset_{i}", typeof(GameObject));
@@ -199,8 +216,11 @@ namespace Asaki.Tests.Resources
 
             // Assert
             Debug.Log($"Memory difference after load/release cycle: {memoryDiff} bytes");
-            Assert.Less(memoryDiff, MAX_GC_ALLOCATION_BYTES,
-                $"Memory leak detected: {memoryDiff} bytes");
+            Assert.Less(
+                memoryDiff,
+                MAX_GC_ALLOCATION_BYTES,
+                $"Memory leak detected: {memoryDiff} bytes"
+            );
         }
 
         [UnityTest]
@@ -222,7 +242,8 @@ namespace Asaki.Tests.Resources
             }
 
             // Act
-            yield return _resourceService.LoadBatchAsync<GameObject>(locations, CancellationToken.None)
+            yield return _resourceService
+                .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
                 .ToCoroutine();
 
             long memoryDuring = GC.GetTotalMemory(false);
@@ -239,8 +260,11 @@ namespace Asaki.Tests.Resources
             // Assert
             long peakMemory = memoryDuring - memoryBefore;
             Debug.Log($"Peak memory during batch load: {peakMemory} bytes");
-            Assert.Less(peakMemory, MAX_GC_ALLOCATION_BYTES * 5,
-                $"Peak memory {peakMemory} bytes exceeds limit");
+            Assert.Less(
+                peakMemory,
+                MAX_GC_ALLOCATION_BYTES * 5,
+                $"Peak memory {peakMemory} bytes exceeds limit"
+            );
         }
 
         [UnityTest]
@@ -260,7 +284,8 @@ namespace Asaki.Tests.Resources
             {
                 int loadCountBefore = _mockStrategy.LoadedAssets.Count;
 
-                yield return _resourceService.LoadAsync<GameObject>("cache/test", CancellationToken.None)
+                yield return _resourceService
+                    .LoadAsync<GameObject>("cache/test", CancellationToken.None)
                     .ToCoroutine();
 
                 int loadCountAfter = _mockStrategy.LoadedAssets.Count;
@@ -274,8 +299,7 @@ namespace Asaki.Tests.Resources
             // Assert
             float hitRate = (float)cacheHits / (totalRequests - 1);
             Debug.Log($"Cache hit rate: {hitRate:P}");
-            Assert.GreaterOrEqual(hitRate, 0.99f,
-                $"Cache hit rate {hitRate:P} is too low");
+            Assert.GreaterOrEqual(hitRate, 0.99f, $"Cache hit rate {hitRate:P} is too low");
         }
 
         #endregion
@@ -292,22 +316,29 @@ namespace Asaki.Tests.Resources
             _mockStrategy.RegisterAsset("gc/test", asset);
 
             // 预热
-            yield return _resourceService.LoadAsync<GameObject>("gc/test", CancellationToken.None).ToCoroutine();
+            yield return _resourceService
+                .LoadAsync<GameObject>("gc/test", CancellationToken.None)
+                .ToCoroutine();
             _resourceService.Release("gc/test", typeof(GameObject));
 
             GC.Collect();
             long memoryBefore = GC.GetTotalMemory(true);
 
             // Act
-            yield return _resourceService.LoadAsync<GameObject>("gc/test", CancellationToken.None).ToCoroutine();
+            yield return _resourceService
+                .LoadAsync<GameObject>("gc/test", CancellationToken.None)
+                .ToCoroutine();
 
             long memoryAfter = GC.GetTotalMemory(false);
             long allocation = memoryAfter - memoryBefore;
 
             // Assert
             Debug.Log($"GC allocation for LoadAsync: {allocation} bytes");
-            Assert.Less(allocation, 100 * 1024, // 100KB阈值
-                $"GC allocation {allocation} bytes is too high");
+            Assert.Less(
+                allocation,
+                100 * 1024, // 100KB阈值
+                $"GC allocation {allocation} bytes is too high"
+            );
         }
 
         [UnityTest]
@@ -319,7 +350,9 @@ namespace Asaki.Tests.Resources
             var asset = new GameObject("GCReleaseAsset");
             _mockStrategy.RegisterAsset("gc/release", asset);
 
-            yield return _resourceService.LoadAsync<GameObject>("gc/release", CancellationToken.None).ToCoroutine();
+            yield return _resourceService
+                .LoadAsync<GameObject>("gc/release", CancellationToken.None)
+                .ToCoroutine();
 
             GC.Collect();
             long memoryBefore = GC.GetTotalMemory(true);
@@ -332,8 +365,11 @@ namespace Asaki.Tests.Resources
 
             // Assert
             Debug.Log($"GC allocation for Release: {allocation} bytes");
-            Assert.Less(allocation, 10 * 1024, // 10KB阈值
-                $"GC allocation {allocation} bytes for release is too high");
+            Assert.Less(
+                allocation,
+                10 * 1024, // 10KB阈值
+                $"GC allocation {allocation} bytes for release is too high"
+            );
         }
 
         [UnityTest]
@@ -356,15 +392,16 @@ namespace Asaki.Tests.Resources
             for (int i = 0; i < iterations; i++)
             {
                 var location = $"stress/asset_{i % 5}";
-                yield return _resourceService.LoadAsync<GameObject>(location, CancellationToken.None).ToCoroutine();
+                yield return _resourceService
+                    .LoadAsync<GameObject>(location, CancellationToken.None)
+                    .ToCoroutine();
             }
             stopwatch.Stop();
 
             // Assert
             float avgTime = (float)stopwatch.ElapsedMilliseconds / iterations;
             Debug.Log($"Average load time under pressure: {avgTime}ms");
-            Assert.Less(avgTime, 25f,
-                $"Average load time {avgTime}ms is too high under pressure");
+            Assert.Less(avgTime, 25f, $"Average load time {avgTime}ms is too high under pressure");
         }
 
         #endregion
@@ -392,16 +429,22 @@ namespace Asaki.Tests.Resources
 
             // Act
             stopwatch.Start();
-            yield return _resourceService.LoadBatchAsync<GameObject>(locations, CancellationToken.None)
+            yield return _resourceService
+                .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
                 .ToCoroutine();
             stopwatch.Stop();
 
             // Assert
             float elapsedMs = stopwatch.ElapsedMilliseconds;
             float avgTimePerAsset = elapsedMs / assetCount;
-            Debug.Log($"Stress test: {assetCount} assets in {elapsedMs}ms, avg {avgTimePerAsset:F2}ms/asset");
-            Assert.Less(avgTimePerAsset, 20f,
-                $"Average time per asset {avgTimePerAsset:F2}ms is too high");
+            Debug.Log(
+                $"Stress test: {assetCount} assets in {elapsedMs}ms, avg {avgTimePerAsset:F2}ms/asset"
+            );
+            Assert.Less(
+                avgTimePerAsset,
+                20f,
+                $"Average time per asset {avgTimePerAsset:F2}ms is too high"
+            );
         }
 
         [UnityTest]
@@ -419,14 +462,19 @@ namespace Asaki.Tests.Resources
             // Act - 快速发起多个相同资源的加载请求
             for (int i = 0; i < rapidRequests; i++)
             {
-                tasks.Add(_resourceService.LoadAsync<GameObject>("rapid/test", CancellationToken.None));
+                tasks.Add(
+                    _resourceService.LoadAsync<GameObject>("rapid/test", CancellationToken.None)
+                );
             }
 
             yield return UniTask.WhenAll(tasks).ToCoroutine();
 
             // Assert - 策略应该只被调用一次
-            Assert.AreEqual(1, _mockStrategy.LoadedAssets.Count,
-                "Strategy should only load the asset once");
+            Assert.AreEqual(
+                1,
+                _mockStrategy.LoadedAssets.Count,
+                "Strategy should only load the asset once"
+            );
         }
 
         #endregion

@@ -55,7 +55,10 @@ namespace Asaki.Core.Architecture
         public TResult SendQuery<TQuery, TResult>()
             where TQuery : class, IAsakiQuery<TResult>, new()
         {
-            TQuery query = QueryPoolManager.Rent<TQuery>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
+            query ??= new TQuery();
+
             try
             {
                 query.Create(this);
@@ -85,7 +88,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                QueryPoolManager.Return(query);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    QueryPoolManager.TryReturn(query);
             }
         }
 
@@ -135,7 +140,10 @@ namespace Asaki.Core.Architecture
         public async UniTask<TResult> SendQueryAsync<TQuery, TResult>()
             where TQuery : class, IAsakiQueryAsync<TResult>, new()
         {
-            TQuery query = QueryPoolManager.Rent<TQuery>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
+            query ??= new TQuery();
+
             try
             {
                 query.Create(this);
@@ -167,7 +175,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                QueryPoolManager.Return(query);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    QueryPoolManager.TryReturn(query);
             }
         }
 
@@ -212,7 +222,11 @@ namespace Asaki.Core.Architecture
         {
             // 注意：带参数的 Query 不使用类型名作为缓存键
             // 需要子类自己实现 GetCacheKey() 方法
-            TQuery query = QueryPoolManager.Rent<TQuery>();
+
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
+            query ??= new TQuery();
+
             try
             {
                 configure?.Invoke(query);
@@ -230,7 +244,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                QueryPoolManager.Return(query);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    QueryPoolManager.TryReturn(query);
             }
         }
 
@@ -243,7 +259,10 @@ namespace Asaki.Core.Architecture
         )
             where TQuery : class, IAsakiQueryAsync<TResult>, new()
         {
-            TQuery query = QueryPoolManager.Rent<TQuery>();
+            // 尝试从对象池获取，池不存在则使用new
+            bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
+            query ??= new TQuery();
+
             try
             {
                 configure?.Invoke(query);
@@ -261,7 +280,9 @@ namespace Asaki.Core.Architecture
             }
             finally
             {
-                QueryPoolManager.Return(query);
+                // 根据来源决定归还方式
+                if (fromPool)
+                    QueryPoolManager.TryReturn(query);
             }
         }
 

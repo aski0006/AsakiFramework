@@ -23,7 +23,11 @@ namespace Asaki.Plungin.ComboSystem.Editor
         private EditorWindow _window;
         private Texture2D _indentationIcon;
 
-        public void Initialize(ComboGraphView graphView, ComboGraphAsset graphAsset, EditorWindow window)
+        public void Initialize(
+            ComboGraphView graphView,
+            ComboGraphAsset graphAsset,
+            EditorWindow window
+        )
         {
             _graphView = graphView;
             _graphAsset = graphAsset;
@@ -49,14 +53,19 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             foreach (Type type in nodeTypes)
             {
-                if (type.IsAbstract) continue;
+                if (type.IsAbstract)
+                    continue;
 
                 // 获取节点的 [GraphContext] 特性
-                var contextAttr = Attribute.GetCustomAttribute(type, typeof(AsakiGraphContextAttribute))
+                var contextAttr =
+                    Attribute.GetCustomAttribute(type, typeof(AsakiGraphContextAttribute))
                     as AsakiGraphContextAttribute;
 
                 // 检查是否匹配 ComboGraphAsset
-                if (contextAttr == null || !typeof(ComboGraphAsset).IsAssignableFrom(contextAttr.GraphType))
+                if (
+                    contextAttr == null
+                    || !typeof(ComboGraphAsset).IsAssignableFrom(contextAttr.GraphType)
+                )
                     continue;
 
                 // 使用完整路径作为分类（如"招式/Move"）
@@ -81,14 +90,16 @@ namespace Asaki.Plungin.ComboSystem.Editor
                 for (int i = 0; i < pathParts.Length; i++)
                 {
                     string part = pathParts[i];
-                    currentPath = string.IsNullOrEmpty(currentPath) ? part : $"{currentPath}/{part}";
+                    currentPath = string.IsNullOrEmpty(currentPath)
+                        ? part
+                        : $"{currentPath}/{part}";
 
                     if (!categoryGroups.ContainsKey(currentPath))
                     {
                         // 创建分组
                         var group = new SearchTreeGroupEntry(
                             new GUIContent(part),
-                            i + 1  // 层级
+                            i + 1 // 层级
                         );
 
                         categoryGroups[currentPath] = group;
@@ -120,21 +131,39 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             // 添加快速创建区域
             tree.Add(new SearchTreeGroupEntry(new GUIContent("快速创建"), 1));
-            tree.Add(new SearchTreeEntry(new GUIContent("轻攻击招式", _indentationIcon))
-            {
-                userData = new QuickCreateData { NodeType = typeof(MoveNode), InputType = "LightAttack" },
-                level = 2,
-            });
-            tree.Add(new SearchTreeEntry(new GUIContent("重攻击招式", _indentationIcon))
-            {
-                userData = new QuickCreateData { NodeType = typeof(MoveNode), InputType = "HeavyAttack" },
-                level = 2,
-            });
-            tree.Add(new SearchTreeEntry(new GUIContent("轻攻击转换", _indentationIcon))
-            {
-                userData = new QuickCreateData { NodeType = typeof(TransitionNode), InputType = "LightAttack" },
-                level = 2,
-            });
+            tree.Add(
+                new SearchTreeEntry(new GUIContent("轻攻击招式", _indentationIcon))
+                {
+                    userData = new QuickCreateData
+                    {
+                        NodeType = typeof(MoveNode),
+                        InputType = "LightAttack",
+                    },
+                    level = 2,
+                }
+            );
+            tree.Add(
+                new SearchTreeEntry(new GUIContent("重攻击招式", _indentationIcon))
+                {
+                    userData = new QuickCreateData
+                    {
+                        NodeType = typeof(MoveNode),
+                        InputType = "HeavyAttack",
+                    },
+                    level = 2,
+                }
+            );
+            tree.Add(
+                new SearchTreeEntry(new GUIContent("轻攻击转换", _indentationIcon))
+                {
+                    userData = new QuickCreateData
+                    {
+                        NodeType = typeof(TransitionNode),
+                        InputType = "LightAttack",
+                    },
+                    level = 2,
+                }
+            );
 
             return tree;
         }
@@ -142,11 +171,14 @@ namespace Asaki.Plungin.ComboSystem.Editor
         public bool OnSelectEntry(SearchTreeEntry searchTreeEntry, SearchWindowContext context)
         {
             var userData = searchTreeEntry.userData;
-            if (userData == null) return false;
+            if (userData == null)
+                return false;
 
             // 计算鼠标位置
             Vector2 windowMousePosition = CalculateMousePosition(context);
-            Vector2 graphMousePosition = _graphView.contentViewContainer.WorldToLocal(windowMousePosition);
+            Vector2 graphMousePosition = _graphView.contentViewContainer.WorldToLocal(
+                windowMousePosition
+            );
 
             // 处理快速创建
             if (userData is QuickCreateData quickData)
@@ -186,7 +218,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             if (method != null)
             {
-                AsakiNodeBase newNode = method.Invoke(null, new object[] { _graphAsset, position }) as AsakiNodeBase;
+                AsakiNodeBase newNode =
+                    method.Invoke(null, new object[] { _graphAsset, position }) as AsakiNodeBase;
 
                 if (newNode != null)
                 {
@@ -209,7 +242,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
 
             if (method != null)
             {
-                AsakiNodeBase newNode = method.Invoke(null, new object[] { _graphAsset, position }) as AsakiNodeBase;
+                AsakiNodeBase newNode =
+                    method.Invoke(null, new object[] { _graphAsset, position }) as AsakiNodeBase;
 
                 if (newNode != null)
                 {
@@ -217,7 +251,8 @@ namespace Asaki.Plungin.ComboSystem.Editor
                     if (newNode is MoveNode moveNode)
                     {
                         moveNode.MoveData.MoveName = GetDefaultMoveName(data.InputType);
-                        moveNode.MoveData.MoveId = $"move_{data.InputType.ToLower()}_{System.Guid.NewGuid().ToString().Substring(0, 4)}";
+                        moveNode.MoveData.MoveId =
+                            $"move_{data.InputType.ToLower()}_{System.Guid.NewGuid().ToString().Substring(0, 4)}";
                     }
                     else if (newNode is TransitionNode transitionNode)
                     {
@@ -240,12 +275,18 @@ namespace Asaki.Plungin.ComboSystem.Editor
             // 可以根据类型返回更友好的名称
             switch (type.Name)
             {
-                case "MoveNode": return "⚔️ 招式节点";
-                case "TransitionNode": return "➡️ 转换节点";
-                case "EntryNode": return "🚦 入口节点";
-                case "EndNode": return "🏁 结束节点";
-                case "ConditionNode": return "❓ 条件节点";
-                default: return type.Name;
+                case "MoveNode":
+                    return "⚔️ 招式节点";
+                case "TransitionNode":
+                    return "➡️ 转换节点";
+                case "EntryNode":
+                    return "🚦 入口节点";
+                case "EndNode":
+                    return "🏁 结束节点";
+                case "ConditionNode":
+                    return "❓ 条件节点";
+                default:
+                    return type.Name;
             }
         }
 

@@ -83,8 +83,8 @@ namespace Asaki.Tests.Resources
             _mockStrategy.RegisterAsset("test/path", asset);
 
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/path", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("test/path", CancellationToken.None)
+                .ToCoroutine();
 
             // Act
             _resourceService.OnDispose();
@@ -124,8 +124,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine(h => handle = h);
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine(h => handle = h);
 
             // Assert
             Assert.IsNotNull(handle);
@@ -145,8 +145,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine();
 
             // Assert
             Assert.That(_mockStrategy.LoadedAssets, Does.Contain("test/asset"));
@@ -166,12 +166,12 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>(
-                             "test/asset",
-                             tracker.GetProgressAction(),
-                             CancellationToken.None
-                         )
-                         .ToCoroutine();
+                .LoadAsync<GameObject>(
+                    "test/asset",
+                    tracker.GetProgressAction(),
+                    CancellationToken.None
+                )
+                .ToCoroutine();
 
             // Assert
             Assert.Greater(tracker.UpdateCount, 0, "Progress should be reported");
@@ -198,11 +198,11 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", cts.Token)
-                         .ToCoroutine(
-                             resultHandler: _ => { },
-                             exceptionHandler: ex => capturedException = ex
-                         );
+                .LoadAsync<GameObject>("test/asset", cts.Token)
+                .ToCoroutine(
+                    resultHandler: _ => { },
+                    exceptionHandler: ex => capturedException = ex
+                );
 
             // Assert
             Assert.IsNotNull(capturedException);
@@ -256,11 +256,11 @@ namespace Asaki.Tests.Resources
             ResHandle<Sprite> spriteHandle = null;
 
             yield return _resourceService
-                         .LoadAsync<Texture2D>("test/image", CancellationToken.None)
-                         .ToCoroutine(h => textureHandle = h);
+                .LoadAsync<Texture2D>("test/image", CancellationToken.None)
+                .ToCoroutine(h => textureHandle = h);
             yield return _resourceService
-                         .LoadAsync<Sprite>("test/image", CancellationToken.None)
-                         .ToCoroutine(h => spriteHandle = h);
+                .LoadAsync<Sprite>("test/image", CancellationToken.None)
+                .ToCoroutine(h => spriteHandle = h);
 
             // Assert
             Assert.IsNotNull(textureHandle);
@@ -281,11 +281,11 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine(
-                             resultHandler: _ => { },
-                             exceptionHandler: ex => capturedException = ex
-                         );
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine(
+                    resultHandler: _ => { },
+                    exceptionHandler: ex => capturedException = ex
+                );
 
             // Assert
             Assert.IsNotNull(capturedException);
@@ -307,8 +307,8 @@ namespace Asaki.Tests.Resources
 
             ResHandle<GameObject> handle = null;
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine(h => handle = h);
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine(h => handle = h);
 
             // Act - 释放一次
             _resourceService.Release("test/asset", typeof(GameObject));
@@ -330,8 +330,8 @@ namespace Asaki.Tests.Resources
             // Act - 先异步加载获取handle
             ResHandle<GameObject> handle = null;
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine(h => handle = h);
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine(h => handle = h);
 
             // 使用using语句测试Dispose
             using (handle)
@@ -342,8 +342,8 @@ namespace Asaki.Tests.Resources
             // Assert - 释放后再次加载应该重新加载
             _mockStrategy.Reset();
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("test/asset", CancellationToken.None)
+                .ToCoroutine();
 
             Assert.AreEqual(1, _mockStrategy.LoadedAssets.Count);
         }
@@ -360,17 +360,14 @@ namespace Asaki.Tests.Resources
             _mockStrategy.RegisterAsset("test/asset2", asset2);
 
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset1", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("test/asset1", CancellationToken.None)
+                .ToCoroutine();
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/asset2", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("test/asset2", CancellationToken.None)
+                .ToCoroutine();
 
             // Act - 使用泛型ReleaseBatch方法，与LoadBatchAsync<GameObject>对应
-            _resourceService.ReleaseBatch<GameObject>(new[]
-            {
-                "test/asset1", "test/asset2"
-            });
+            _resourceService.ReleaseBatch<GameObject>(new[] { "test/asset1", "test/asset2" });
 
             // Assert
             Assert.AreEqual(2, _mockStrategy.UnloadedAssets.Count);
@@ -391,16 +388,13 @@ namespace Asaki.Tests.Resources
             _mockStrategy.RegisterAsset("test/asset1", asset1);
             _mockStrategy.RegisterAsset("test/asset2", asset2);
 
-            var locations = new[]
-            {
-                "test/asset1", "test/asset2"
-            };
+            var locations = new[] { "test/asset1", "test/asset2" };
             List<ResHandle<GameObject>> handles = null;
 
             // Act
             yield return _resourceService
-                         .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
-                         .ToCoroutine(h => handles = h);
+                .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
+                .ToCoroutine(h => handles = h);
 
             // Assert
             Assert.IsNotNull(handles);
@@ -421,20 +415,17 @@ namespace Asaki.Tests.Resources
             _mockStrategy.RegisterAsset("test/asset2", asset2);
             _mockStrategy.LoadDelayMs = 30;
 
-            var locations = new[]
-            {
-                "test/asset1", "test/asset2"
-            };
+            var locations = new[] { "test/asset1", "test/asset2" };
             var tracker = new MockProgressTracker();
 
             // Act
             yield return _resourceService
-                         .LoadBatchAsync<GameObject>(
-                             locations,
-                             tracker.GetProgressAction(),
-                             CancellationToken.None
-                         )
-                         .ToCoroutine();
+                .LoadBatchAsync<GameObject>(
+                    locations,
+                    tracker.GetProgressAction(),
+                    CancellationToken.None
+                )
+                .ToCoroutine();
 
             // Assert
             Assert.Greater(tracker.UpdateCount, 0);
@@ -452,8 +443,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
-                         .ToCoroutine(h => handles = h);
+                .LoadBatchAsync<GameObject>(locations, CancellationToken.None)
+                .ToCoroutine(h => handles = h);
 
             // Assert
             Assert.IsNotNull(handles);
@@ -479,8 +470,8 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("main/asset", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("main/asset", CancellationToken.None)
+                .ToCoroutine();
 
             // Assert
             Assert.That(_mockStrategy.LoadedAssets, Does.Contain("main/asset"));
@@ -501,8 +492,8 @@ namespace Asaki.Tests.Resources
             _mockDependencyLookup.RegisterDependencies("main/asset", "dep/asset");
 
             yield return _resourceService
-                         .LoadAsync<GameObject>("main/asset", CancellationToken.None)
-                         .ToCoroutine();
+                .LoadAsync<GameObject>("main/asset", CancellationToken.None)
+                .ToCoroutine();
 
             // Act - 释放主资源
             _resourceService.Release("main/asset", typeof(GameObject));
@@ -527,11 +518,11 @@ namespace Asaki.Tests.Resources
 
             // Act
             yield return _resourceService
-                         .LoadAsync<GameObject>("non/existent/asset", CancellationToken.None)
-                         .ToCoroutine(
-                             resultHandler: _ => { },
-                             exceptionHandler: ex => capturedException = ex
-                         );
+                .LoadAsync<GameObject>("non/existent/asset", CancellationToken.None)
+                .ToCoroutine(
+                    resultHandler: _ => { },
+                    exceptionHandler: ex => capturedException = ex
+                );
 
             // Assert
             Assert.IsNotNull(capturedException);
@@ -552,11 +543,11 @@ namespace Asaki.Tests.Resources
 
             // Act - 尝试加载GameObject，但Mock会返回Texture2D
             yield return _resourceService
-                         .LoadAsync<GameObject>("test/texture", CancellationToken.None)
-                         .ToCoroutine(
-                             resultHandler: _ => { },
-                             exceptionHandler: ex => capturedException = ex
-                         );
+                .LoadAsync<GameObject>("test/texture", CancellationToken.None)
+                .ToCoroutine(
+                    resultHandler: _ => { },
+                    exceptionHandler: ex => capturedException = ex
+                );
 
             // 清理
             _mockStrategy.ForceReturnAsset = null;
@@ -582,16 +573,16 @@ namespace Asaki.Tests.Resources
             // Act - 第一次加载
             ResHandle<GameObject> handle1 = null;
             yield return _resourceService
-                         .LoadAsync<GameObject>("cached/asset", CancellationToken.None)
-                         .ToCoroutine(h => handle1 = h);
+                .LoadAsync<GameObject>("cached/asset", CancellationToken.None)
+                .ToCoroutine(h => handle1 = h);
 
             int loadCountAfterFirst = _mockStrategy.LoadedAssets.Count;
 
             // 第二次加载
             ResHandle<GameObject> handle2 = null;
             yield return _resourceService
-                         .LoadAsync<GameObject>("cached/asset", CancellationToken.None)
-                         .ToCoroutine(h => handle2 = h);
+                .LoadAsync<GameObject>("cached/asset", CancellationToken.None)
+                .ToCoroutine(h => handle2 = h);
 
             // Assert
             Assert.AreEqual(
@@ -629,10 +620,7 @@ namespace Asaki.Tests.Resources
 
             // Act & Assert - 不应抛出异常
             Exception ex = null;
-            yield return _resourceService
-                         .UnloadUnusedAssets(cts.Token).ToCoroutine(
-                             e => ex = e
-                         );
+            yield return _resourceService.UnloadUnusedAssets(cts.Token).ToCoroutine(e => ex = e);
             Assert.IsInstanceOf<OperationCanceledException>(ex);
         }
 

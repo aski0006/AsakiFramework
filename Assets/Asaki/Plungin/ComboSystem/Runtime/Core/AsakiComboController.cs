@@ -12,13 +12,16 @@ namespace Asaki.Plungin.ComboSystem
     public class AsakiComboController : MonoBehaviour
     {
         [Header("Data")]
-        [SerializeField] private ComboTree comboTree;
+        [SerializeField]
+        private ComboTree comboTree;
 
         [Header("Animation")]
-        [SerializeField] private Animator animator;
+        [SerializeField]
+        private Animator animator;
 
         [Header("Settings")]
-        [SerializeField] private float inputBufferDuration = 0.3f;
+        [SerializeField]
+        private float inputBufferDuration = 0.3f;
 
         // 核心组件
         private AsakiStateMachine<AsakiComboController> _stateMachine;
@@ -67,14 +70,21 @@ namespace Asaki.Plungin.ComboSystem
         {
             get
             {
-                if (_stateMachine?.CurrentState == null) return ComboStateType.Idle;
+                if (_stateMachine?.CurrentState == null)
+                    return ComboStateType.Idle;
                 var state = _stateMachine.CurrentState;
-                if (state is ComboIdleState) return ComboStateType.Idle;
-                if (state is ComboStartupState) return ComboStateType.Startup;
-                if (state is ComboActiveState) return ComboStateType.Active;
-                if (state is ComboRecoveryState) return ComboStateType.Recovery;
-                if (state is ComboWindowState) return ComboStateType.ComboWindow;
-                if (state is ComboInterruptedState) return ComboStateType.Interrupted;
+                if (state is ComboIdleState)
+                    return ComboStateType.Idle;
+                if (state is ComboStartupState)
+                    return ComboStateType.Startup;
+                if (state is ComboActiveState)
+                    return ComboStateType.Active;
+                if (state is ComboRecoveryState)
+                    return ComboStateType.Recovery;
+                if (state is ComboWindowState)
+                    return ComboStateType.ComboWindow;
+                if (state is ComboInterruptedState)
+                    return ComboStateType.Interrupted;
                 return ComboStateType.Idle;
             }
         }
@@ -122,7 +132,8 @@ namespace Asaki.Plungin.ComboSystem
 
         void Update()
         {
-            if (!_isInitialized) return;
+            if (!_isInitialized)
+                return;
 
             _stateMachine.Update(Time.deltaTime);
             _inputBuffer.Update(Time.deltaTime);
@@ -131,7 +142,8 @@ namespace Asaki.Plungin.ComboSystem
 
         void FixedUpdate()
         {
-            if (!_isInitialized) return;
+            if (!_isInitialized)
+                return;
 
             _stateMachine.FixedUpdate(Time.fixedDeltaTime);
         }
@@ -207,7 +219,8 @@ namespace Asaki.Plungin.ComboSystem
         /// </summary>
         internal void ProcessAttackInput(string inputTypeId)
         {
-            if (comboTree == null) return;
+            if (comboTree == null)
+                return;
 
             ComboMove nextMove = null;
             var previousState = CurrentStateType;
@@ -239,7 +252,8 @@ namespace Asaki.Plungin.ComboSystem
         /// </summary>
         internal bool TryContinueCombo(string inputTypeId)
         {
-            if (comboTree == null || _currentMove == null) return false;
+            if (comboTree == null || _currentMove == null)
+                return false;
 
             var nextMove = comboTree.FindNextMove(_currentMove.MoveId, inputTypeId);
             if (nextMove != null && CanExecuteMove(nextMove))
@@ -339,8 +353,7 @@ namespace Asaki.Plungin.ComboSystem
         public bool CanAcceptInput()
         {
             var state = CurrentStateType;
-            return state == ComboStateType.Idle ||
-                   state == ComboStateType.ComboWindow;
+            return state == ComboStateType.Idle || state == ComboStateType.ComboWindow;
         }
 
         /// <summary>
@@ -385,19 +398,22 @@ namespace Asaki.Plungin.ComboSystem
         /// </summary>
         internal void ActivateHitBoxes()
         {
-            if (_currentMove?.HitBoxes == null) return;
+            if (_currentMove?.HitBoxes == null)
+                return;
 
             // 激活Collider
             _hitBoxManager.ActivateHitBoxes(_currentMove.HitBoxes);
 
             // 通知外部"判定框已激活" - 外部CombatSystem处理命中检测
-            var hitBoxInfos = _currentMove.HitBoxes.Select(h => new HitBoxInfo
-            {
-                HitBoxId = h.HitBoxId,
-                Collider = _hitBoxManager.GetCollider(h.HitBoxId),
-                Owner = gameObject,
-                MoveData = _currentMove
-            }).ToArray();
+            var hitBoxInfos = _currentMove
+                .HitBoxes.Select(h => new HitBoxInfo
+                {
+                    HitBoxId = h.HitBoxId,
+                    Collider = _hitBoxManager.GetCollider(h.HitBoxId),
+                    Owner = gameObject,
+                    MoveData = _currentMove,
+                })
+                .ToArray();
 
             OnHitBoxesActivated?.Invoke(hitBoxInfos);
         }

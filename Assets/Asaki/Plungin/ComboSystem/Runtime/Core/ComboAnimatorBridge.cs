@@ -7,7 +7,8 @@ namespace Asaki.Plungin.ComboSystem
     /// </summary>
     public class ComboAnimatorBridge : MonoBehaviour
     {
-        [SerializeField] private Animator animator;
+        [SerializeField]
+        private Animator animator;
 
         private int _lastPlayedHash;
 

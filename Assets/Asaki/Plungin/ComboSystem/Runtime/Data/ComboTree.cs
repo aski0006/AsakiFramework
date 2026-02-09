@@ -25,6 +25,7 @@ namespace Asaki.Plungin.ComboSystem
         // CustomFunction模式参数
         [NonSerialized]
         public Func<int, ComboContext, int> CustomResetFunction;
+
         [NonSerialized]
         public Func<ComboContext, bool> CustomShouldResetFunction;
     }
@@ -104,28 +105,27 @@ namespace Asaki.Plungin.ComboSystem
                 ResetComboMode.Decay => new DecayCountStrategy
                 {
                     DecayAmount = def.DecayAmount,
-                    MinCount = def.MinCount
+                    MinCount = def.MinCount,
                 },
                 ResetComboMode.PercentageDecay => new PercentageDecayStrategy
                 {
                     DecayPercent = def.DecayPercent,
-                    MinCount = def.MinCount
+                    MinCount = def.MinCount,
                 },
                 ResetComboMode.SetToSpecific => new SetToSpecificStrategy
                 {
-                    TargetCount = def.SpecificValue
+                    TargetCount = def.SpecificValue,
                 },
                 ResetComboMode.CustomFunction => new CustomResetStrategy
                 {
                     ResetFunction = def.CustomResetFunction,
-                    ShouldResetFunction = def.CustomShouldResetFunction
+                    ShouldResetFunction = def.CustomShouldResetFunction,
                 },
-                _ => new ResetToZeroStrategy()
+                _ => new ResetToZeroStrategy(),
             };
         }
 
-        public ComboMove GetMove(string moveId) =>
-            _moveLookup?.GetValueOrDefault(moveId);
+        public ComboMove GetMove(string moveId) => _moveLookup?.GetValueOrDefault(moveId);
 
         public List<ComboTransition> GetTransitions(string fromMoveId) =>
             _transitionLookup?.GetValueOrDefault(fromMoveId) ?? new List<ComboTransition>();
@@ -147,9 +147,7 @@ namespace Asaki.Plungin.ComboSystem
         /// </summary>
         public List<ComboTransition> GetAvailableTransitions(string currentMoveId)
         {
-            return GetTransitions(currentMoveId)
-                .Where(t => t.IsValid())
-                .ToList();
+            return GetTransitions(currentMoveId).Where(t => t.IsValid()).ToList();
         }
 
         /// <summary>
