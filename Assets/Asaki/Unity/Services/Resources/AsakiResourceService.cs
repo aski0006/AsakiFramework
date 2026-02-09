@@ -164,6 +164,51 @@ namespace Asaki.Unity.Services.Resources
             }
         }
 
+        /// <summary>
+        /// 非泛型方式加载资源，避免运行时反射
+        /// </summary>
+        public async UniTask<ResHandle<Object>> LoadAsync(
+            string location,
+            Type type,
+            Action<float> onProgress,
+            CancellationToken token
+        )
+        {
+            ResRecord record = GetOrCreateRecord(location, type, token);
+
+            // 进度回调注册
+            if (onProgress != null)
+            {
+                if (record.Asset != null)
+                    onProgress(1f);
+                else
+                    record.ProgressCallbacks += onProgress;
+            }
+
+            // 乐观锁引用计数
+            Interlocked.Increment(ref record.RefCount);
+
+            try
+            {
+                Object assetObj = await record.LoadingTcs.Task.WaitAsync(token);
+                return new ResHandle<Object>(location, assetObj, this);
+            }
+            catch (Exception)
+            {
+                // 发生取消或错误时，回滚引用
+                ReleaseInternal(location, type);
+                throw;
+            }
+            finally
+            {
+                // 清理进度委托
+                if (onProgress != null)
+                {
+                    record.ProgressCallbacks -= onProgress;
+                }
+            }
+        }
+
         // =========================================================
         // Internal Logic
         // =========================================================

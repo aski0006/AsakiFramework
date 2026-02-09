@@ -1224,9 +1224,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _preloadDatabase: {fileID: 11400000, guid: 93aa2b12051962948b0ae5e429a7f986, type: 2}
   _defaultLoadingSceneName: LoadingScene
-  _progressBar: {fileID: 1255208510}
-  _progressText: {fileID: 1917179932}
-  _tipText: {fileID: 174901200}
+  _loadingView: {fileID: 114650562}
 --- !u!1 &1917179930
 GameObject:
   m_ObjectHideFlags: 0

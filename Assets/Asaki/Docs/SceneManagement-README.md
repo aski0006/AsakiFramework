@@ -308,12 +308,12 @@ public void CancelLoading()
 
 加载场景视图接口，由游戏开发者在 Game 程序集中实现。
 
+> **设计原则**: 接口只关注进度报告，不涉及业务相关的提示信息（如"准备加载..."、"加载完成"等），这些由开发者自行在实现中处理。
+
 ```csharp
 public interface ILoadingSceneView
 {
     void UpdateProgress(float progress);    // 更新进度 0.0 ~ 1.0
-    void UpdateTip(string message);         // 更新提示文本
-    void ShowError(string errorMessage);    // 显示错误
     void Show();                            // 显示视图
     void Hide();                            // 隐藏视图
 }
@@ -333,17 +333,16 @@ public class LoadingPanelWindow : AsakiUIWindow, ILoadingSceneView
     {
         progressBar.value = progress;
         progressDetails.text = $"{progress * 100:F0}%";
-    }
-
-    public void UpdateTip(string message)
-    {
-        loadingText.text = message;
-    }
-
-    public void ShowError(string errorMessage)
-    {
-        loadingText.text = errorMessage;
-        loadingText.color = Color.red;
+        
+        // 开发者自行处理提示信息
+        if (progress < 0.3f)
+            loadingText.text = "准备加载...";
+        else if (progress < 0.9f)
+            loadingText.text = "加载资源中...";
+        else if (progress < 1f)
+            loadingText.text = "即将完成...";
+        else
+            loadingText.text = "加载完成";
     }
 
     public void Show() => gameObject.SetActive(true);

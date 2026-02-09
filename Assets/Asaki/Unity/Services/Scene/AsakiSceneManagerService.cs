@@ -87,7 +87,29 @@ namespace Asaki.Unity.Services.Scene
             CancellationToken token = default(CancellationToken)
         )
         {
-            if (_isLoading)
+            return await LoadSceneInternalAsync(
+                targetScene,
+                mode,
+                activation,
+                transition,
+                token,
+                true
+            );
+        }
+
+        /// <summary>
+        /// 内部场景加载方法，支持跳过 _isLoading 检查（用于 LoadSceneWithPreloadAsync）
+        /// </summary>
+        private async UniTask<AsakiSceneResult> LoadSceneInternalAsync(
+            string targetScene,
+            AsakiLoadSceneMode mode,
+            AsakiSceneActivation activation,
+            IAsakiSceneTransition transition,
+            CancellationToken token,
+            bool checkIsLoading
+        )
+        {
+            if (checkIsLoading && _isLoading)
             {
                 transition?.Dispose();
                 return AsakiSceneResult.Failed(targetScene, "Another scene load is in progress");
@@ -216,22 +238,37 @@ namespace Asaki.Unity.Services.Scene
         )
         {
             if (_isLoading)
+            {
+                ALog.Warn(
+                    $"[SceneService] Cannot start preload transition, another load is in progress"
+                );
                 return AsakiSceneResult.Failed(
                     targetSceneName,
                     "Another scene load is in progress"
                 );
+            }
 
             if (!IsSceneValid(targetSceneName))
+            {
+                ALog.Error(
+                    $"[SceneService] Target scene '{targetSceneName}' not found in BuildSettings"
+                );
                 return AsakiSceneResult.Failed(
                     targetSceneName,
                     $"Scene '{targetSceneName}' not found in BuildSettings."
                 );
+            }
 
             if (!IsSceneValid(loadingSceneName))
+            {
+                ALog.Error(
+                    $"[SceneService] Loading scene '{loadingSceneName}' not found in BuildSettings"
+                );
                 return AsakiSceneResult.Failed(
                     loadingSceneName,
                     $"Loading scene '{loadingSceneName}' not found in BuildSettings."
                 );
+            }
 
             _isLoading = true;
 
@@ -243,17 +280,25 @@ namespace Asaki.Unity.Services.Scene
 
                 var payload = SceneLoadPayload.Create(targetSceneName, loadingSceneName);
                 SceneLoadStateService.SetPayload(payload);
+                ALog.Info(
+                    $"[SceneService] Payload set: Target={payload.TargetSceneName}, Loading={payload.LoadingSceneName}"
+                );
 
-                var result = await LoadSceneAsync(
+                // 使用内部方法，跳过 _isLoading 检查，因为已经在上面设置了
+                var result = await LoadSceneInternalAsync(
                     loadingSceneName,
                     AsakiLoadSceneMode.Single,
                     AsakiSceneActivation.Immediate,
                     null,
-                    token
+                    token,
+                    false // 跳过 _isLoading 检查
                 );
 
                 if (!result.IsSuccess)
                 {
+                    ALog.Error(
+                        $"[SceneService] Failed to load loading scene: {result.ErrorMessage}"
+                    );
                     SceneLoadStateService.ClearPayload();
                     return AsakiSceneResult.Failed(
                         targetSceneName,
@@ -261,6 +306,10 @@ namespace Asaki.Unity.Services.Scene
                     );
                 }
 
+                ALog.Info(
+                    $"[SceneService] Loading scene '{loadingSceneName}' loaded successfully, waiting for target scene load..."
+                );
+                // 注意：此时不重置 _isLoading，因为 LoadingSceneController 还会继续加载目标场景
                 return AsakiSceneResult.Ok(targetSceneName);
             }
             catch (Exception e)
@@ -271,7 +320,10 @@ namespace Asaki.Unity.Services.Scene
             }
             finally
             {
+                // 预加载流程中，LoadingScene加载完成后即返回
+                // LoadingSceneController会继续加载目标场景，所以这里需要重置标志
                 _isLoading = false;
+                ALog.Info("[SceneService] LoadSceneWithPreloadAsync completed, _isLoading reset");
             }
         }
 

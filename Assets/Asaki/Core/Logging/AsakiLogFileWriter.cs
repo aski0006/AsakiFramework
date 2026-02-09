@@ -120,8 +120,12 @@ namespace Asaki.Core.Logging
             if (!Directory.Exists(_logDir))
                 Directory.CreateDirectory(_logDir);
 
-            // 2. 启动异步写入循环（文件延迟到 ApplyConfig 时创建）
+            Debug.Log($"[AsakiWriter] Log directory initialized: {_logDir}");
+
+            // 2. 启动异步写入循环（文件延迟到首次写入时创建）
             _writeTask = WriteLoopAsync(_cts.Token);
+
+            Debug.Log("[AsakiWriter] Background write loop started.");
         }
 
         /// <summary>
@@ -184,51 +188,51 @@ namespace Asaki.Core.Logging
         /// <para>文件头写入：<c>#VERSION:2.3</c> 与 <c>#SESSION:{DateTime.Now}</c></para>
         /// <para>使用 <see cref="FileShare.Read"/> 允许外部工具（如日志查看器）在写入时读取文件</para>
         /// <para>异常处理：任何 I/O 异常仅记录到 Unity 控制台，不向上抛出</para>
-        /// <para>线程安全：必须持有 <see cref="_fileOperationLock"/> 锁才能调用</para>
+        /// <para>线程安全：调用者必须持有 <see cref="_fileOperationLock"/> 锁才能调用此方法</para>
         /// </remarks>
-        private void OpenNewFile()
+        private void OpenNewFileUnsafe()
         {
-            lock (_fileOperationLock)
+            // 注意：此方法假设调用者已经持有 _fileOperationLock 锁
+            try
             {
-                try
-                {
-                    // 检查是否已释放，避免在 Dispose 后创建新文件
-                    if (_isDisposed)
-                        return;
+                // 检查是否已释放，避免在 Dispose 后创建新文件
+                if (_isDisposed)
+                    return;
 
-                    // 关闭旧的
-                    _streamWriter?.Dispose();
-                    _fileStream?.Dispose();
-                    _streamWriter = null;
-                    _fileStream = null;
+                // 关闭旧的
+                _streamWriter?.Dispose();
+                _fileStream?.Dispose();
+                _streamWriter = null;
+                _fileStream = null;
 
-                    // 获取当前配置快照
-                    var config = GetConfigSnapshot();
+                // 获取当前配置快照
+                var config = GetConfigSnapshot();
 
-                    // 创建新的（包含毫秒和GUID确保文件名唯一，避免并发冲突）
-                    string fileName =
-                        $"{config.filePrefix}_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}.asakilog";
-                    _currentFilePath = Path.Combine(_logDir, fileName);
+                // 创建新的（包含毫秒和GUID确保文件名唯一，避免并发冲突）
+                string fileName =
+                    $"{config.filePrefix}_{DateTime.Now:yyyyMMdd_HHmmss_fff}_{Guid.NewGuid():N}.asakilog";
+                _currentFilePath = Path.Combine(_logDir, fileName);
 
-                    // 使用 FileShare.Read 允许外部查看
-                    _fileStream = new FileStream(
-                        _currentFilePath,
-                        FileMode.Create,
-                        FileAccess.Write,
-                        FileShare.Read
-                    );
-                    _streamWriter = new StreamWriter(_fileStream, Encoding.UTF8);
-                    _streamWriter.AutoFlush = false; // 手动 Flush 提高性能
+                // 使用 FileShare.Read 允许外部查看
+                _fileStream = new FileStream(
+                    _currentFilePath,
+                    FileMode.Create,
+                    FileAccess.Write,
+                    FileShare.Read
+                );
+                _streamWriter = new StreamWriter(_fileStream, Encoding.UTF8);
+                _streamWriter.AutoFlush = false; // 手动 Flush 提高性能
 
-                    // 写入头信息
-                    _streamWriter.Write($"#VERSION:2.3\n#SESSION:{DateTime.Now}\n");
-                    _streamWriter.Flush();
-                    _currentWrittenBytes = _fileStream.Length;
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[AsakiWriter] Failed to create log file: {ex.Message}");
-                }
+                // 写入头信息
+                _streamWriter.Write($"#VERSION:2.3\n#SESSION:{DateTime.Now}\n");
+                _streamWriter.Flush();
+                _currentWrittenBytes = _fileStream.Length;
+
+                Debug.Log($"[AsakiWriter] Created new log file: {_currentFilePath}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[AsakiWriter] Failed to create log file: {ex.Message}");
             }
         }
 
@@ -365,7 +369,7 @@ namespace Asaki.Core.Logging
                         // 如果文件流未创建，先创建文件（首次写入时）
                         if (_streamWriter == null || _fileStream == null)
                         {
-                            OpenNewFile();
+                            OpenNewFileUnsafe();
                             // 如果创建失败，放弃本次写入
                             if (_streamWriter == null || _fileStream == null)
                                 return;
@@ -381,7 +385,7 @@ namespace Asaki.Core.Logging
                         var config = GetConfigSnapshot();
                         if (_currentWrittenBytes > config.maxFileSize)
                         {
-                            OpenNewFile(); // 触发轮转
+                            OpenNewFileUnsafe(); // 触发轮转
                         }
                     }
                 }

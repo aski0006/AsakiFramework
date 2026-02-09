@@ -47,6 +47,17 @@ namespace Asaki.Core.Resources
             where T : class;
         UniTask<ResHandle<T>> LoadAsync<T>(string location, CancellationToken token)
             where T : class;
+
+        /// <summary>
+        /// 非泛型方式加载资源，用于运行时类型不确定的场景
+        /// </summary>
+        UniTask<ResHandle<UnityEngine.Object>> LoadAsync(
+            string location,
+            Type type,
+            Action<float> onProgress,
+            CancellationToken token
+        );
+
         void Release(string location, Type type);
 
         UniTask<List<ResHandle<T>>> LoadBatchAsync<T>(

@@ -9,6 +9,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Resources;
 using Asaki.Core.Scene;
 using Cysharp.Threading.Tasks;
+using Object = UnityEngine.Object;
 
 namespace Asaki.Tests.Scene.Mocks
 {
@@ -386,6 +387,10 @@ namespace Asaki.Tests.Scene.Mocks
         {
             LoadAsyncCallCount++;
             return UniTask.FromResult(new ResHandle<T>(location, null, this));
+        }
+        public async UniTask<ResHandle<Object>> LoadAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+        {
+            throw new NotImplementedException();
         }
 
         public void Release(string location, Type type)

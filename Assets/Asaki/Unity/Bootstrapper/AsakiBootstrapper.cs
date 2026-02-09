@@ -133,10 +133,14 @@ namespace Asaki.Unity.Bootstrapper
             _logService = new AsakiLoggingService();
             AsakiContext.Register(_logService);
 
-            if (_config != null)
+            // 应用日志配置 - 确保配置不为null
+            AsakiLogConfig logConfig = _config?.LogConfig;
+            if (logConfig == null)
             {
-                _logService.ApplyConfig(_config.LogConfig);
+                logConfig = new AsakiLogConfig(); // 使用默认配置
+                Debug.Log("[AsakiBootstrapper] Using default log config.");
             }
+            _logService.ApplyConfig(logConfig);
 
             ALog.Info("=======================================");
             ALog.Info("== ASAKI FRAMEWORK V2 BOOT START ==");

@@ -157,7 +157,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.UI.LoginScene
             {
                 ALog.Info($"[{nameof(LoginSceneFlowManager)}] Loading MainScene...");
                 _asakiUIService.Close<LoginPanelWindow>();
-                await _asakiSceneService.LoadSceneAsync("MainScene");
+                await _asakiSceneService.LoadSceneWithPreloadAsync("MainScene");
                 ALog.Info($"[{nameof(LoginSceneFlowManager)}] MainScene loaded successfully.");
             }
             catch (System.Exception ex)

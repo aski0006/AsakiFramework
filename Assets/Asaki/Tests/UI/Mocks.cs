@@ -12,6 +12,7 @@ using Asaki.Core.UI;
 using Asaki.Unity.Services.UI;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 namespace Asaki.Tests.UI
 {
@@ -87,6 +88,10 @@ namespace Asaki.Tests.UI
             where T : class
         {
             return LoadAsync<T>(location, null, token);
+        }
+        public async UniTask<ResHandle<Object>> LoadAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+        {
+            throw new NotImplementedException();
         }
 
         public UniTask<ResHandle<T>> LoadAsync<T>(
