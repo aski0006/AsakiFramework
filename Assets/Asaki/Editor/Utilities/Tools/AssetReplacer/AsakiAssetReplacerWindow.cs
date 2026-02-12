@@ -40,7 +40,7 @@ namespace Asaki.Editor.Utilities.Tools.AssetReplacer
 
         private void DrawSettings()
         {
-            GUILayout.Label("Configuration", EditorStyles.boldLabel);
+            GUILayout.Label("DataTable", EditorStyles.boldLabel);
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {

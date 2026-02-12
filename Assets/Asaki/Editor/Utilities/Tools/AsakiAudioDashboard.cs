@@ -1,7 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Text;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,16 +10,16 @@ namespace Asaki.Editor.Utilities.Tools
     public class AsakiAudioDashboard : EditorWindow
     {
         // === 路径配置 ===
-        // [修改] 指向唯一的 AsakiConfig
-        private const string CONFIG_PATH = "Assets/Resources/Asaki/Configuration/AsakiConfig.asset";
+        // [修改] 指向唯一的 AsakiFrameworkSetting
+        private const string CONFIG_PATH = "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
         private const string CODE_GEN_PATH =
             "Assets/Asaki/Generated/AudioAsset_2_Id/AudioAssetID.cs";
 
         // [修改] 持有主配置
-        private AsakiConfig _mainConfig;
+        private AsakiFrameworkSetting _mainFrameworkSetting;
 
         // 快捷访问属性
-        private AsakiAudioConfig _audioConfig => _mainConfig?.AudioConfig;
+        private AsakiAudioConfig _audioConfig => _mainFrameworkSetting?.AudioConfig;
 
         private Vector2 _scrollPos;
         private string _searchFilter = "";
@@ -67,7 +67,7 @@ namespace Asaki.Editor.Utilities.Tools
         {
             DrawHeader();
 
-            if (_mainConfig == null)
+            if (_mainFrameworkSetting == null)
             {
                 DrawEmptyState();
                 return;
@@ -91,7 +91,7 @@ namespace Asaki.Editor.Utilities.Tools
 
         private void DrawEmptyState()
         {
-            EditorGUILayout.HelpBox($"AsakiConfig not found at: {CONFIG_PATH}", MessageType.Error);
+            EditorGUILayout.HelpBox($"AsakiFrameworkSetting not found at: {CONFIG_PATH}", MessageType.Error);
             if (GUILayout.Button("Create Config Asset"))
                 CreateConfigAsset();
         }
@@ -116,9 +116,9 @@ namespace Asaki.Editor.Utilities.Tools
             if (GUILayout.Button("Sort by Name", EditorStyles.toolbarButton))
             {
                 // [修改] 记录主配置对象
-                Undo.RecordObject(_mainConfig, "Sort Audio Items");
+                Undo.RecordObject(_mainFrameworkSetting, "Sort Audio Items");
                 _audioConfig.Items = _audioConfig.Items.OrderBy(x => x.Key).ToList();
-                EditorUtility.SetDirty(_mainConfig);
+                EditorUtility.SetDirty(_mainFrameworkSetting);
             }
 
             if (GUILayout.Button("■ Stop All", EditorStyles.toolbarButton))
@@ -146,13 +146,13 @@ namespace Asaki.Editor.Utilities.Tools
                 {
                     DragAndDrop.AcceptDrag();
                     // [修改] 记录主配置对象
-                    Undo.RecordObject(_mainConfig, "Add Audio Clips");
+                    Undo.RecordObject(_mainFrameworkSetting, "Add Audio Clips");
                     foreach (Object draggedObj in DragAndDrop.objectReferences)
                     {
                         if (draggedObj is AudioClip clip)
                             RegisterOrUpdateClip(clip);
                     }
-                    EditorUtility.SetDirty(_mainConfig);
+                    EditorUtility.SetDirty(_mainFrameworkSetting);
                 }
                 Event.current.Use();
             }
@@ -195,7 +195,7 @@ namespace Asaki.Editor.Utilities.Tools
             string newKey = EditorGUILayout.TextField(item.Key, GUILayout.Width(180));
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(_mainConfig, "Rename Key");
+                Undo.RecordObject(_mainFrameworkSetting, "Rename Key");
                 item.Key = newKey;
             }
             GUI.color = defaultColor;
@@ -205,7 +205,7 @@ namespace Asaki.Editor.Utilities.Tools
                 EditorGUILayout.ObjectField(item.Clip, typeof(AudioClip), false);
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(_mainConfig, "Change Clip");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Clip");
                 item.Clip = newClip;
                 if (newClip != null)
                     item.AssetPath = GetLoadPath(newClip);
@@ -216,7 +216,7 @@ namespace Asaki.Editor.Utilities.Tools
                 EditorGUILayout.EnumPopup(item.Group, GUILayout.Width(60));
             if (EditorGUI.EndChangeCheck())
             {
-                Undo.RecordObject(_mainConfig, "Change Group");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Group");
                 item.Group = newGroup;
             }
 
@@ -228,9 +228,9 @@ namespace Asaki.Editor.Utilities.Tools
             if (GUILayout.Button("X", GUILayout.Width(20)))
             {
                 StopPreview();
-                Undo.RecordObject(_mainConfig, "Remove Item");
+                Undo.RecordObject(_mainFrameworkSetting, "Remove Item");
                 _audioConfig.Items.RemoveAt(index);
-                EditorUtility.SetDirty(_mainConfig);
+                EditorUtility.SetDirty(_mainFrameworkSetting);
                 EditorGUILayout.EndHorizontal();
                 EditorGUILayout.EndVertical();
                 return;
@@ -323,7 +323,7 @@ namespace Asaki.Editor.Utilities.Tools
             float newVol = EditorGUILayout.Slider(item.Volume, 0f, 1f, GUILayout.Width(120));
             if (newVol != item.Volume)
             {
-                Undo.RecordObject(_mainConfig, "Change Volume");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Volume");
                 item.Volume = newVol;
                 if (_currentPlayingItem == item && _previewSource != null)
                     _previewSource.volume = newVol;
@@ -335,7 +335,7 @@ namespace Asaki.Editor.Utilities.Tools
             float newPitch = EditorGUILayout.Slider(item.Pitch, 0.1f, 3f, GUILayout.Width(120));
             if (newPitch != item.Pitch)
             {
-                Undo.RecordObject(_mainConfig, "Change Pitch");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Pitch");
                 item.Pitch = newPitch;
                 if (_currentPlayingItem == item && _previewSource != null)
                     _previewSource.pitch = newPitch;
@@ -351,7 +351,7 @@ namespace Asaki.Editor.Utilities.Tools
             bool newLoop = EditorGUILayout.ToggleLeft("Loop", item.Loop, GUILayout.Width(50));
             if (newLoop != item.Loop)
             {
-                Undo.RecordObject(_mainConfig, "Change Loop");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Loop");
                 item.Loop = newLoop;
             }
 
@@ -362,7 +362,7 @@ namespace Asaki.Editor.Utilities.Tools
             );
             if (newRnd != item.RandomPitch)
             {
-                Undo.RecordObject(_mainConfig, "Change RndPitch");
+                Undo.RecordObject(_mainFrameworkSetting, "Change RndPitch");
                 item.RandomPitch = newRnd;
             }
 
@@ -382,7 +382,7 @@ namespace Asaki.Editor.Utilities.Tools
             );
             if (newSpatial != item.SpatialBlend)
             {
-                Undo.RecordObject(_mainConfig, "Change SpatialBlend");
+                Undo.RecordObject(_mainFrameworkSetting, "Change SpatialBlend");
                 item.SpatialBlend = newSpatial;
             }
 
@@ -397,7 +397,7 @@ namespace Asaki.Editor.Utilities.Tools
             );
             if (newPriority != item.Priority)
             {
-                Undo.RecordObject(_mainConfig, "Change Priority");
+                Undo.RecordObject(_mainFrameworkSetting, "Change Priority");
                 item.Priority = newPriority;
             }
 
@@ -414,7 +414,7 @@ namespace Asaki.Editor.Utilities.Tools
                 Vector3 newPos = EditorGUILayout.Vector3Field("", item.Position);
                 if (newPos != item.Position)
                 {
-                    Undo.RecordObject(_mainConfig, "Change Position");
+                    Undo.RecordObject(_mainFrameworkSetting, "Change Position");
                     item.Position = newPos;
                 }
 
@@ -448,7 +448,7 @@ namespace Asaki.Editor.Utilities.Tools
         private void LoadConfig()
         {
             // [修改] 加载主配置
-            _mainConfig = AssetDatabase.LoadAssetAtPath<AsakiConfig>(CONFIG_PATH);
+            _mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_PATH);
         }
 
         private void CreateConfigAsset()
@@ -457,8 +457,8 @@ namespace Asaki.Editor.Utilities.Tools
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
 
-            _mainConfig = CreateInstance<AsakiConfig>();
-            AssetDatabase.CreateAsset(_mainConfig, CONFIG_PATH);
+            _mainFrameworkSetting = CreateInstance<AsakiFrameworkSetting>();
+            AssetDatabase.CreateAsset(_mainFrameworkSetting, CONFIG_PATH);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
         }
@@ -579,7 +579,7 @@ namespace Asaki.Editor.Utilities.Tools
 
         private void SyncAndGenerate()
         {
-            if (_mainConfig == null || _audioConfig == null)
+            if (_mainFrameworkSetting == null || _audioConfig == null)
                 return;
 
             foreach (AudioItem item in _audioConfig.Items)
@@ -591,7 +591,7 @@ namespace Asaki.Editor.Utilities.Tools
                     item.AssetPath = GetLoadPath(item.Clip);
             }
 
-            EditorUtility.SetDirty(_mainConfig);
+            EditorUtility.SetDirty(_mainFrameworkSetting);
             AssetDatabase.SaveAssets();
 
             StringBuilder sb = new StringBuilder();

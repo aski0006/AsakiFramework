@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
-using Asaki.Plungin.ComboSystem;
-using Asaki.Plungin.ComboSystem.States;
+using Asaki.Plugin.ComboSystem;
+using Asaki.Plugin.ComboSystem.States;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;

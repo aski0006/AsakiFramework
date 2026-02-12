@@ -3,7 +3,7 @@ using System.Linq;
 using System.Reflection;
 using Asaki.Core;
 using Asaki.Core.Attributes;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.UI;
 using UnityEditor;
 using UnityEngine;
@@ -13,7 +13,7 @@ namespace Asaki.Editor.UI
     public static class AsakiUIScaffolder
     {
         // [修改] 指向主配置
-        private const string CONFIG_PATH = "Assets/Resources/Asaki/Configuration/AsakiConfig.asset";
+        private const string CONFIG_PATH = "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
 
         // =========================================================
         // 入口 1: 从 Project 窗口的脚本直接生成 (新需求)
@@ -98,12 +98,12 @@ namespace Asaki.Editor.UI
             System.Type type = targetScript.GetType();
 
             // [修改] 加载主配置
-            AsakiConfig mainConfig = AssetDatabase.LoadAssetAtPath<AsakiConfig>(CONFIG_PATH);
-            if (mainConfig == null)
+            AsakiFrameworkSetting mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_PATH);
+            if (mainFrameworkSetting == null)
             {
                 EditorUtility.DisplayDialog(
                     "Error",
-                    $"AsakiConfig not found at {CONFIG_PATH}",
+                    $"AsakiFrameworkSetting not found at {CONFIG_PATH}",
                     "OK"
                 );
                 return;
@@ -179,7 +179,7 @@ namespace Asaki.Editor.UI
                 {
                     // [修改] 从主配置的 UIConfig 中获取模板
                     // 假设 AsakiUIConfig 已实现 GetTemplate 方法
-                    prefab = mainConfig.UIConfig.GetTemplate(attr.Type);
+                    prefab = mainFrameworkSetting.UIConfig.GetTemplate(attr.Type);
                 }
 
                 if (prefab != null)

@@ -7,6 +7,7 @@ using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Asaki.Core.Scene;
+using Asaki.Core.Scene.SceneManagement;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -23,7 +24,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             IAsakiAutoInject,
             IAsakiInit<IAsakiResourceService, IAsakiSceneManagerService>
     {
-        [Header("Configuration")]
+        [Header("DataTable")]
         [Tooltip("场景预加载配置数据库")]
         [SerializeField]
         private ScenePreloadDatabase _preloadDatabase;
@@ -43,6 +44,11 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         private SceneLoadPayload _payload;
         private CancellationTokenSource _loadingCts;
         private float _currentProgress;
+
+        /// <summary>
+        /// 预加载资源句柄列表 - 用于防止资源泄漏
+        /// </summary>
+        private readonly List<ResHandle<Object>> _preloadHandles = new List<ResHandle<Object>>();
 
         [AsakiInject]
         public void Init(
@@ -64,7 +70,8 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             // 初始化视图接口
             InitializeView();
 
-            _payload = SceneLoadStateService.GetPayload();
+            // 使用 Service 实例获取 Payload，替代静态 SceneLoadStateService
+            _payload = _sceneManager?.CurrentPayload;
 
             if (_payload == null)
             {
@@ -114,6 +121,31 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             _loadingCts?.Cancel();
             _loadingCts?.Dispose();
             _loadingCts = null;
+
+            // 修复：释放所有预加载的资源句柄，防止资源泄漏
+            ReleasePreloadedResources();
+        }
+
+        /// <summary>
+        /// 释放所有预加载的资源句柄
+        /// </summary>
+        private void ReleasePreloadedResources()
+        {
+            if (_preloadHandles.Count == 0)
+                return;
+
+            ALog.Info($"[LoadingSceneController] Releasing {_preloadHandles.Count} preloaded resources");
+
+            foreach (var handle in _preloadHandles)
+            {
+                if (handle != null && handle.IsValid)
+                {
+                    handle.Dispose();
+                }
+            }
+
+            _preloadHandles.Clear();
+            ALog.Info("[LoadingSceneController] All preloaded resources released");
         }
 
         private async UniTaskVoid StartLoading()
@@ -195,7 +227,6 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         {
             var resources = config.Resources;
             int totalCount = resources.Count;
-            var handles = new List<ResHandle<Object>>();
             float[] progresses = new float[totalCount];
 
             ALog.Info($"[LoadingSceneController] Preloading {totalCount} resources...");
@@ -225,7 +256,8 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
 
                     if (handle != null)
                     {
-                        handles.Add(handle);
+                        // 保存句柄以便后续释放
+                        _preloadHandles.Add(handle);
                     }
 
                     progresses[index] = 1f;
@@ -240,7 +272,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                 }
             }
 
-            ALog.Info($"[LoadingSceneController] Preloaded {handles.Count} resources successfully");
+            ALog.Info($"[LoadingSceneController] Preloaded {_preloadHandles.Count} resources successfully");
         }
 
         private async UniTask<ResHandle<Object>> LoadResourceAsync(
@@ -260,6 +292,8 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                 ALog.Error(
                     "[LoadingSceneController] _sceneManager is null! Make sure IAsakiInit is properly implemented and injection is complete."
                 );
+                // 通知失败
+                _sceneManager?.NotifyPreloadFinished(false, _payload?.TargetSceneName ?? "Unknown");
                 return;
             }
 
@@ -268,22 +302,40 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                 ALog.Error(
                     "[LoadingSceneController] _payload is null! This should not happen after OnStart."
                 );
+                _sceneManager.NotifyPreloadFinished(false, "Unknown");
                 return;
             }
 
             ALog.Info($"[LoadingSceneController] Loading target scene: {_payload.TargetSceneName}");
 
-            var result = await _sceneManager.LoadSceneAsync(
-                _payload.TargetSceneName,
-                _payload.LoadMode,
-                _payload.Activation,
-                null,
-                token
-            );
+            AsakiSceneResult result;
+            try
+            {
+                result = await _sceneManager.LoadSceneAsync(
+                    _payload.TargetSceneName,
+                    _payload.LoadMode,
+                    _payload.Activation,
+                    null,
+                    token
+                );
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[LoadingSceneController] Exception during scene load: {ex}");
+                _sceneManager.NotifyPreloadFinished(false, _payload.TargetSceneName);
+                return;
+            }
 
             if (!result.IsSuccess)
             {
                 ALog.Error($"[LoadingSceneController] Failed to load scene: {result.ErrorMessage}");
+                _sceneManager.NotifyPreloadFinished(false, _payload.TargetSceneName);
+            }
+            else
+            {
+                ALog.Info($"[LoadingSceneController] Target scene loaded successfully: {_payload.TargetSceneName}");
+                // 修复：通知预加载流程成功完成
+                _sceneManager.NotifyPreloadFinished(true, _payload.TargetSceneName);
             }
         }
 

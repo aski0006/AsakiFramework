@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Editor.Utilities.Tools;
 using Asaki.Unity.Bootstrapper;
@@ -18,7 +18,7 @@ namespace Asaki.Editor.Bootstrapper
     {
         private Vector2 _scrollPosition;
         private AsakiBootstrapper _bootstrapper;
-        private AsakiConfig _config;
+        private AsakiFrameworkSetting _frameworkSetting;
         private AsakiSceneContext _sceneContext;
 
         private bool _showBootstrapperSection = true;
@@ -70,7 +70,7 @@ namespace Asaki.Editor.Bootstrapper
         private void RefreshState()
         {
             _bootstrapper = FindFirstObjectByType<AsakiBootstrapper>();
-            _config = AsakiBootstrapperEditor.GetConfigAsset();
+            _frameworkSetting = AsakiBootstrapperEditor.GetConfigAsset();
             _sceneContext = FindFirstObjectByType<AsakiSceneContext>();
         }
 
@@ -148,7 +148,7 @@ namespace Asaki.Editor.Bootstrapper
             // Config 部分
             _showConfigSection = EditorGUILayout.Foldout(
                 _showConfigSection,
-                "⚙️ 配置资源 (AsakiConfig)",
+                "⚙️ 配置资源 (AsakiFrameworkSetting)",
                 true
             );
             if (_showConfigSection)
@@ -224,7 +224,7 @@ namespace Asaki.Editor.Bootstrapper
             EditorGUILayout.Space(5);
 
             // 详细状态
-            DrawStatusItem("AsakiConfig 资源", result.HasConfig);
+            DrawStatusItem("AsakiFrameworkSetting 资源", result.HasConfig);
             DrawStatusItem("Bootstrapper", result.HasBootstrapper, !result.HasBootstrapper);
             DrawStatusItem("SceneContext", result.HasSceneContext, false);
 
@@ -304,16 +304,16 @@ namespace Asaki.Editor.Bootstrapper
         {
             EditorGUILayout.BeginVertical(_boxStyle);
 
-            if (_config != null)
+            if (_frameworkSetting != null)
             {
                 GUILayout.Label("状态：已存在", _successStyle);
-                EditorGUILayout.ObjectField("Config Asset", _config, typeof(AsakiConfig), false);
+                EditorGUILayout.ObjectField("Config Asset", _frameworkSetting, typeof(AsakiFrameworkSetting), false);
 
                 GUILayout.Space(10);
 
                 if (GUILayout.Button("选中 Config"))
                 {
-                    Selection.activeObject = _config;
+                    Selection.activeObject = _frameworkSetting;
                 }
 
                 if (GUILayout.Button("创建新的 Config"))
@@ -325,7 +325,7 @@ namespace Asaki.Editor.Bootstrapper
             else
             {
                 GUILayout.Label("状态：未创建", _warningStyle);
-                GUILayout.Label("AsakiConfig 是必需的配置资源。", EditorStyles.wordWrappedLabel);
+                GUILayout.Label("AsakiFrameworkSetting 是必需的配置资源。", EditorStyles.wordWrappedLabel);
 
                 GUILayout.Space(10);
 

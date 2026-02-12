@@ -1,4 +1,4 @@
-﻿// File: Asaki/Unity/Configuration/AsakiCsvUtils.cs
+﻿// File: Asaki/Unity/DataTable/AsakiCsvUtils.cs
 
 using System.Collections.Generic;
 using System.Text;

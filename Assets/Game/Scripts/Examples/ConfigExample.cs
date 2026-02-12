@@ -1,6 +1,6 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
-using Asaki.Core.Configuration;
+using Asaki.Core.DataTable;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using UnityEngine;
@@ -8,7 +8,7 @@ using UnityEngine;
 namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 {
     [AsakiSave]
-    public partial class AsakiWeaponConfigExample : IAsakiConfig
+    public partial class AsakiWeaponDataTableExample : IAsakiDataTable
     {
         [AsakiSaveMember]
         public int Id { get; set; }
@@ -27,7 +27,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test
 
     namespace Game.Test
     {
-        partial class AsakiWeaponConfigExample : IAsakiSavable
+        partial class AsakiWeaponDataTableExample : IAsakiSavable
         {
             // WARNING: This is a configuration type. Direct serialization is restricted for safety.
             private bool _allowConfigSerialization = false;
@@ -45,12 +45,12 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test
                 // SECURITY CHECK: Prevent accidental serialization of config objects
                 if (!_allowConfigSerialization)
                 {
-                    throw new InvalidOperationException("Security violation: Attempt to serialize configuration object 'AsakiWeaponConfigExample'. " +
-                        "Configuration objects should NEVER be saved in game saves. " +
+                    throw new InvalidOperationException("Security violation: Attempt to serialize configuration object 'AsakiWeaponDataTableExample'. " +
+                        "DataTable objects should NEVER be saved in game saves. " +
                         "Instead, save only the configuration ID and reload the config when needed.");
                 }
 
-                writer.BeginObject("AsakiWeaponConfigExample");
+                writer.BeginObject("AsakiWeaponDataTableExample");
                 writer.WriteInt("Id", this.Id);
                 writer.WriteString("WeaponAssetPath", this.WeaponAssetPath);
                 writer.EndObject();
@@ -71,7 +71,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test
         [ContextMenu("Queries")]
         public void Query()
         {
-            var weapon = AsakiContext.Get<IAsakiConfigService>().Get<AsakiWeaponConfigExample>(0);
+            var weapon = AsakiContext.Get<IAsakiConfigService>().Get<AsakiWeaponDataTableExample>(0);
             if (weapon != null)
             {
                 ALog.Info(weapon.WeaponAssetPath);

@@ -6,6 +6,7 @@ using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
 using Asaki.Core.Scene;
+using Asaki.Core.Scene.SceneManagement;
 using Asaki.Unity.Services.Scene.SceneManagement;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -22,7 +23,14 @@ namespace Asaki.Unity.Services.Scene
         private bool _isLoading;
         private bool _isDisposed;
         public string LastLoadedSceneName { get; private set; }
+
+        /// <summary>
+        /// 当前待处理的场景加载参数
+        /// </summary>
+        public SceneLoadPayload CurrentPayload { get; private set; }
+
         private UniTaskCompletionSource<bool> _activationTaskSignal;
+        private UniTaskCompletionSource<AsakiSceneResult> _preloadFlowSource;
 
         public AsakiSceneManagerService(
             IAsakiEventService asakiEventService,
@@ -37,7 +45,14 @@ namespace Asaki.Unity.Services.Scene
 
         private bool IsSceneValid(string sceneName)
         {
+            // 按需检查，避免启动时遍历所有场景
             _validScene ??= new HashSet<string>();
+
+            // 如果已经验证过，直接返回
+            if (_validScene.Contains(sceneName))
+                return true;
+
+            // 按需检查特定场景是否存在
             int count = SceneManager.sceneCountInBuildSettings;
             for (int i = 0; i < count; i++)
             {
@@ -48,6 +63,8 @@ namespace Asaki.Unity.Services.Scene
                     {
                         string name = System.IO.Path.GetFileNameWithoutExtension(path);
                         _validScene.Add(name);
+                        if (name == sceneName)
+                            return true;
                     }
                 }
                 catch (Exception e)
@@ -55,28 +72,14 @@ namespace Asaki.Unity.Services.Scene
                     ALog.Error($"Failed to get scene path at index {i}", e);
                 }
             }
-            return _validScene.Contains(sceneName);
+            return false;
         }
 
         public void PerBuildScene()
         {
+            // 按需检查模式，不再在启动时遍历所有场景
             _validScene ??= new HashSet<string>();
-            int count = SceneManager.sceneCountInBuildSettings;
-            for (int i = 0; i < count; i++)
-            {
-                try
-                {
-                    string path = SceneUtility.GetScenePathByBuildIndex(i);
-                    if (string.IsNullOrEmpty(path))
-                        continue;
-                    string name = System.IO.Path.GetFileNameWithoutExtension(path);
-                    _validScene.Add(name);
-                }
-                catch (Exception e)
-                {
-                    ALog.Error($"Failed to get scene path at index {i}, Message : {e.Message}", e);
-                }
-            }
+            ALog.Info("[SceneService] PerBuildScene called - using on-demand validation");
         }
 
         public async UniTask<AsakiSceneResult> LoadSceneAsync(
@@ -137,7 +140,8 @@ namespace Asaki.Unity.Services.Scene
                 {
                     await _asakiAsyncService.WaitFrame(token);
                     await _asakiResourceService.UnloadUnusedAssets(token);
-                    GC.Collect();
+                    // 移除强制 GC.Collect()，避免在过渡动画期间造成卡顿
+                    // 依赖 Unity 的自动垃圾回收机制
                 }
 
                 LoadSceneMode unityMode =
@@ -154,7 +158,8 @@ namespace Asaki.Unity.Services.Scene
                 float lastProgress = 0f;
                 float lastReportTime = UnityEngine.Time.realtimeSinceStartup;
 
-                while (Mathf.Approximately(op.progress, 0.899f))
+                // 修复：使用 < 0.9f 而不是 Mathf.Approximately，避免浮点数精度问题
+                while (op.progress < 0.9f)
                 {
                     if (token.IsCancellationRequested)
                         return CancelSceneLoadOperation(targetScene);
@@ -179,19 +184,20 @@ namespace Asaki.Unity.Services.Scene
                 if (activation == AsakiSceneActivation.ManualConfirm)
                 {
                     _activationTaskSignal = new UniTaskCompletionSource<bool>();
-                    UniTask signalTask = _activationTaskSignal.Task.AttachExternalCancellation(
-                        token
-                    );
-                    UniTask waitTask = UniTask.Delay(
-                        TimeSpan.MaxValue,
-                        false,
-                        PlayerLoopTiming.Update,
-                        token,
-                        false
-                    );
-                    int completedIndex = await UniTask.WhenAny(signalTask, waitTask);
-                    if (completedIndex == 0) // signalTask 先完成 (索引 0)
+
+                    // 修复：移除 UniTask.Delay(TimeSpan.MaxValue) 的奇怪写法
+                    // 直接等待激活信号，添加超时警告
+                    ALog.Info($"[SceneService] Waiting for manual scene activation: {targetScene}");
+
+                    try
+                    {
+                        await _activationTaskSignal.Task.AttachExternalCancellation(token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        ALog.Warn($"[SceneService] Scene activation cancelled or timeout: {targetScene}");
                         return CancelSceneLoadOperation(targetScene);
+                    }
                 }
 
                 op.allowSceneActivation = true;
@@ -278,10 +284,12 @@ namespace Asaki.Unity.Services.Scene
                     $"[SceneService] Starting preload scene transition: Current -> {loadingSceneName} -> {targetSceneName}"
                 );
 
-                var payload = SceneLoadPayload.Create(targetSceneName, loadingSceneName);
-                SceneLoadStateService.SetPayload(payload);
+                // 使用实例属性存储 Payload，替代静态 SceneLoadStateService
+                CurrentPayload = SceneLoadPayload.Create(targetSceneName, loadingSceneName);
+                _preloadFlowSource = new UniTaskCompletionSource<AsakiSceneResult>();
+
                 ALog.Info(
-                    $"[SceneService] Payload set: Target={payload.TargetSceneName}, Loading={payload.LoadingSceneName}"
+                    $"[SceneService] Payload set: Target={CurrentPayload.TargetSceneName}, Loading={CurrentPayload.LoadingSceneName}"
                 );
 
                 // 使用内部方法，跳过 _isLoading 检查，因为已经在上面设置了
@@ -299,7 +307,8 @@ namespace Asaki.Unity.Services.Scene
                     ALog.Error(
                         $"[SceneService] Failed to load loading scene: {result.ErrorMessage}"
                     );
-                    SceneLoadStateService.ClearPayload();
+                    CurrentPayload = null;
+                    _preloadFlowSource = null;
                     return AsakiSceneResult.Failed(
                         targetSceneName,
                         $"Failed to load loading scene: {result.ErrorMessage}"
@@ -309,22 +318,57 @@ namespace Asaki.Unity.Services.Scene
                 ALog.Info(
                     $"[SceneService] Loading scene '{loadingSceneName}' loaded successfully, waiting for target scene load..."
                 );
-                // 注意：此时不重置 _isLoading，因为 LoadingSceneController 还会继续加载目标场景
-                return AsakiSceneResult.Ok(targetSceneName);
+
+                // 修复：等待整个流程完成（Loading -> Target）
+                // 使用 AttachExternalCancellation 确保 token 取消时能正确处理
+                var finalResult = await _preloadFlowSource.Task.AttachExternalCancellation(token);
+
+                ALog.Info($"[SceneService] Preload flow completed with result: {finalResult.IsSuccess}");
+                return finalResult;
+            }
+            catch (OperationCanceledException)
+            {
+                CurrentPayload = null;
+                _preloadFlowSource = null;
+                ALog.Info("[SceneService] Preload scene transition cancelled");
+                return AsakiSceneResult.OperationCanceled(targetSceneName);
             }
             catch (Exception e)
             {
-                SceneLoadStateService.ClearPayload();
+                CurrentPayload = null;
+                _preloadFlowSource = null;
                 ALog.Error("[SceneService] Preload scene transition failed.", e);
                 return AsakiSceneResult.Failed(targetSceneName, e.Message);
             }
             finally
             {
-                // 预加载流程中，LoadingScene加载完成后即返回
-                // LoadingSceneController会继续加载目标场景，所以这里需要重置标志
                 _isLoading = false;
                 ALog.Info("[SceneService] LoadSceneWithPreloadAsync completed, _isLoading reset");
             }
+        }
+
+        /// <summary>
+        /// 通知预加载流程已完成（由 LoadingSceneController 调用）
+        /// </summary>
+        public void NotifyPreloadFinished(bool success, string sceneName)
+        {
+            if (_preloadFlowSource == null)
+            {
+                ALog.Warn("[SceneService] NotifyPreloadFinished called but no preload flow is active");
+                return;
+            }
+
+            if (success)
+            {
+                _preloadFlowSource.TrySetResult(AsakiSceneResult.Ok(sceneName));
+            }
+            else
+            {
+                _preloadFlowSource.TrySetResult(AsakiSceneResult.Failed(sceneName, "Target scene load failed in LoadingSceneController"));
+            }
+
+            // 清理 Payload
+            CurrentPayload = null;
         }
 
         public void Dispose()
@@ -337,6 +381,9 @@ namespace Asaki.Unity.Services.Scene
             _validScene = null;
             _activationTaskSignal?.TrySetCanceled();
             _activationTaskSignal = null;
+            _preloadFlowSource?.TrySetCanceled();
+            _preloadFlowSource = null;
+            CurrentPayload = null;
         }
 
         private AsakiSceneResult CancelSceneLoadOperation(string targetSceneName)
@@ -344,7 +391,6 @@ namespace Asaki.Unity.Services.Scene
             _asakiEventService.Publish(
                 new AsakiSceneStateEvent(targetSceneName, AsakiSceneStateEvent.State.Cancelled)
             );
-            ;
             return AsakiSceneResult.OperationCanceled(targetSceneName);
         }
     }

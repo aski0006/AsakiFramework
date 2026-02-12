@@ -1,5 +1,5 @@
 ﻿using System;
-using Asaki.Core.Configuration;
+using Asaki.Core.DataTable;
 
 namespace Asaki.Core.Attributes
 {

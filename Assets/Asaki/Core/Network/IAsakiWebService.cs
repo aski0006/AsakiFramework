@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Serialization;
 using Cysharp.Threading.Tasks;

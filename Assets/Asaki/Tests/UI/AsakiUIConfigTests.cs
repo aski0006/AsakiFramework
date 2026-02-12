@@ -1,7 +1,7 @@
 ﻿// File: Assets/Tests/UI/AsakiUIConfigTests.cs
 
 using System.Collections.Generic;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.UI;
 using NUnit.Framework;
 using UnityEngine;

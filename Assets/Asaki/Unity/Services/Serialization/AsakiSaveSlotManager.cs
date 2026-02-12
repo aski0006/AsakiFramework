@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Utils;

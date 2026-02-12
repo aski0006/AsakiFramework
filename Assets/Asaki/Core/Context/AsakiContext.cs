@@ -142,7 +142,7 @@ namespace Asaki.Core.Context
                 {
                     throw new InvalidOperationException(
                         $"[AsakiContext] Container is Frozen! Cannot register new service '{type.Name}' at runtime. "
-                            + "Use 'Replace()' if you intend to hot - fix."
+                        + "Use 'Replace()' if you intend to hot - fix."
                     );
                 }
 
@@ -252,11 +252,20 @@ namespace Asaki.Core.Context
                 catch (Exception ex)
                 {
                     // 记录异常但不中断清理流程
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     ALog.Error($"[AsakiContext] Error disposing service {kvp.Key.Name}: {ex}");
-#endif
+                    #endif
                 }
             }
         }
-    }
+
+        public static void Reset()
+        {
+            lock (_writeLock)
+            {
+                _services = new Dictionary<Type, IAsakiService>();
+                _isFrozen = false;
+            }
+        }
+}
 }

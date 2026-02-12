@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
@@ -44,15 +44,15 @@ namespace Asaki.Unity.Modules
 
         public void OnInit()
         {
-            AsakiConfig config = AsakiContext.Get<AsakiConfig>();
+            AsakiFrameworkSetting frameworkSetting = AsakiContext.Get<AsakiFrameworkSetting>();
             // 如果没配置 UI，直接跳过
-            if (!config)
+            if (!frameworkSetting)
                 return;
 
             _uiManageService = new AsakiUIManageService(
-                config.UIConfig,
-                config.UIConfig.ReferenceResolution,
-                config.UIConfig.MatchWidthOrHeight,
+                frameworkSetting.UIConfig,
+                frameworkSetting.UIConfig.ReferenceResolution,
+                frameworkSetting.UIConfig.MatchWidthOrHeight,
                 _eventService,
                 _resourceService,
                 _poolService

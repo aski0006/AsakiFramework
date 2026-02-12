@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.Threading;
 using Asaki.Core.Context;
+using Asaki.Core.Scene.SceneManagement;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Scene
@@ -8,6 +9,12 @@ namespace Asaki.Core.Scene
     public interface IAsakiSceneManagerService : IAsakiService, IDisposable
     {
         string LastLoadedSceneName { get; }
+
+        /// <summary>
+        /// 当前待处理的场景加载参数
+        /// </summary>
+        SceneLoadPayload CurrentPayload { get; }
+
         void PerBuildScene();
         UniTask<AsakiSceneResult> LoadSceneAsync(
             string sceneName,
@@ -26,11 +33,18 @@ namespace Asaki.Core.Scene
         /// <param name="targetSceneName">目标场景名称</param>
         /// <param name="loadingSceneName">过渡场景名称，默认为"LoadingScene"</param>
         /// <param name="token">取消令牌</param>
-        /// <returns>场景加载结果</returns>
+        /// <returns>场景加载结果（等待整个流程完成）</returns>
         UniTask<AsakiSceneResult> LoadSceneWithPreloadAsync(
             string targetSceneName,
             string loadingSceneName = "LoadingScene",
             CancellationToken token = default(CancellationToken)
         );
+
+        /// <summary>
+        /// 通知预加载流程已完成（由 LoadingSceneController 调用）
+        /// </summary>
+        /// <param name="success">是否成功</param>
+        /// <param name="sceneName">场景名称</param>
+        void NotifyPreloadFinished(bool success, string sceneName);
     }
 }

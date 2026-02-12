@@ -99,7 +99,7 @@ namespace Asaki.Editor.Utilities.Tools
 
         private void DrawLayoutSettings()
         {
-            EditorGUILayout.LabelField("Layout Configuration", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Layout DataTable", EditorStyles.boldLabel);
 
             // 模式选择（带图标）
             using (new EditorGUILayout.HorizontalScope())

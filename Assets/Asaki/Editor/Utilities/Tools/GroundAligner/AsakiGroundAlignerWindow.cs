@@ -61,7 +61,7 @@ namespace Asaki.Editor.Utilities.Tools.GroundAligner
 
         private void DrawSettings()
         {
-            GUILayout.Label("Configuration", EditorStyles.boldLabel);
+            GUILayout.Label("DataTable", EditorStyles.boldLabel);
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {

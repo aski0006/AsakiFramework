@@ -89,7 +89,7 @@ namespace Asaki.Unity.Services.Resources
 
         #region Serialized Fields
 
-        [Header("Resource Configuration")]
+        [Header("Resource DataTable")]
         [SerializeField]
         [Tooltip("预加载的资源组列表")]
         private List<ResourceGroup> _resourceGroups = new();

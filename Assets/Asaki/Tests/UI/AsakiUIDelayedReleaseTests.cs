@@ -1,7 +1,7 @@
 // File: Assets/Tests/UI/AsakiUIDelayedReleaseTests.cs
 
 using System.Collections;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;

@@ -152,6 +152,18 @@ namespace Asaki.Core.Architecture.Entities.Extensions
             }
         }
 
+        public static void ForEach(this IEntityWorld world, Action<IEntity> action)
+        {
+            if (action == null)
+                return;
+
+            foreach (var entity in world.GetAllEntities())
+            {
+                action(entity);
+            }
+        }
+
+
         /// <summary>
         /// 批量处理组件（最高性能）
         /// </summary>

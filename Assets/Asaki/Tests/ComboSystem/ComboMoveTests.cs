@@ -1,4 +1,4 @@
-using Asaki.Plungin.ComboSystem;
+using Asaki.Plugin.ComboSystem;
 using NUnit.Framework;
 using UnityEngine;
 

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using UnityEditor;
@@ -47,7 +47,7 @@ namespace Asaki.Unity.Logging
                 // 延迟初始化，从配置读取
                 if (!_isEnabled.HasValue)
                 {
-                    if (AsakiContext.TryGet(out AsakiConfig config) && config.LogConfig != null)
+                    if (AsakiContext.TryGet(out AsakiFrameworkSetting config) && config.LogConfig != null)
                     {
                         _isEnabled = config.LogConfig.OutputToUnityConsole;
                     }

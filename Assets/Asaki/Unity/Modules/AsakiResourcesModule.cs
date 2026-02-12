@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Asaki.Core.Async;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Resources;
@@ -28,11 +28,11 @@ namespace Asaki.Unity.Modules
 
         public void OnInit()
         {
-            AsakiConfig config = AsakiContext.Get<AsakiConfig>();
+            AsakiFrameworkSetting frameworkSetting = AsakiContext.Get<AsakiFrameworkSetting>();
 
             // 2. 创建工厂
-            AsakiResKitMode mode = config ? config.ResConfig.Mode : AsakiResKitMode.Resources;
-            int timeoutSeconds = config.ResConfig.TimeoutSeconds;
+            AsakiResKitMode mode = frameworkSetting ? frameworkSetting.ResConfig.Mode : AsakiResKitMode.Resources;
+            int timeoutSeconds = frameworkSetting.ResConfig.TimeoutSeconds;
             _resourceService = AsakiResKitFactory.Create(mode, _asyncService, _eventService);
             _resourceService.SetTimeoutSeconds(timeoutSeconds);
             // 3. 注册服务

@@ -1,4 +1,4 @@
-using Asaki.Plungin.ComboSystem;
+using Asaki.Plugin.ComboSystem;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -468,11 +468,11 @@ namespace Asaki.Tests.ComboSystem
             var context = new ComboContext();
 
             // Act
-            context.InterruptReason = Asaki.Plungin.ComboSystem.InterruptReason.Damaged;
+            context.InterruptReason = Asaki.Plugin.ComboSystem.InterruptReason.Damaged;
 
             // Assert
             Assert.AreEqual(
-                Asaki.Plungin.ComboSystem.InterruptReason.Damaged,
+                Asaki.Plugin.ComboSystem.InterruptReason.Damaged,
                 context.InterruptReason
             );
         }

@@ -1,5 +1,5 @@
 using System.IO;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Unity.Bootstrapper;
 using UnityEditor;
@@ -15,7 +15,7 @@ namespace Asaki.Editor.Bootstrapper
     /// </summary>
     public static class AsakiBootstrapperEditor
     {
-        private const string CONFIG_PATH = "Assets/Resources/AsakiConfig.asset";
+        private const string CONFIG_PATH = "Assets/Resources/AsakiFrameworkSetting.asset";
         private const string BOOTSTRAPPER_GO_NAME = "[AsakiBootstrapper]";
 
         // ===================================================================
@@ -101,7 +101,7 @@ namespace Asaki.Editor.Bootstrapper
         }
 
         [MenuItem("Asaki/Bootstrapper/Create Config Asset", false, 102)]
-        public static AsakiConfig CreateConfigAsset()
+        public static AsakiFrameworkSetting CreateConfigAsset()
         {
             var config = GetOrCreateConfigAsset();
             EditorUtility.DisplayDialog(
@@ -180,7 +180,7 @@ namespace Asaki.Editor.Bootstrapper
 
                 var sb = new System.Text.StringBuilder();
                 if (!HasConfig)
-                    sb.AppendLine("- 缺少 AsakiConfig 资源（必须）");
+                    sb.AppendLine("- 缺少 AsakiFrameworkSetting 资源（必须）");
 
                 return sb.ToString();
             }
@@ -227,9 +227,9 @@ namespace Asaki.Editor.Bootstrapper
         // ===================================================================
 
         /// <summary>
-        /// 获取或创建 AsakiConfig 资源
+        /// 获取或创建 AsakiFrameworkSetting 资源
         /// </summary>
-        public static AsakiConfig GetOrCreateConfigAsset()
+        public static AsakiFrameworkSetting GetOrCreateConfigAsset()
         {
             var config = GetConfigAsset();
             if (config != null)
@@ -243,7 +243,7 @@ namespace Asaki.Editor.Bootstrapper
             }
 
             // 创建资源
-            config = ScriptableObject.CreateInstance<AsakiConfig>();
+            config = ScriptableObject.CreateInstance<AsakiFrameworkSetting>();
             AssetDatabase.CreateAsset(config, CONFIG_PATH);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -253,21 +253,21 @@ namespace Asaki.Editor.Bootstrapper
         }
 
         /// <summary>
-        /// 获取已存在的 AsakiConfig 资源
+        /// 获取已存在的 AsakiFrameworkSetting 资源
         /// </summary>
-        public static AsakiConfig GetConfigAsset()
+        public static AsakiFrameworkSetting GetConfigAsset()
         {
             // 尝试从 Resources 加载
-            var config = Resources.Load<AsakiConfig>("AsakiConfig");
+            var config = Resources.Load<AsakiFrameworkSetting>("AsakiFrameworkSetting");
             if (config != null)
                 return config;
 
             // 尝试从 AssetDatabase 查找
-            string[] guids = AssetDatabase.FindAssets("t:AsakiConfig");
+            string[] guids = AssetDatabase.FindAssets("t:AsakiFrameworkSetting");
             if (guids.Length > 0)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                return AssetDatabase.LoadAssetAtPath<AsakiConfig>(path);
+                return AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(path);
             }
 
             return null;

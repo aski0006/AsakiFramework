@@ -1,9 +1,9 @@
 ﻿using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
-using Asaki.Core.Configuration;
+using Asaki.Core.DataTable;
 using Asaki.Core.Context;
-using Asaki.Unity.Services.Configuration;
+using Asaki.Unity.Services.DataTable;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Unity.Modules

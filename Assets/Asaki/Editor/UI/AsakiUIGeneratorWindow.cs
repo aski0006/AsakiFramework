@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.UI;
 using UnityEditor;
 using UnityEngine;
@@ -15,7 +15,7 @@ namespace Asaki.Editor.UI
     {
         private const string CODE_GEN_PATH = "Assets/Asaki/Generated/UIAsset_2_Id/WindowAssetId.cs";
         private const string CONFIG_ASSET_PATH =
-            "Assets/Resources/Asaki/Configuration/AsakiConfig.asset";
+            "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
 
         [Serializable]
         private class UIItem
@@ -84,7 +84,7 @@ namespace Asaki.Editor.UI
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
             // [修改] 按钮文字更新
-            if (GUILayout.Button("Load From AsakiConfig", EditorStyles.toolbarButton))
+            if (GUILayout.Button("Load From AsakiFrameworkSetting", EditorStyles.toolbarButton))
             {
                 LoadCurrentConfig();
             }
@@ -218,7 +218,7 @@ namespace Asaki.Editor.UI
         {
             GUILayout.Space(10);
             GUI.enabled = !_hasGlobalConflict && _items.Count > 0;
-            if (GUILayout.Button("Sync Configuration & Generate Code", GUILayout.Height(40)))
+            if (GUILayout.Button("Sync DataTable & Generate Code", GUILayout.Height(40)))
             {
                 SyncAndGenerate();
             }
@@ -258,17 +258,17 @@ namespace Asaki.Editor.UI
                 EditorUtility.DisplayProgressBar("Asaki UI Gen", "Processing...", 0.5f);
 
                 // [修改] 获取主配置
-                AsakiConfig mainConfig = LoadOrCreateConfig();
+                AsakiFrameworkSetting mainFrameworkSetting = LoadOrCreateConfig();
 
                 GenerateCode(_items);
 
-                // [修改] 同步到 mainConfig.UIConfig
-                UpdateConfigData(mainConfig, _items);
+                // [修改] 同步到 mainFrameworkSetting.UIConfig
+                UpdateConfigData(mainFrameworkSetting, _items);
 
                 AssetDatabase.Refresh();
                 EditorUtility.DisplayDialog(
                     "Success",
-                    $"Synced {_items.Count} items to AsakiConfig & UIID.cs",
+                    $"Synced {_items.Count} items to AsakiFrameworkSetting & UIID.cs",
                     "OK"
                 );
             }
@@ -303,10 +303,10 @@ namespace Asaki.Editor.UI
             WriteFile(CODE_GEN_PATH, sb.ToString());
         }
 
-        private static void UpdateConfigData(AsakiConfig mainConfig, List<UIItem> items)
+        private static void UpdateConfigData(AsakiFrameworkSetting mainFrameworkSetting, List<UIItem> items)
         {
             // [修改] 操作 UIConfig 属性
-            AsakiUIConfig uiConfig = mainConfig.UIConfig;
+            AsakiUIConfig uiConfig = mainFrameworkSetting.UIConfig;
             uiConfig.UIList.Clear();
             foreach (UIItem item in items.OrderBy(x => x.EnumName))
             {
@@ -321,36 +321,36 @@ namespace Asaki.Editor.UI
                 );
             }
             // 标记主 SO 为脏
-            EditorUtility.SetDirty(mainConfig);
+            EditorUtility.SetDirty(mainFrameworkSetting);
             AssetDatabase.SaveAssets();
         }
 
         // [修改] 返回主配置类型
-        private static AsakiConfig LoadOrCreateConfig()
+        private static AsakiFrameworkSetting LoadOrCreateConfig()
         {
-            AsakiConfig config = AssetDatabase.LoadAssetAtPath<AsakiConfig>(CONFIG_ASSET_PATH);
-            if (!config)
+            AsakiFrameworkSetting frameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
+            if (!frameworkSetting)
             {
-                config = CreateInstance<AsakiConfig>();
+                frameworkSetting = CreateInstance<AsakiFrameworkSetting>();
                 string dir = Path.GetDirectoryName(CONFIG_ASSET_PATH);
                 if (!Directory.Exists(dir))
                     if (dir != null)
                         Directory.CreateDirectory(dir);
-                AssetDatabase.CreateAsset(config, CONFIG_ASSET_PATH);
+                AssetDatabase.CreateAsset(frameworkSetting, CONFIG_ASSET_PATH);
             }
-            return config;
+            return frameworkSetting;
         }
 
         private void LoadCurrentConfig()
         {
             // [修改] 加载主配置
-            AsakiConfig mainConfig = AssetDatabase.LoadAssetAtPath<AsakiConfig>(CONFIG_ASSET_PATH);
-            if (mainConfig == null)
+            AsakiFrameworkSetting mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
+            if (mainFrameworkSetting == null)
                 return;
 
             _items.Clear();
             // [修改] 访问 UIConfig.UIList
-            foreach (UIInfo info in mainConfig.UIConfig.UIList)
+            foreach (UIInfo info in mainFrameworkSetting.UIConfig.UIList)
             {
                 GameObject prefab = null;
                 string searchPath = info.AssetPath;

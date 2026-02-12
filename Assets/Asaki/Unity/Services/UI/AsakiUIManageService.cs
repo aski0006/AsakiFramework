@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Factories;
@@ -98,7 +98,7 @@ namespace Asaki.Unity.Services.UI
             }
             else
             {
-                ALog.Warn("[AsakiUI] No UIConfig assigned in AsakiConfig!");
+                ALog.Warn("[AsakiUI] No UIConfig assigned in AsakiFrameworkSetting!");
             }
             return UniTask.CompletedTask;
         }

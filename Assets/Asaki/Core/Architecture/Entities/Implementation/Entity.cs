@@ -6,69 +6,31 @@ using Asaki.Core.Broker;
 namespace Asaki.Core.Architecture.Entities
 {
     /// <summary>
-    /// 实体实现
+    /// 实体实现 - 数组化存储优化版
     /// </summary>
     public class Entity : IEntity
     {
-        private readonly IEntityWorld _world;
-        private readonly Dictionary<int, IEntityComponent> _components = new();
-        private BitArray _componentMask;
+        // 强制转换为具体类型以访问内部优化方法
+        private readonly EntityWorld _worldImpl;
+        public IEntityWorld World => _worldImpl;
+
+        // 优化 1: 使用数组替代 Dictionary，利用 TypeId 直接索引
+        private IEntityComponent[] _componentsArray = new IEntityComponent[8];
+
+        // 优化 2: 保持 BitArray 用于极速 HasComponent 检查
+        private BitArray _componentMask = new BitArray(8);
+
+        private int _componentCount;
+        private bool _isActive = true;
         private bool _isDisposed;
 
-        /// <summary>
-        /// 实体唯一标识符
-        /// </summary>
         public EntityId Id { get; private set; }
-
-        /// <summary>
-        /// 实体是否激活
-        /// </summary>
-        public bool IsActive
-        {
-            get => _isActive;
-            set
-            {
-                if (_isActive == value)
-                    return;
-                _isActive = value;
-
-                if (_isActive)
-                {
-                    foreach (var component in _components.Values)
-                    {
-                        component.OnEnable();
-                    }
-                }
-                else
-                {
-                    foreach (var component in _components.Values)
-                    {
-                        component.OnDisable();
-                    }
-                }
-            }
-        }
-        private bool _isActive = true;
-
-        /// <summary>
-        /// 实体所属世界
-        /// </summary>
-        public IEntityWorld World => _world;
-
-        /// <summary>
-        /// 组件数量
-        /// </summary>
-        public int ComponentCount => _components.Count;
-
-        /// <summary>
-        /// 是否已释放
-        /// </summary>
+        public int ComponentCount => _componentCount;
         public bool IsDisposed => _isDisposed;
 
-        internal Entity(IEntityWorld world)
+        internal Entity(EntityWorld world)
         {
-            _world = world ?? throw new ArgumentNullException(nameof(world));
-            _componentMask = new BitArray(32); // 初始支持32种组件
+            _worldImpl = world ?? throw new ArgumentNullException(nameof(world));
         }
 
         internal void Initialize(EntityId id)
@@ -76,243 +38,165 @@ namespace Asaki.Core.Architecture.Entities
             Id = id;
         }
 
-        /// <summary>
-        /// 添加组件
-        /// </summary>
-        public T AddComponent<T>()
-            where T : class, IEntityComponent, new()
+        public bool IsActive
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException(
-                    nameof(Entity),
-                    $"Cannot add component to disposed entity {Id}"
-                );
-
-            int typeId = ComponentTypeRegistry.GetTypeId<T>();
-
-            if (_components.ContainsKey(typeId))
+            get => _isActive;
+            set
             {
-                throw new InvalidOperationException(
-                    $"Entity {Id} already has component of type {typeof(T).Name}"
-                );
+                if (_isActive == value) return;
+                _isActive = value;
+                // 数组遍历比 Dictionary Values 遍历更快
+                for (int i = 0; i < _componentsArray.Length; i++)
+                {
+                    var c = _componentsArray[i];
+                    if (c == null) continue;
+                    if (_isActive) c.OnEnable(); else c.OnDisable();
+                }
             }
+        }
 
+        public T AddComponent<T>() where T : class, IEntityComponent, new()
+        {
             var component = new T();
-            component.Entity = this;
-
-            _components[typeId] = component;
-            EnsureMaskCapacity(typeId);
-            _componentMask[typeId] = true;
-
-            component.OnAttach();
-            if (IsActive)
-                component.OnEnable();
-
-            // 发布组件添加事件
-            AsakiBroker.Publish(
-                new ComponentAddedEvent { EntityId = Id, ComponentTypeName = typeof(T).Name }
-            );
-
-            return component;
+            return AddComponentInternal(component, ComponentTypeRegistry.GetTypeId<T>(), typeof(T));
         }
 
-        /// <summary>
-        /// 添加已有组件实例
-        /// </summary>
-        public T AddComponent<T>(T component)
-            where T : class, IEntityComponent
+        public T AddComponent<T>(T component) where T : class, IEntityComponent
         {
-            if (_isDisposed)
-                throw new ObjectDisposedException(
-                    nameof(Entity),
-                    $"Cannot add component to disposed entity {Id}"
-                );
+            return AddComponentInternal(component, ComponentTypeRegistry.GetTypeId<T>(), typeof(T));
+        }
 
-            if (component == null)
-                throw new ArgumentNullException(nameof(component));
+        private T AddComponentInternal<T>(T component, int typeId, Type type) where T : class, IEntityComponent
+        {
+            if (_isDisposed) throw new ObjectDisposedException(nameof(Entity));
 
-            int typeId = ComponentTypeRegistry.GetTypeId<T>();
-
-            if (_components.ContainsKey(typeId))
+            // 数组扩容检查
+            if (typeId >= _componentsArray.Length)
             {
-                throw new InvalidOperationException(
-                    $"Entity {Id} already has component of type {typeof(T).Name}"
-                );
+                int newSize = Math.Max(typeId + 1, _componentsArray.Length * 2);
+                Array.Resize(ref _componentsArray, newSize);
+                _componentMask.Length = newSize;
             }
 
+            if (_componentsArray[typeId] != null)
+                throw new InvalidOperationException($"Entity {Id} already has component {type.Name}");
+
             component.Entity = this;
-            _components[typeId] = component;
-            EnsureMaskCapacity(typeId);
+            _componentsArray[typeId] = component;
             _componentMask[typeId] = true;
+            _componentCount++;
+
+            // 通知 World 更新缓存
+            _worldImpl.OnComponentAdded(this, typeId);
 
             component.OnAttach();
-            if (IsActive)
-                component.OnEnable();
+            if (_isActive) component.OnEnable();
 
+            AsakiBroker.Publish(new ComponentAddedEvent { EntityId = Id, ComponentTypeName = type.Name });
             return component;
         }
 
-        /// <summary>
-        /// 获取组件
-        /// </summary>
-        public T GetComponent<T>()
-            where T : class, IEntityComponent
+        public T GetComponent<T>() where T : class, IEntityComponent
         {
             int typeId = ComponentTypeRegistry.GetTypeId<T>();
-            return _components.TryGetValue(typeId, out var component) ? component as T : null;
+            if (typeId >= _componentsArray.Length) return null;
+            // 数组直接访问，极快
+            return _componentsArray[typeId] as T;
         }
 
-        /// <summary>
-        /// 尝试获取组件
-        /// </summary>
-        public bool TryGetComponent<T>(out T component)
-            where T : class, IEntityComponent
+        public bool TryGetComponent<T>(out T component) where T : class, IEntityComponent
         {
             component = GetComponent<T>();
             return component != null;
         }
 
-        /// <summary>
-        /// 移除组件
-        /// </summary>
-        public bool RemoveComponent<T>()
-            where T : class, IEntityComponent
+        public bool RemoveComponent<T>() where T : class, IEntityComponent
         {
-            int typeId = ComponentTypeRegistry.GetTypeId<T>();
-
-            if (!_components.TryGetValue(typeId, out var component))
-                return false;
-
-            if (IsActive)
-                component.OnDisable();
-            component.OnDetach();
-            component.Dispose();
-
-            _components.Remove(typeId);
-            if (typeId < _componentMask.Length)
-                _componentMask[typeId] = false;
-
-            // 发布组件移除事件
-            AsakiBroker.Publish(
-                new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = typeof(T).Name }
-            );
-
-            return true;
+            return RemoveComponent(typeof(T));
         }
 
-        /// <summary>
-        /// 检查是否具有指定组件
-        /// </summary>
-        public bool HasComponent<T>()
-            where T : class, IEntityComponent
-        {
-            int typeId = ComponentTypeRegistry.GetTypeId<T>();
-            return HasComponent(typeId);
-        }
-
-        /// <summary>
-        /// 检查是否具有指定组件（内部使用）
-        /// </summary>
-        internal bool HasComponent(int typeId)
-        {
-            return typeId < _componentMask.Length && _componentMask[typeId];
-        }
-
-        /// <summary>
-        /// 检查是否具有指定组件（基于类型）
-        /// </summary>
-        public bool HasComponent(Type componentType)
-        {
-            if (componentType == null)
-                throw new ArgumentNullException(nameof(componentType));
-
-            int typeId = ComponentTypeRegistry.GetTypeId(componentType);
-            return HasComponent(typeId);
-        }
-
-        /// <summary>
-        /// 移除组件（基于类型）
-        /// </summary>
         public bool RemoveComponent(Type componentType)
         {
-            if (componentType == null)
-                throw new ArgumentNullException(nameof(componentType));
-
             int typeId = ComponentTypeRegistry.GetTypeId(componentType);
+            if (typeId >= _componentsArray.Length) return false;
 
-            if (!_components.TryGetValue(typeId, out var component))
-                return false;
+            var component = _componentsArray[typeId];
+            if (component == null) return false;
 
-            if (IsActive)
-                component.OnDisable();
+            // 1. 生命周期处理
+            if (_isActive) component.OnDisable();
             component.OnDetach();
             component.Dispose();
 
-            _components.Remove(typeId);
-            if (typeId < _componentMask.Length)
-                _componentMask[typeId] = false;
+            // 2. 数据清理
+            _componentsArray[typeId] = null;
+            _componentMask[typeId] = false;
+            _componentCount--;
 
-            // 发布组件移除事件
-            AsakiBroker.Publish(
-                new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = componentType.Name }
-            );
+            // 3. 通知 World
+            _worldImpl.OnComponentRemoved(this, typeId);
 
+            AsakiBroker.Publish(new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = componentType.Name });
             return true;
         }
 
-        /// <summary>
-        /// 获取所有组件
-        /// </summary>
-        public IEnumerable<IEntityComponent> GetAllComponents()
+        public bool HasComponent<T>() where T : class, IEntityComponent
         {
-            return _components.Values;
+            int typeId = ComponentTypeRegistry.GetTypeId<T>();
+            return HasComponent(typeId);
         }
 
-        /// <summary>
-        /// 释放实体
-        /// </summary>
+        internal bool HasComponent(int typeId)
+        {
+            if (typeId >= _componentMask.Length) return false;
+            return _componentMask[typeId];
+        }
+
+        public bool HasComponent(Type componentType)
+        {
+            return HasComponent(ComponentTypeRegistry.GetTypeId(componentType));
+        }
+
+        public IEnumerable<IEntityComponent> GetAllComponents()
+        {
+            for (int i = 0; i < _componentsArray.Length; i++)
+            {
+                var c = _componentsArray[i];
+                if (c != null) yield return c;
+            }
+        }
+
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
+            if (_isDisposed) return;
             _isDisposed = true;
 
-            // 清理所有组件
-            foreach (var component in _components.Values)
+            // 倒序删除更安全? 这里直接遍历即可
+            for (int i = 0; i < _componentsArray.Length; i++)
             {
-                try
+                var c = _componentsArray[i];
+                if (c != null)
                 {
-                    if (IsActive)
-                        component.OnDisable();
-                    component.OnDetach();
-                    component.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    // 记录错误但不中断清理过程
-                    Core.Logging.ALog.Error($"[Entity] Error disposing component: {ex.Message}");
+                    try
+                    {
+                        // 通知 World 清理 Group 索引 (虽然 World.DestroyEntity 也会清理 Entity，
+                        // 但如果单纯调用 entity.Dispose，也需要保持一致性)
+                        _worldImpl.OnComponentRemoved(this, i);
+
+                        if (_isActive) c.OnDisable();
+                        c.OnDetach();
+                        c.Dispose();
+                    }
+                    catch { }
+                    _componentsArray[i] = null;
                 }
             }
 
-            _components.Clear();
             _componentMask.SetAll(false);
+            _componentCount = 0;
             Id = EntityId.Invalid;
         }
 
-        /// <summary>
-        /// 字符串表示
-        /// </summary>
-        public override string ToString()
-        {
-            return $"Entity[{Id}] (Components: {ComponentCount})";
-        }
-
-        private void EnsureMaskCapacity(int typeId)
-        {
-            if (typeId >= _componentMask.Length)
-            {
-                _componentMask.Length = typeId + 8; // 每次扩展8个位
-            }
-        }
+        public override string ToString() => $"Entity[{Id}] (Comps: {_componentCount})";
     }
 }

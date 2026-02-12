@@ -1,5 +1,5 @@
 using System;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using UnityEngine;
 
 namespace Asaki.Core.Logging

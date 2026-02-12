@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 

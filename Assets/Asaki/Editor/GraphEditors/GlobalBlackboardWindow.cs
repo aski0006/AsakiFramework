@@ -41,13 +41,13 @@ namespace Asaki.Editor.GraphEditors
 
         private void LoadAsset()
         {
-            string assetPath = "Assets/Resources/Asaki/Configuration/GlobalBlackboard.asset";
+            string assetPath = "Assets/Resources/Asaki/DataTable/GlobalBlackboard.asset";
             _globalAsset = AssetDatabase.LoadAssetAtPath<AsakiGlobalBlackboardAsset>(assetPath);
 
             if (_globalAsset == null)
             {
                 _globalAsset = CreateInstance<AsakiGlobalBlackboardAsset>();
-                System.IO.Directory.CreateDirectory("Assets/Resources/Asaki/Configuration");
+                System.IO.Directory.CreateDirectory("Assets/Resources/Asaki/DataTable");
                 AssetDatabase.CreateAsset(_globalAsset, assetPath);
                 AssetDatabase.SaveAssets();
             }

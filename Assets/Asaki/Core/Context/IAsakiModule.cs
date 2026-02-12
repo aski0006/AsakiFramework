@@ -14,7 +14,7 @@ namespace Asaki.Core.Context
         /// <para>时机：模块实例被创建并注册到容器后立即调用。</para>
         /// <para>职责：</para>
         /// <list type="bullet">
-        /// <item>获取配置 (AsakiContext.Get&lt;AsakiConfig&gt;)</item>
+        /// <item>获取配置 (AsakiContext.Get&lt;AsakiFrameworkSetting&gt;)</item>
         /// <item>获取已就绪的依赖模块 (AsakiContext.Get&lt;TDependency&gt;)</item>
         /// <item>注册此模块提供的额外子服务 (AsakiContext.Register&lt;IService&gt;)</item>
         /// </list>

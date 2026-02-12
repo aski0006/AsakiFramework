@@ -77,16 +77,6 @@ namespace Asaki.Core.Architecture.Entities
         int EntityCount { get; }
 
         /// <summary>
-        /// 实体被创建时的事件
-        /// </summary>
-        event Action<IEntity> OnEntityCreated;
-
-        /// <summary>
-        /// 实体被销毁时的事件
-        /// </summary>
-        event Action<IEntity> OnEntityDestroyed;
-
-        /// <summary>
         /// 通过索引获取实体（用于高性能遍历）
         /// </summary>
         /// <param name="index">数组索引</param>

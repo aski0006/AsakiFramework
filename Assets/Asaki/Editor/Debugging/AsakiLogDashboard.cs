@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Editor.Utilities.Extensions;
@@ -630,7 +630,7 @@ namespace Asaki.Editor.Debugging
         /// </summary>
         private void UpdateRefreshIntervalFromConfig()
         {
-            if (AsakiContext.TryGet(out AsakiConfig config) && config.LogConfig != null)
+            if (AsakiContext.TryGet(out AsakiFrameworkSetting config) && config.LogConfig != null)
             {
                 _refreshInterval = config.LogConfig.DashboardRefreshInterval;
             }

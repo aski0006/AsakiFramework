@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Asaki.Core.Architecture.Entities;
+using Asaki.Core.Architecture.Entities.Extensions;
 using NUnit.Framework;
 
 namespace Asaki.Tests.Entities
@@ -307,23 +308,6 @@ namespace Asaki.Tests.Entities
             Assert.AreEqual(3, ids.Count, "Should process all 3 entities");
         }
 
-        [Test]
-        [Category("Unit")]
-        public void ForEach_WithIndex_ProvidesCorrectIndices()
-        {
-            // Arrange
-            var indices = new List<int>();
-            _world.CreateEntity();
-            _world.CreateEntity();
-
-            // Act
-            _world.ForEach((index, e) => indices.Add(index));
-
-            // Assert
-            Assert.AreEqual(2, indices.Count, "Should have 2 indices");
-            Assert.Contains(0, indices, "Should contain index 0");
-            Assert.Contains(1, indices, "Should contain index 1");
-        }
 
         #endregion
 
@@ -412,42 +396,7 @@ namespace Asaki.Tests.Entities
 
         #endregion
 
-        #region Events
 
-        [Test]
-        [Category("Unit")]
-        public void OnEntityCreated_WhenEntityCreated_EventIsFired()
-        {
-            // Arrange
-            IEntity createdEntity = null;
-            _world.OnEntityCreated += e => createdEntity = e;
-
-            // Act
-            var entity = _world.CreateEntity();
-
-            // Assert
-            Assert.IsNotNull(createdEntity, "Event should have been fired");
-            Assert.AreEqual(entity.Id, createdEntity.Id, "Event should contain created entity");
-        }
-
-        [Test]
-        [Category("Unit")]
-        public void OnEntityDestroyed_WhenEntityDestroyed_EventIsFired()
-        {
-            // Arrange
-            var entity = _world.CreateEntity();
-            IEntity destroyedEntity = null;
-            _world.OnEntityDestroyed += e => destroyedEntity = e;
-
-            // Act
-            _world.DestroyEntity(entity.Id);
-
-            // Assert
-            Assert.IsNotNull(destroyedEntity, "Event should have been fired");
-            Assert.AreEqual(entity.Id, destroyedEntity.Id, "Event should contain destroyed entity");
-        }
-
-        #endregion
 
         #region Dispose
 
@@ -467,21 +416,6 @@ namespace Asaki.Tests.Entities
             Assert.Pass();
         }
 
-        [Test]
-        [Category("Unit")]
-        public void Dispose_WhenCalled_ClearsEventSubscriptions()
-        {
-            // Arrange
-            bool eventFired = false;
-            _world.OnEntityCreated += _ => eventFired = true;
-
-            // Act
-            _world.Dispose();
-            _world.CreateEntity();
-
-            // Assert
-            Assert.IsFalse(eventFired, "Event should not fire after dispose (events cleared)");
-        }
 
         #endregion
     }

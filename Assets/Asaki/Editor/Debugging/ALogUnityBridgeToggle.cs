@@ -1,4 +1,4 @@
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Unity.Logging;
@@ -53,7 +53,7 @@ namespace Asaki.Editor.Debugging
         private static bool GetEnabledState()
         {
             // 尝试从配置读取
-            if (AsakiContext.TryGet(out AsakiConfig config) && config.LogConfig != null)
+            if (AsakiContext.TryGet(out AsakiFrameworkSetting config) && config.LogConfig != null)
             {
                 return config.LogConfig.OutputToUnityConsole;
             }
@@ -70,7 +70,7 @@ namespace Asaki.Editor.Debugging
             ALogUnityBridge.SetEnabled(enabled);
 
             // 更新配置
-            if (AsakiContext.TryGet(out AsakiConfig config) && config.LogConfig != null)
+            if (AsakiContext.TryGet(out AsakiFrameworkSetting config) && config.LogConfig != null)
             {
                 config.LogConfig.OutputToUnityConsole = enabled;
             }

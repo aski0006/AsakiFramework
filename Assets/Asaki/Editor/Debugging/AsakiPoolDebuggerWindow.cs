@@ -665,7 +665,7 @@ namespace Asaki.Editor.Debugging
         {
             if (data.Config == null)
             {
-                EditorGUILayout.HelpBox("Configuration not available.", MessageType.Info);
+                EditorGUILayout.HelpBox("DataTable not available.", MessageType.Info);
                 return;
             }
 
@@ -680,7 +680,7 @@ namespace Asaki.Editor.Debugging
 
             _foldoutStates[data.Key + "_config"] = EditorGUILayout.Foldout(
                 _foldoutStates[data.Key + "_config"],
-                "Configuration",
+                "DataTable",
                 true
             );
 

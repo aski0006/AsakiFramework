@@ -80,10 +80,9 @@ namespace Asaki.Core.Architecture
             {
                 return (T)system;
             }
-            ALog.Error(
-                $"[AsakiArchitecture] Failed to get System: {typeof(T).Name}. Make sure it is registered in OnSetup()."
+            throw new KeyNotFoundException(
+                $"[AsakiArchitecture] System not registered: {typeof(T).Name}. Register it in OnSetup()."
             );
-            return null;
         }
 
         public T GetModel<T>()
@@ -93,11 +92,9 @@ namespace Asaki.Core.Architecture
             {
                 return (T)model;
             }
-
-            ALog.Error(
-                $"[AsakiArchitecture] Failed to get Model: {typeof(T).Name}. Make sure it is registered in OnSetup()."
+            throw new KeyNotFoundException(
+                $"[AsakiArchitecture] Model not registered: {typeof(T).Name}. Register it in OnSetup()."
             );
-            return null;
         }
 
         public void Dispose()

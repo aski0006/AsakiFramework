@@ -1109,12 +1109,12 @@ namespace Asaki.Editor.Debugging
             IAsakiAutoSaveConfig config = service.Config;
             if (config == null)
             {
-                EditorGUILayout.HelpBox("Configuration not available.", MessageType.Info);
+                EditorGUILayout.HelpBox("DataTable not available.", MessageType.Info);
                 return;
             }
 
             EditorGUILayout.BeginVertical(_styles.BoxStyle);
-            EditorGUILayout.LabelField("Configuration", _styles.SubHeaderStyle);
+            EditorGUILayout.LabelField("DataTable", _styles.SubHeaderStyle);
 
             DrawInfoRow("Enabled:", config.Enabled.ToString());
             DrawInfoRow("Triggers:", config.Triggers.ToString());

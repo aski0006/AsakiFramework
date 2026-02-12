@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Audio;
-using Asaki.Core.Configs;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Factories;
@@ -23,7 +23,7 @@ namespace Asaki.Unity.Services.Audio
     public class AsakiAudioService : IAsakiAudioService
     {
         // ==========================================================
-        // 1. Dependencies & Configuration
+        // 1. Dependencies & DataTable
         // ==========================================================
         private readonly AsakiAudioConfig _config;
         private readonly IAsakiPoolService _poolService;

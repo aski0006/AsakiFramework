@@ -41,14 +41,44 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("using Asaki.Core.Context;");
             sb.AppendLine("using UnityEngine;");
             sb.AppendLine("using System;");
+            sb.AppendLine("using System.Collections.Generic;");
             sb.AppendLine();
             sb.AppendLine("namespace Asaki.Generated.Injectors");
             sb.AppendLine("{");
-            sb.AppendLine($"    /// <summary> 程序集专用注入器: {context.Compilation.AssemblyName} </summary>");
+            sb.AppendLine($"    /// <summary> 程序集专用注入器 (O(1) Dictionary Lookup): {context.Compilation.AssemblyName} </summary>");
             sb.AppendLine($"    public class {className} : IAsakiInjector");
             sb.AppendLine("    {");
-            
-            // AutoRegister
+
+            // 1. 静态字典存储注入逻辑
+            sb.AppendLine("        private static readonly Dictionary<Type, Action<object, IAsakiResolver>> _injectMap = new Dictionary<Type, Action<object, IAsakiResolver>>();");
+            sb.AppendLine();
+
+            // 2. 静态构造/初始化
+            sb.AppendLine("        static " + className + "()");
+            sb.AppendLine("        {");
+            foreach (var pair in validMethods)
+            {
+                var methodSymbol = pair.Symbol;
+                var classSymbol = methodSymbol.ContainingType;
+                string fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                string methodName = methodSymbol.Name;
+
+                sb.Append($"            _injectMap[typeof({fullClassName})] = (target, resolver) => (({fullClassName})target).{methodName}(");
+
+                var parameters = methodSymbol.Parameters;
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var paramType = parameters[i].Type;
+                    string fullParamTypeName = paramType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                    sb.Append($"resolver.Get<{fullParamTypeName}>()");
+                    if (i < parameters.Length - 1) sb.Append(", ");
+                }
+                sb.AppendLine(");");
+            }
+            sb.AppendLine("        }");
+            sb.AppendLine();
+
+            // 3. 自动注册
             sb.AppendLine("        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]");
             sb.AppendLine("        private static void AutoRegister()");
             sb.AppendLine("        {");
@@ -56,57 +86,20 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("        }");
             sb.AppendLine();
 
-            // 1. 接口实现 (Instance Method)
-            sb.AppendLine("        /// <summary> [Interface] 接口实现，转发给静态逻辑 </summary>");
-            sb.AppendLine("        public void Inject(object target, global::Asaki.Core.Context.IAsakiResolver resolver = null)");
+            // 4. 接口实现 (O(1) 查找)
+            sb.AppendLine("        public void Inject(object target, IAsakiResolver resolver = null)");
             sb.AppendLine("        {");
-            sb.AppendLine("            InjectInternal(target, resolver);"); 
-            sb.AppendLine("        }");
-            sb.AppendLine();
-
-            // 2. 静态实现 (Static Method) - 改名为 InjectInternal
-            sb.AppendLine($"        public static void InjectInternal(object module, global::Asaki.Core.Context.IAsakiResolver resolver = null)");
-            sb.AppendLine("        {");
-            sb.AppendLine("            if (module == null) return;");
+            sb.AppendLine("            if (target == null) return;");
             sb.AppendLine("            if (resolver == null) resolver = global::Asaki.Core.Context.Resolvers.AsakiGlobalResolver.Instance;");
             sb.AppendLine();
+            sb.AppendLine("            if (_injectMap.TryGetValue(target.GetType(), out var action))");
+            sb.AppendLine("            {");
+            sb.AppendLine("                action(target, resolver);");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
 
-            // 生成注入逻辑
-            foreach (var pair in validMethods)
-            {
-                var methodSymbol = pair.Symbol;
-                var classSymbol = methodSymbol.ContainingType;
-
-                string fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                string methodName = methodSymbol.Name;
-                
-                // [Fix] 生成合法的变量名 (移除 . 和 ::)
-                // 例如: global::Asaki.UI -> target_Asaki_UI_HexCode
-                string safeVarName = $"target_{classSymbol.Name}_{classSymbol.GetHashCode().ToString("X").Replace("-", "_")}"; 
-
-                sb.AppendLine($"            if (module is {fullClassName} {safeVarName})");
-                sb.AppendLine("            {");
-                sb.Append($"                {safeVarName}.{methodName}(");
-
-                var parameters = methodSymbol.Parameters;
-                for (int i = 0; i < parameters.Length; i++)
-                {
-                    var paramType = parameters[i].Type;
-                    string fullParamTypeName = paramType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-
-                    sb.Append($"resolver.Get<{fullParamTypeName}>()");
-
-                    if (i < parameters.Length - 1) sb.Append(", ");
-                }
-
-                sb.AppendLine(");");
-                sb.AppendLine("                return;");
-                sb.AppendLine("            }");
-            }
-
-            sb.AppendLine("        }"); // End Static
-            sb.AppendLine("    }");     // End Class
-            sb.AppendLine("}");         // End Namespace
+            sb.AppendLine("    }");
+            sb.AppendLine("}");
 
             context.AddSource($"{className}.g.cs", sb.ToString());
         }

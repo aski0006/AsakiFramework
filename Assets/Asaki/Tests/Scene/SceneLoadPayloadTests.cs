@@ -2,6 +2,7 @@
 // SceneLoadPayload 单元测试
 
 using Asaki.Core.Scene;
+using Asaki.Core.Scene.SceneManagement;
 using Asaki.Unity.Services.Scene.SceneManagement;
 using NUnit.Framework;
 
