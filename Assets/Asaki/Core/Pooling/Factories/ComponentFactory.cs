@@ -1,12 +1,10 @@
-﻿using System;
+using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-// 使用 IAsakiPoolable 的旧命名空间兼容性导入
-using IAsakiPoolable = Asaki.Core.Pooling.Interfaces.IAsakiPoolable;
 using Object = UnityEngine.Object;
 
 namespace Asaki.Core.Pooling.Factories
@@ -110,18 +108,7 @@ namespace Asaki.Core.Pooling.Factories
                 return;
 
             component.gameObject.SetActive(true);
-
-            if (component is IAsakiPoolable poolable)
-            {
-                try
-                {
-                    poolable.OnSpawn();
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error($"[AsakiPool] ComponentFactory OnSpawn failed: {ex.Message}", ex);
-                }
-            }
+            PoolObjectLifecycleHelper.InvokeOnSpawnForComponent(component);
         }
 
         public void OnReturn(T component)
@@ -129,18 +116,7 @@ namespace Asaki.Core.Pooling.Factories
             if (!component)
                 return;
 
-            if (component is IAsakiPoolable poolable)
-            {
-                try
-                {
-                    poolable.OnDespawn();
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error($"[AsakiPool] ComponentFactory OnDespawn failed: {ex.Message}", ex);
-                }
-            }
-
+            PoolObjectLifecycleHelper.InvokeOnDespawnForComponent(component);
             component.gameObject.SetActive(false);
 
             if (_parent && component.transform.parent != _parent)

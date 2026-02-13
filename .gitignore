@@ -180,3 +180,12 @@ Temporary Items
 
 # AI Agent 文档
 AGENTS.md
+
+# GameDesign 目录
+/[Gg]ameDesigned/
+
+# TestService 目录
+/[Tt]estService/
+
+# Python Tool 目录
+/[Pp] Tools/

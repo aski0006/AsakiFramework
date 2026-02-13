@@ -458,10 +458,10 @@ namespace Asaki.Tests.Serialization
         public class TestEventService : IAsakiEventService
         {
             public void Subscribe<T>(IAsakiHandler<T> handler)
-                where T : IAsakiEvent { }
+                where T : struct, IAsakiEvent { }
 
             public void Unsubscribe<T>(IAsakiHandler<T> handler)
-                where T : IAsakiEvent { }
+                where T : struct, IAsakiEvent { }
 
             void IAsakiEventService.Publish<T>(T e)
             {

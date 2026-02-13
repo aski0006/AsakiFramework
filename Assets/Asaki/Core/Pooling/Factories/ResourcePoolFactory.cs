@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
@@ -15,8 +15,9 @@ namespace Asaki.Core.Pooling.Factories
     /// - 自动管理资源句柄生命周期
     /// - 支持 Addressable 和 Resources 双路径
     /// - 延迟加载（首次创建时才加载资源）
+    /// - 仅支持 GameObject 类型（其他资源类型不支持池化）
     /// </summary>
-    /// <typeparam name="T">Unity 资源类型（GameObject, Sprite, AudioClip 等）</typeparam>
+    /// <typeparam name="T">Unity 资源类型（仅支持 GameObject）</typeparam>
     public class ResourcePoolFactory<T> : IAsakiPoolObjectFactory<T>, IDisposable
         where T : Object
     {
@@ -35,6 +36,16 @@ namespace Asaki.Core.Pooling.Factories
                     "Resource key cannot be null or empty",
                     nameof(resourceKey)
                 );
+
+            // 验证类型：仅支持 GameObject
+            if (typeof(T) != typeof(GameObject))
+            {
+                throw new NotSupportedException(
+                    $"ResourcePoolFactory only supports GameObject pooling. "
+                        + $"Type {typeof(T).Name} is not supported. "
+                        + "For shared assets like Sprite or AudioClip, use direct resource loading instead."
+                );
+            }
         }
 
         public async UniTask<T> CreateAsync(CancellationToken token = default(CancellationToken))
@@ -71,15 +82,6 @@ namespace Asaki.Core.Pooling.Factories
                     else
                     {
                         _isHandleLoaded = true;
-
-                        // 对非 GameObject 资源发出警告，因为池化意义不大
-                        if (typeof(T) != typeof(GameObject))
-                        {
-                            ALog.Warn(
-                                $"[AsakiPool] ResourcePoolFactory is pooling non-GameObject type {typeof(T).Name}. "
-                                    + "Consider using direct resource loading instead of pooling for shared assets like Sprite or AudioClip."
-                            );
-                        }
                     }
                 }
                 catch (Exception ex)
@@ -99,15 +101,9 @@ namespace Asaki.Core.Pooling.Factories
                 return null;
             }
 
-            // 对于 GameObject，需要实例化
-            if (typeof(T) == typeof(GameObject))
-            {
-                GameObject instance = Object.Instantiate(_handle.Asset as GameObject);
-                return instance as T;
-            }
-
-            // 对于其他资源类型（Sprite, AudioClip 等），直接返回引用
-            return _handle.Asset;
+            // 实例化 GameObject
+            GameObject instance = Object.Instantiate(_handle.Asset as GameObject);
+            return instance as T;
         }
 
         public virtual void OnGet(T obj)
@@ -128,7 +124,6 @@ namespace Asaki.Core.Pooling.Factories
 
         public virtual void OnDestroy(T obj)
         {
-            // 只销毁实例化的对象（GameObject）
             if (obj is GameObject go)
             {
                 Object.Destroy(go);
@@ -137,11 +132,9 @@ namespace Asaki.Core.Pooling.Factories
 
         public virtual bool Validate(T obj)
         {
-            // 检查对象本身是否为空
             if (obj == null)
                 return false;
 
-            // 检查底层资源句柄是否仍然有效
             return _handle is { IsValid: true };
         }
 

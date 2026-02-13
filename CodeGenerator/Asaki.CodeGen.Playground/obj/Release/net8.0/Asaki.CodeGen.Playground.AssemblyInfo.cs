@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Asaki.CodeGen.Playground")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bcdaa62fb40be5b03599a7e6f212bfb97193be49")]
 [assembly: System.Reflection.AssemblyProductAttribute("Asaki.CodeGen.Playground")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Asaki.CodeGen.Playground")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -5,7 +5,7 @@ namespace Asaki.Core.Pooling
 {
     /// <summary>
     /// 对象池统计信息实现
-    /// 注意：此类使用 Interlocked 确保线程安全，但 Reset 方法不是线程安全的
+    /// 所有方法均为线程安全
     /// </summary>
     public class AsakiPoolStatistics : IAsakiPoolStatistics
     {
@@ -128,16 +128,16 @@ namespace Asaki.Core.Pooling
 
         /// <summary>
         /// 重置所有统计数据
-        /// 注意：此方法不是线程安全的，应在单线程环境中调用
+        /// 线程安全
         /// </summary>
         public void Reset()
         {
-            _totalCreated = 0;
-            _activeCount = 0;
-            _inactiveCount = 0;
-            _totalDestroyed = 0;
-            _getCallCount = 0;
-            _returnCallCount = 0;
+            Interlocked.Exchange(ref _totalCreated, 0);
+            Interlocked.Exchange(ref _activeCount, 0);
+            Interlocked.Exchange(ref _inactiveCount, 0);
+            Interlocked.Exchange(ref _totalDestroyed, 0);
+            Interlocked.Exchange(ref _getCallCount, 0);
+            Interlocked.Exchange(ref _returnCallCount, 0);
         }
 
         public override string ToString()

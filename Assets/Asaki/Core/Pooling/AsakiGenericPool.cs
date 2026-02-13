@@ -35,7 +35,7 @@ namespace Asaki.Core.Pooling
         public AsakiPoolConfig Config { get; }
         public IAsakiPoolStatistics Statistics => _statistics;
         public Type ObjectType => typeof(T);
-        private bool _isDisposed;
+        private volatile bool _isDisposed;
 
         /// <summary>上次治理检查时间</summary>
         public float LastGovernanceCheckTime { get; private set; }
@@ -88,14 +88,17 @@ namespace Asaki.Core.Pooling
                     }
 
                     // 预热创建的对象直接放入池中，不调用OnReturn（对象从未被获取过）
+                    // 在锁外生成序列号，减少锁持有时间
+                    long sequenceNum = Interlocked.Increment(ref _globalSequenceCounter);
+                    float timestamp = UnityEngine.Time.time;
                     lock (_lock)
                     {
                         _stack.Push(obj);
-                        // 记录对象元数据（LRU时间戳）- 使用 Time.time 以与测试保持一致
+                        // 记录对象元数据（LRU时间戳）
                         _objectMetadata[obj] = new PoolObjectMetadata
                         {
-                            LastUsedTime = UnityEngine.Time.time,
-                            SequenceNumber = Interlocked.Increment(ref _globalSequenceCounter),
+                            LastUsedTime = timestamp,
+                            SequenceNumber = sequenceNum,
                         };
                     }
                     _statistics.IncrementCreated();
@@ -351,35 +354,51 @@ namespace Asaki.Core.Pooling
                 return false;
             }
 
-            // 检查池是否已满（线程安全）
+            // 在锁外生成序列号和时间戳，减少锁持有时间
+            long sequenceNum = Interlocked.Increment(ref _globalSequenceCounter);
+            float timestamp = UnityEngine.Time.time;
+
+            // 第一次检查池是否已满
+            bool canReturn;
             lock (_lock)
             {
-                // MaxSize == 0 表示池被禁用，所有归还的对象都应该被销毁
-                if (Config.MaxSize == 0 || _stack.Count >= Config.MaxSize)
+                canReturn = Config.MaxSize != 0 && _stack.Count < Config.MaxSize;
+            }
+
+            if (!canReturn)
+            {
+                ALog.Info($"[AsakiPool] {Key} Pool full, destroying object");
+                _factory.OnDestroy(obj);
+                _statistics.IncrementDestroyedFromActive();
+                return false;
+            }
+
+            // 在锁外执行归还回调，减少锁持有时间
+            try
+            {
+                _factory.OnReturn(obj);
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
+            }
+
+            // 再次获取锁，入栈对象
+            lock (_lock)
+            {
+                // 再次检查池是否已满（其他线程可能已经入栈了对象）
+                if (Config.MaxSize != 0 && _stack.Count >= Config.MaxSize)
                 {
-                    ALog.Info(
-                        $"[AsakiPool] {Key} Pool full ({_stack.Count}/{Config.MaxSize}), destroying object"
-                    );
+                    ALog.Info($"[AsakiPool] {Key} Pool full after callback, destroying object");
                     _factory.OnDestroy(obj);
                     _statistics.IncrementDestroyedFromActive();
                     return false;
                 }
 
-                // 执行归还回调并入池
-                try
-                {
-                    _factory.OnReturn(obj);
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error($"[AsakiPool] {Key} OnReturn callback failed: {ex.Message}", ex);
-                }
-
-                // 记录对象元数据（LRU时间戳）- 使用 Time.time 以与测试保持一致
                 _objectMetadata[obj] = new PoolObjectMetadata
                 {
-                    LastUsedTime = UnityEngine.Time.time,
-                    SequenceNumber = Interlocked.Increment(ref _globalSequenceCounter),
+                    LastUsedTime = timestamp,
+                    SequenceNumber = sequenceNum,
                 };
 
                 _stack.Push(obj);
@@ -473,105 +492,20 @@ namespace Asaki.Core.Pooling
 
             lock (_lock)
             {
-                // 更新最后治理检查时间
                 LastGovernanceCheckTime = currentTime;
 
                 if (_stack.Count == 0)
                     return 0;
 
-                // 计算目标大小
-                int targetSize = Config.KeepMinSize;
-                if (!force)
-                {
-                    // 非强制模式：根据收缩比例计算
-                    int shrinkCount = (int)(_stack.Count * Config.ShrinkRatio);
-                    targetSize = Math.Max(Config.KeepMinSize, _stack.Count - shrinkCount);
-                }
-
+                int targetSize = CalculateShrinkTargetSize(force);
                 if (_stack.Count <= targetSize)
                     return 0;
 
-                // 计算需要移除的数量（在弹出所有对象之前计算）
                 int toRemove = _stack.Count - targetSize;
+                var sortedObjects = ExtractAndSortObjects();
+                int removed = ExecuteShrink(sortedObjects, toRemove, currentTime, force);
 
-                // 将池中对象按最后使用时间排序（最久未使用的在前）
-                var sortedObjects = new List<(T obj, float lastUsedTime, long sequenceNumber)>();
-
-                while (_stack.Count > 0)
-                {
-                    T obj = _stack.Pop();
-                    if (_objectMetadata.TryGetValue(obj, out PoolObjectMetadata meta))
-                    {
-                        sortedObjects.Add((obj, meta.LastUsedTime, meta.SequenceNumber));
-                    }
-                    else
-                    {
-                        // 如果没有元数据，使用默认值（最老的）
-                        sortedObjects.Add((obj, 0f, 0));
-                    }
-                }
-
-                // 按时间升序排序（最老的在前），如果时间相同则按序列号排序
-                sortedObjects.Sort(
-                    (a, b) =>
-                    {
-                        int timeComparison = a.lastUsedTime.CompareTo(b.lastUsedTime);
-                        if (timeComparison != 0)
-                            return timeComparison;
-                        return a.sequenceNumber.CompareTo(b.sequenceNumber);
-                    }
-                );
-
-                int removed = 0;
-                float idleThreshold = currentTime - Config.IdleTimeout;
-
-                for (int i = 0; i < sortedObjects.Count; i++)
-                {
-                    var (obj, lastUsedTime, _) = sortedObjects[i];
-
-                    // 判断是否应销毁该对象：
-                    // - 强制模式：销毁最久未使用的对象，直到达到targetSize
-                    // - 非强制模式：只销毁超过IdleTimeout的对象
-                    bool shouldDestroy;
-                    if (force)
-                    {
-                        // 强制模式：销毁最老的toRemove个对象
-                        shouldDestroy = removed < toRemove;
-                    }
-                    else
-                    {
-                        // 非强制模式：只销毁超过IdleTimeout的对象
-                        shouldDestroy = lastUsedTime < idleThreshold;
-                    }
-
-                    if (shouldDestroy && removed < toRemove)
-                    {
-                        _objectMetadata.Remove(obj);
-                        try
-                        {
-                            _factory.OnDestroy(obj);
-                        }
-                        catch (Exception ex)
-                        {
-                            ALog.Error(
-                                $"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}",
-                                ex
-                            );
-                        }
-                        removed++;
-                    }
-                    else
-                    {
-                        // 保留的对象重新入栈
-                        _stack.Push(obj);
-                    }
-                }
-
-                // 使用循环确保非活动计数不会低于0
-                for (int i = 0; i < removed; i++)
-                {
-                    _statistics.IncrementDestroyed();
-                }
+                UpdateStatisticsAfterShrink(removed);
 
                 if (removed > 0)
                 {
@@ -581,6 +515,96 @@ namespace Asaki.Core.Pooling
                 }
 
                 return removed;
+            }
+        }
+
+        private int CalculateShrinkTargetSize(bool force)
+        {
+            if (force)
+                return Config.KeepMinSize;
+
+            int shrinkCount = (int)(_stack.Count * Config.ShrinkRatio);
+            return Math.Max(Config.KeepMinSize, _stack.Count - shrinkCount);
+        }
+
+        private List<(T obj, float lastUsedTime, long sequenceNumber)> ExtractAndSortObjects()
+        {
+            var sortedObjects = new List<(T obj, float lastUsedTime, long sequenceNumber)>();
+
+            while (_stack.Count > 0)
+            {
+                T obj = _stack.Pop();
+                if (_objectMetadata.TryGetValue(obj, out PoolObjectMetadata meta))
+                {
+                    sortedObjects.Add((obj, meta.LastUsedTime, meta.SequenceNumber));
+                }
+                else
+                {
+                    sortedObjects.Add((obj, 0f, 0));
+                }
+            }
+
+            sortedObjects.Sort((a, b) =>
+            {
+                int timeComparison = a.lastUsedTime.CompareTo(b.lastUsedTime);
+                return timeComparison != 0
+                    ? timeComparison
+                    : a.sequenceNumber.CompareTo(b.sequenceNumber);
+            });
+
+            return sortedObjects;
+        }
+
+        private int ExecuteShrink(
+            List<(T obj, float lastUsedTime, long sequenceNumber)> sortedObjects,
+            int toRemove,
+            float currentTime,
+            bool force
+        )
+        {
+            int removed = 0;
+            float idleThreshold = currentTime - Config.IdleTimeout;
+
+            for (int i = 0; i < sortedObjects.Count; i++)
+            {
+                var (obj, lastUsedTime, _) = sortedObjects[i];
+
+                bool shouldDestroy = force
+                    ? removed < toRemove
+                    : lastUsedTime < idleThreshold && removed < toRemove;
+
+                if (shouldDestroy)
+                {
+                    DestroyObject(obj);
+                    removed++;
+                }
+                else
+                {
+                    _stack.Push(obj);
+                }
+            }
+
+            return removed;
+        }
+
+        private void DestroyObject(T obj)
+        {
+            _objectMetadata.Remove(obj);
+            try
+            {
+                _factory.OnDestroy(obj);
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[AsakiPool] {Key} OnDestroy callback failed: {ex.Message}", ex);
+            }
+        }
+
+        private void UpdateStatisticsAfterShrink(int removed)
+        {
+            for (int i = 0; i < removed; i++)
+            {
+                _statistics.IncrementDestroyed();
             }
         }
 

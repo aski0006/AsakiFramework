@@ -1,4 +1,4 @@
-﻿using System.Threading;
+using System.Threading;
 using Asaki.Core.Pooling.Factories;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
@@ -48,23 +48,6 @@ namespace Asaki.Core.Pooling.Extensions
             where T : Component
         {
             var factory = new ComponentFactory<T>(resourceService, resourcePath, parent);
-            return await service.CreatePoolAsync(key, factory, config, token);
-        }
-
-        /// <summary>
-        /// 快捷创建资源池（Sprite, AudioClip 等）
-        /// </summary>
-        public static async UniTask<IAsakiPool<T>> CreateResourcePoolAsync<T>(
-            this IAsakiPoolService service,
-            string key,
-            string resourcePath,
-            IAsakiResourceService resourceService,
-            AsakiPoolConfig config = null,
-            CancellationToken token = default(CancellationToken)
-        )
-            where T : Object
-        {
-            var factory = new ResourcePoolFactory<T>(resourceService, resourcePath);
             return await service.CreatePoolAsync(key, factory, config, token);
         }
 

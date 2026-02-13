@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Context;
+using Asaki.Core.Context;
 
 namespace Asaki.Core.Broker
 {
@@ -39,11 +39,13 @@ namespace Asaki.Core.Broker
         /// 订阅一个事件处理程序。
         /// 通过懒加载获取事件总线实例，并调用其 <see cref="IAsakiEventService.Subscribe{T}(IAsakiHandler{T})"/> 方法订阅事件处理程序。
         /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
         /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
+        /// <exception cref="System.ArgumentNullException">当 <paramref name="handler"/> 为 null 时抛出。</exception>
         public static void Subscribe<T>(IAsakiHandler<T> handler)
-            where T : IAsakiEvent
+            where T : struct, IAsakiEvent
         {
+            if (handler == null) throw new System.ArgumentNullException(nameof(handler));
             GetOrRegisterBus().Subscribe(handler);
         }
 
@@ -53,11 +55,13 @@ namespace Asaki.Core.Broker
         /// <see cref="IAsakiEventService.Unsubscribe{T}(IAsakiHandler{T})"/> 方法取消订阅事件处理程序。
         /// 如果未获取到总线实例，则直接忽略，因为未订阅过。
         /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
         /// <param name="handler">要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
+        /// <exception cref="System.ArgumentNullException">当 <paramref name="handler"/> 为 null 时抛出。</exception>
         public static void Unsubscribe<T>(IAsakiHandler<T> handler)
-            where T : IAsakiEvent
+            where T : struct, IAsakiEvent
         {
+            if (handler == null) throw new System.ArgumentNullException(nameof(handler));
             // Unsubscribe 时如果 Bus 不存在，那肯定没订阅过，直接忽略即可
             if (AsakiContext.TryGet<IAsakiEventService>(out IAsakiEventService bus))
             {

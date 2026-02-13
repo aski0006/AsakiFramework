@@ -180,11 +180,7 @@ namespace Asaki.Core.Pooling
 
             foreach (var kvp in _pools)
             {
-                if (kvp.Value is AsakiGenericPool<object> pool)
-                {
-                    // 使用反射调用泛型方法
-                    totalRemoved += InvokeShrinkByLRU(kvp.Value, currentTime, force: true);
-                }
+                totalRemoved += InvokeShrinkByLRU(kvp.Value, currentTime, force: true);
             }
 
             ALog.Info(

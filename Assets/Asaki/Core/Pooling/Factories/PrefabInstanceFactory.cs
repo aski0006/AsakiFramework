@@ -1,12 +1,10 @@
-﻿using System;
+using System;
 using System.Threading;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-// 使用 IAsakiPoolable 的旧命名空间兼容性导入
-using IAsakiPoolable = Asaki.Core.Pooling.Interfaces.IAsakiPoolable;
 using Object = UnityEngine.Object;
 
 namespace Asaki.Core.Pooling.Factories
@@ -114,55 +112,12 @@ namespace Asaki.Core.Pooling.Factories
 
         public void OnGet(GameObject obj)
         {
-            if (!obj)
-                return;
-
-            obj.SetActive(true);
-
-            IAsakiPoolable poolable = obj.GetComponent<IAsakiPoolable>();
-            if (poolable != null)
-            {
-                try
-                {
-                    poolable.OnSpawn();
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error(
-                        $"[AsakiPool] PrefabInstanceFactory OnSpawn failed: {ex.Message}",
-                        ex
-                    );
-                }
-            }
+            PoolObjectLifecycleHelper.OnGet(obj);
         }
 
         public void OnReturn(GameObject obj)
         {
-            if (!obj)
-                return;
-
-            IAsakiPoolable poolable = obj.GetComponent<IAsakiPoolable>();
-            if (poolable != null)
-            {
-                try
-                {
-                    poolable.OnDespawn();
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error(
-                        $"[AsakiPool] PrefabInstanceFactory OnDespawn failed: {ex.Message}",
-                        ex
-                    );
-                }
-            }
-
-            obj.SetActive(false);
-
-            if (_parent && obj.transform.parent != _parent)
-            {
-                obj.transform.SetParent(_parent, _worldPositionStays);
-            }
+            PoolObjectLifecycleHelper.OnReturn(obj, _parent, _worldPositionStays);
         }
 
         public void OnDestroy(GameObject obj)

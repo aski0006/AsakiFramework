@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -328,10 +328,10 @@ namespace Asaki.Tests.Network
         }
 
         public void Subscribe<T>(IAsakiHandler<T> handler)
-            where T : IAsakiEvent { }
+            where T : struct, IAsakiEvent { }
 
         public void Unsubscribe<T>(IAsakiHandler<T> handler)
-            where T : IAsakiEvent { }
+            where T : struct, IAsakiEvent { }
 
         public void Dispose() { }
 
