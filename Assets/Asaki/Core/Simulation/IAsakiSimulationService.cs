@@ -1,4 +1,4 @@
-﻿using Asaki.Core.Context;
+using Asaki.Core.Context;
 
 namespace Asaki.Core.Simulation
 {
@@ -8,6 +8,49 @@ namespace Asaki.Core.Simulation
     /// </summary>
     public interface IAsakiSimulationService : IAsakiService
     {
+        // =========================================================
+        // 状态控制
+        // =========================================================
+
+        /// <summary>
+        /// 是否暂停所有更新
+        /// </summary>
+        bool IsPaused { get; set; }
+
+        /// <summary>
+        /// 时间缩放因子（1.0为正常速度）
+        /// </summary>
+        float TimeScale { get; set; }
+
+        /// <summary>
+        /// 暂停所有更新
+        /// </summary>
+        void Pause();
+
+        /// <summary>
+        /// 恢复所有更新
+        /// </summary>
+        void Resume();
+
+        // =========================================================
+        // 统计信息
+        // =========================================================
+
+        /// <summary>
+        /// 已注册的Tick对象数量
+        /// </summary>
+        int TickableCount { get; }
+
+        /// <summary>
+        /// 已注册的FixedTick对象数量
+        /// </summary>
+        int FixedTickableCount { get; }
+
+        /// <summary>
+        /// 已注册的LateTick对象数量
+        /// </summary>
+        int LateTickableCount { get; }
+
         // =========================================================
         // 注册与注销
         // =========================================================

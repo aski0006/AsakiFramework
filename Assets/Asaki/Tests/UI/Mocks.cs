@@ -21,6 +21,25 @@ namespace Asaki.Tests.UI
     /// </summary>
     public class MockSimulationService : IAsakiSimulationService
     {
+        // =========================================================
+        // 状态控制
+        // =========================================================
+
+        public bool IsPaused { get; set; } = false;
+        public float TimeScale { get; set; } = 1f;
+
+        public void Pause() => IsPaused = true;
+
+        public void Resume() => IsPaused = false;
+
+        // =========================================================
+        // 统计信息
+        // =========================================================
+
+        public int TickableCount => _tickable != null ? 1 : 0;
+        public int FixedTickableCount => 0;
+        public int LateTickableCount => 0;
+
         private IAsakiTickable _tickable;
         private float _currentTime = 0f;
 

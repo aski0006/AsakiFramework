@@ -20,6 +20,25 @@ namespace Asaki.Tests.Pooling
         public IAsakiTickable LastRegisteredTickable { get; private set; }
         public IAsakiTickable LastUnregisteredTickable { get; private set; }
 
+        // =========================================================
+        // 状态控制
+        // =========================================================
+
+        public bool IsPaused { get; set; } = false;
+        public float TimeScale { get; set; } = 1f;
+
+        public void Pause() => IsPaused = true;
+
+        public void Resume() => IsPaused = false;
+
+        // =========================================================
+        // 统计信息
+        // =========================================================
+
+        public int TickableCount => RegisterTickableCallCount - UnregisterTickableCallCount;
+        public int FixedTickableCount => 0;
+        public int LateTickableCount => 0;
+
         public void Register(IAsakiTickable tickable, int priority = (int)TickPriority.Normal)
         {
             RegisterTickableCallCount++;

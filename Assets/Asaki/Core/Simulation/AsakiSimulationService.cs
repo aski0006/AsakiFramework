@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 
@@ -7,7 +8,7 @@ namespace Asaki.Core.Simulation
     /// Unity仿真时间管理器实现
     /// 支持优先级排序与延迟更新控制
     /// </summary>
-    public class AsakiSimulationService : IAsakiSimulationService
+    public class AsakiSimulationService : IAsakiSimulationService, IDisposable
     {
         // =========================================================
         // 内部包装结构
@@ -34,9 +35,39 @@ namespace Asaki.Core.Simulation
             new List<IAsakiFixedTickable>();
         private readonly List<LateTickableWrapper> _lateTickables = new List<LateTickableWrapper>();
 
-        // 脏标记控制排序触发频率
+        private readonly HashSet<IAsakiTickable> _tickableSet = new HashSet<IAsakiTickable>();
+        private readonly HashSet<IAsakiFixedTickable> _fixedTickableSet =
+            new HashSet<IAsakiFixedTickable>();
+        private readonly HashSet<IAsakiLateTickable> _lateTickableSet =
+            new HashSet<IAsakiLateTickable>();
+
         private bool _isTickDirty = false;
         private bool _isLateTickDirty = false;
+
+        // =========================================================
+        // 状态控制
+        // =========================================================
+
+        public bool IsPaused { get; set; } = false;
+
+        public float TimeScale
+        {
+            get => _timeScale;
+            set => _timeScale = value < 0f ? 0f : value;
+        }
+        private float _timeScale = 1f;
+
+        public void Pause() => IsPaused = true;
+
+        public void Resume() => IsPaused = false;
+
+        // =========================================================
+        // 统计信息
+        // =========================================================
+
+        public int TickableCount => _tickables.Count;
+        public int FixedTickableCount => _fixedTickables.Count;
+        public int LateTickableCount => _lateTickables.Count;
 
 #if UNITY_EDITOR
         // =========================================================
@@ -82,12 +113,8 @@ namespace Asaki.Core.Simulation
             if (tickable == null)
                 return;
 
-            // 查重 (O(N)，启动阶段可接受)
-            for (int i = 0; i < _tickables.Count; i++)
-            {
-                if (_tickables[i].Tickable == tickable)
-                    return;
-            }
+            if (!_tickableSet.Add(tickable))
+                return;
 
             _tickables.Add(new TickableWrapper { Tickable = tickable, Priority = priority });
             _isTickDirty = true;
@@ -97,10 +124,11 @@ namespace Asaki.Core.Simulation
         {
             if (tickable == null)
                 return;
-            if (!_fixedTickables.Contains(tickable))
-            {
-                _fixedTickables.Add(tickable);
-            }
+
+            if (!_fixedTickableSet.Add(tickable))
+                return;
+
+            _fixedTickables.Add(tickable);
         }
 
         public void Register(IAsakiLateTickable tickable, int priority = (int)TickPriority.Normal)
@@ -108,12 +136,8 @@ namespace Asaki.Core.Simulation
             if (tickable == null)
                 return;
 
-            // 查重
-            for (int i = 0; i < _lateTickables.Count; i++)
-            {
-                if (_lateTickables[i].Tickable == tickable)
-                    return;
-            }
+            if (!_lateTickableSet.Add(tickable))
+                return;
 
             _lateTickables.Add(
                 new LateTickableWrapper { Tickable = tickable, Priority = priority }
@@ -126,11 +150,15 @@ namespace Asaki.Core.Simulation
             if (tickable == null)
                 return;
 
+            if (!_tickableSet.Remove(tickable))
+                return;
+
             for (int i = 0; i < _tickables.Count; i++)
             {
                 if (_tickables[i].Tickable == tickable)
                 {
                     _tickables.RemoveAt(i);
+                    _isTickDirty = true;
                     return;
                 }
             }
@@ -140,6 +168,10 @@ namespace Asaki.Core.Simulation
         {
             if (tickable == null)
                 return;
+
+            if (!_fixedTickableSet.Remove(tickable))
+                return;
+
             _fixedTickables.Remove(tickable);
         }
 
@@ -148,11 +180,15 @@ namespace Asaki.Core.Simulation
             if (tickable == null)
                 return;
 
+            if (!_lateTickableSet.Remove(tickable))
+                return;
+
             for (int i = 0; i < _lateTickables.Count; i++)
             {
                 if (_lateTickables[i].Tickable == tickable)
                 {
                     _lateTickables.RemoveAt(i);
+                    _isLateTickDirty = true;
                     return;
                 }
             }
@@ -164,55 +200,71 @@ namespace Asaki.Core.Simulation
 
         public void Tick(float deltaTime)
         {
-            // 1. 排序（稳定排序保证同优先级按注册顺序）
+            if (IsPaused)
+                return;
+
+            float scaledDelta = deltaTime * _timeScale;
+
             if (_isTickDirty)
             {
                 _tickables.Sort((a, b) => a.Priority.CompareTo(b.Priority));
                 _isTickDirty = false;
             }
 
-            // 2. 正序遍历执行
             for (int i = 0; i < _tickables.Count; i++)
             {
-                TickableWrapper wrapper = _tickables[i];
-                if (wrapper.Tickable != null)
-                {
-                    wrapper.Tickable.Tick(deltaTime);
-                }
+                _tickables[i].Tickable.Tick(scaledDelta);
             }
         }
 
         public void FixedTick(float fixedDeltaTime)
         {
-            // FixedUpdate 通常不支持优先级（物理计算顺序敏感）
+            if (IsPaused)
+                return;
+
+            float scaledDelta = fixedDeltaTime * _timeScale;
+
             for (int i = 0; i < _fixedTickables.Count; i++)
             {
-                IAsakiFixedTickable tickable = _fixedTickables[i];
-                if (tickable != null)
-                {
-                    tickable.FixedTick(fixedDeltaTime);
-                }
+                _fixedTickables[i].FixedTick(scaledDelta);
             }
         }
 
         public void LateTick(float lateDeltaTime)
         {
-            // 1. 排序
+            if (IsPaused)
+                return;
+
+            float scaledDelta = lateDeltaTime * _timeScale;
+
             if (_isLateTickDirty)
             {
                 _lateTickables.Sort((a, b) => a.Priority.CompareTo(b.Priority));
                 _isLateTickDirty = false;
             }
 
-            // 2. 正序遍历执行（优先级高的先执行）
             for (int i = 0; i < _lateTickables.Count; i++)
             {
-                LateTickableWrapper wrapper = _lateTickables[i];
-                if (wrapper.Tickable != null)
-                {
-                    wrapper.Tickable.LateTick(lateDeltaTime);
-                }
+                _lateTickables[i].Tickable.LateTick(scaledDelta);
             }
+        }
+
+        // =========================================================
+        // IDisposable
+        // =========================================================
+
+        public void Dispose()
+        {
+            _tickables.Clear();
+            _fixedTickables.Clear();
+            _lateTickables.Clear();
+            _tickableSet.Clear();
+            _fixedTickableSet.Clear();
+            _lateTickableSet.Clear();
+            _isTickDirty = false;
+            _isLateTickDirty = false;
+            IsPaused = false;
+            _timeScale = 1f;
         }
     }
 }
