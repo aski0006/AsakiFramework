@@ -1,0 +1,10 @@
+E:\Projects\C#\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.deps.json
+E:\Projects\C#\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.dll
+E:\Projects\C#\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.pdb
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.csproj.AssemblyReference.cache
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.AssemblyInfoInputs.cache
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.AssemblyInfo.cs
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.csproj.CoreCompileInputs.cache
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.dll
+E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.pdb
