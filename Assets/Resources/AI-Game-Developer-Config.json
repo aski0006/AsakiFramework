@@ -406,5 +406,5 @@
   ],
   "host": "http://localhost:59001",
   "timeoutMs": 10000,
-  "keepConnected": false
+  "keepConnected": true
 }
