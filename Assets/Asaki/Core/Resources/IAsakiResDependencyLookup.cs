@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace Asaki.Core.Resources
 {
@@ -16,16 +16,5 @@ namespace Asaki.Core.Resources
         /// <param name="location">主资源地址</param>
         /// <returns>依赖资源地址列表 (如果没有依赖返回 null 或 空数组)</returns>
         IEnumerable<string> GetDependencies(string location);
-    }
-
-    /// <summary>
-    /// [默认实现] 空依赖查询 (用于 Resources 模式)
-    /// </summary>
-    public class EmptyAsakiResDependencyLookup : IAsakiResDependencyLookup
-    {
-        public IEnumerable<string> GetDependencies(string location)
-        {
-            return null;
-        }
     }
 }

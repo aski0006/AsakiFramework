@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Asaki.Core.Logging;
@@ -7,11 +7,11 @@ using UnityEngine;
 namespace Asaki.Core.Reactive
 {
     /// <summary>
-    /// Asaki MVVM框架的核心可观察属性实现，提供值变化通知机制。
+    /// Asaki Reactive框架的核心可观察属性实现，提供值变化通知机制。
     /// </summary>
     /// <typeparam name="T">属性值的类型</typeparam>
     /// <remarks>
-    /// <para>AsakiProperty是Asaki MVVM框架的基础组件，实现了观察者设计模式，
+    /// <para>AsakiProperty是Asaki Reactive框架的基础组件，实现了观察者设计模式，
     /// 允许对象订阅值变化事件或通过<see cref="IAsakiObserver{T}"/>接口接收通知。</para>
     /// <para>主要功能包括：</para>
     /// <list type="bullet">
@@ -25,7 +25,7 @@ namespace Asaki.Core.Reactive
     /// <example>
     /// <code>
     /// // 创建可观察属性
-    /// var count = new AsakiProperty&lt;int&gt;(0);
+    /// /// var count = new AsakiProperty&lt;int&gt;(0);
     ///
     /// // 使用委托订阅值变化
     /// count.Subscribe(value => Debug.Log($"Count changed to: {value}"));
@@ -73,29 +73,45 @@ namespace Asaki.Core.Reactive
         /// <remarks>
         /// 通过<see cref="Bind(IAsakiObserver{T})"/>和<see cref="Unbind(IAsakiObserver{T})"/>方法管理绑定。
         /// 该字段标记为NonSerialized，不会被序列化。
+        /// 使用延迟初始化属性 <see cref="Observers"/> 访问，确保反序列化后正确初始化。
         /// </remarks>
         [NonSerialized]
-        private readonly List<IAsakiObserver<T>> _observers = new List<IAsakiObserver<T>>();
+        private List<IAsakiObserver<T>> _observers;
 
-        private object _valueLock = new object();
+        /// <summary>
+        /// 线程同步锁对象。
+        /// </summary>
+        /// <remarks>
+        /// 使用延迟初始化属性 <see cref="SyncRoot"/> 访问，确保反序列化后正确初始化。
+        /// </remarks>
+        [NonSerialized]
+        private object _syncRoot;
+
+        /// <summary>
+        /// 获取观察者列表（延迟初始化，支持序列化恢复）。
+        /// </summary>
+        private List<IAsakiObserver<T>> Observers => _observers ??= new List<IAsakiObserver<T>>();
+
+        /// <summary>
+        /// 获取同步锁对象（延迟初始化，支持序列化恢复）。
+        /// </summary>
+        private object SyncRoot => _syncRoot ??= new object();
 
         /// <summary>
         /// 订阅凭证，实现IDisposable接口，用于自动取消订阅或解绑。
         /// </summary>
         private class Subscription : IDisposable
         {
-            private readonly AsakiProperty<T> _property;
-            private readonly Action _unsubscribeAction;
+            private Action _unsubscribeAction;
             private bool _disposed;
 
             /// <summary>
             /// 初始化订阅凭证。
             /// </summary>
-            /// <param name="property">AsakiProperty实例</param>
+            /// <param name="property">AsakiProperty实例（保留用于未来扩展）</param>
             /// <param name="unsubscribeAction">取消订阅的委托</param>
             public Subscription(AsakiProperty<T> property, Action unsubscribeAction)
             {
-                _property = property;
                 _unsubscribeAction = unsubscribeAction;
                 _disposed = false;
             }
@@ -107,8 +123,13 @@ namespace Asaki.Core.Reactive
             {
                 if (!_disposed)
                 {
-                    _unsubscribeAction();
+                    try
+                    {
+                        _unsubscribeAction?.Invoke();
+                    }
+                    catch (ObjectDisposedException) { }
                     _disposed = true;
+                    _unsubscribeAction = null;
                 }
             }
         }
@@ -174,9 +195,21 @@ namespace Asaki.Core.Reactive
         /// </example>
         public IDisposable Subscribe(Action<T> action)
         {
-            _onValueChangedAction += action;
+            lock (SyncRoot)
+            {
+                _onValueChangedAction += action;
+            }
             action?.Invoke(_value);
-            return new Subscription(this, () => _onValueChangedAction -= action);
+            return new Subscription(
+                this,
+                () =>
+                {
+                    lock (SyncRoot)
+                    {
+                        _onValueChangedAction -= action;
+                    }
+                }
+            );
         }
 
         /// <summary>
@@ -246,7 +279,10 @@ namespace Asaki.Core.Reactive
         /// </example>
         public void Unsubscribe(Action<T> action)
         {
-            _onValueChangedAction -= action;
+            lock (SyncRoot)
+            {
+                _onValueChangedAction -= action;
+            }
         }
 
         /// <summary>
@@ -283,27 +319,22 @@ namespace Asaki.Core.Reactive
         /// </example>
         public IDisposable Bind(IAsakiObserver<T> observer)
         {
-            bool emptyObserver;
-            lock (_valueLock)
+            lock (SyncRoot)
             {
-                emptyObserver = _observers.Contains(observer);
-            }
-            if (emptyObserver)
-            {
-                return new Subscription(this, () => { });
-            }
-            lock (_valueLock)
-            {
-                _observers.Add(observer);
+                if (Observers.Contains(observer))
+                {
+                    return new Subscription(this, () => { });
+                }
+                Observers.Add(observer);
             }
             observer.OnValueChange(_value);
             return new Subscription(
                 this,
                 () =>
                 {
-                    lock (_valueLock)
+                    lock (SyncRoot)
                     {
-                        _observers.Remove(observer);
+                        Observers.Remove(observer);
                     }
                 }
             );
@@ -331,9 +362,9 @@ namespace Asaki.Core.Reactive
         /// </example>
         public void Unbind(IAsakiObserver<T> observer)
         {
-            lock (_valueLock)
+            lock (SyncRoot)
             {
-                _observers.Remove(observer);
+                Observers.Remove(observer);
             }
         }
 
@@ -349,71 +380,80 @@ namespace Asaki.Core.Reactive
         /// </remarks>
         private void Notify()
         {
-            // 创建委托快照，防止在通知过程中委托被修改
-            var actionSnapshot = _onValueChangedAction;
-            actionSnapshot?.Invoke(_value);
+            NotifyCore(_value);
+        }
 
-            // 创建观察者快照，防止在通知过程中列表被修改
+        /// <summary>
+        /// 核心通知逻辑，避免代码重复。
+        /// </summary>
+        /// <param name="value">要通知的值</param>
+        private void NotifyCore(T value)
+        {
+            Action<T> actionSnapshot;
             IAsakiObserver<T>[] observerSnapshot;
-            lock (_observers)
+            int observerCount;
+
+            lock (SyncRoot)
             {
-                observerSnapshot = _observers.ToArray();
+                actionSnapshot = _onValueChangedAction;
+                observerCount = Observers.Count;
+                if (observerCount > 0)
+                {
+                    if (_observerBuffer == null || _observerBuffer.Length < observerCount)
+                    {
+                        _observerBuffer = new IAsakiObserver<T>[observerCount * 2];
+                    }
+                    Observers.CopyTo(_observerBuffer, 0);
+                    observerSnapshot = _observerBuffer;
+                }
+                else
+                {
+                    observerSnapshot = null;
+                }
             }
 
-            // 从后往前遍历，支持在通知过程中解除绑定
-            for (int i = observerSnapshot.Length - 1; i >= 0; i--)
+            actionSnapshot?.Invoke(value);
+
+            if (observerSnapshot != null)
             {
-                try
+                for (int i = observerCount - 1; i >= 0; i--)
                 {
-                    observerSnapshot[i]?.OnValueChange(_value);
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error(
-                        $"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}"
-                    );
+                    try
+                    {
+                        observerSnapshot[i]?.OnValueChange(value);
+                    }
+                    catch (Exception ex)
+                    {
+                        ALog.Error(
+                            $"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}"
+                        );
+                    }
                 }
             }
         }
+
+        /// <summary>
+        /// 观察者快照缓冲区，用于减少 GC 压力。
+        /// </summary>
+        [NonSerialized]
+        private IAsakiObserver<T>[] _observerBuffer;
 
         public void InvokeCallback(object value)
         {
             if (value is not T typedValue)
                 return;
 
-            // 更新内部值，确保属性与数据源同步
             _value = typedValue;
-
-            // 创建委托快照
-            var actionSnapshot = _onValueChangedAction;
-            actionSnapshot?.Invoke(typedValue);
-
-            // 创建观察者快照
-            IAsakiObserver<T>[] observerSnapshot;
-            lock (_observers)
-            {
-                observerSnapshot = _observers.ToArray();
-            }
-
-            for (int i = observerSnapshot.Length - 1; i >= 0; i--)
-            {
-                try
-                {
-                    observerSnapshot[i]?.OnValueChange(typedValue);
-                }
-                catch (Exception ex)
-                {
-                    ALog.Error(
-                        $"[AsakiProperty] An error occurred while notifying the observer: {ex.Message}"
-                    );
-                }
-            }
+            NotifyCore(typedValue);
         }
 
         public void Dispose()
         {
-            _onValueChangedAction = null;
-            _observers.Clear();
+            lock (SyncRoot)
+            {
+                _onValueChangedAction = null;
+                Observers.Clear();
+            }
         }
 
         // ========================================================================
@@ -423,18 +463,15 @@ namespace Asaki.Core.Reactive
         /// <summary>
         /// 获取对象的哈希码。
         /// </summary>
-        /// <returns>对象的哈希码</returns>
-        /// <exception cref="NotSupportedException">始终抛出该异常，因为AsakiProperty不适合作为字典键</exception>
+        /// <returns>对象值的哈希码</returns>
         /// <remarks>
-        /// 由于AsakiProperty是可变对象，其哈希码可能会随值变化而变化，
-        /// 因此不适合作为字典键或哈希集合的元素。
+        /// <para>哈希码基于当前值计算。由于AsakiProperty是可变对象，
+        /// 其哈希码会随值变化而变化，因此不建议作为字典键或哈希集合的元素。</para>
+        /// <para>如果需要在字典中使用，建议使用值的引用或不可变的标识符作为键。</para>
         /// </remarks>
         public override int GetHashCode()
         {
-            // 抛出异常，明确禁止将其用作字典键
-            throw new NotSupportedException(
-                $"{nameof(AsakiProperty<T>)} should not be used as a dictionary key due to its mutable nature."
-            );
+            return _value?.GetHashCode() ?? 0;
         }
 
         /// <summary>

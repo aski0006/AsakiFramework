@@ -110,9 +110,8 @@ namespace Asaki.Unity.Services.Resources
         // 依赖注入的服务
         private IAsakiResourceService _resourceService;
 
-        // 资源持有 - 防止自动卸载
         private readonly List<ResHandle<Object>> _loadedHandles = new();
-        private readonly Dictionary<string, ResHandle<Object>> _resourceMap = new();
+        private readonly Dictionary<(string Location, Type Type), ResHandle<Object>> _resourceMap = new();
         private readonly Dictionary<string, List<ResHandle<Object>>> _groupHandlesMap = new();
 
         // 取消令牌源
@@ -216,19 +215,15 @@ namespace Asaki.Unity.Services.Resources
             }
         }
 
-        /// <summary>
-        /// 资源清理
-        /// </summary>
         protected override void Cleanup()
         {
             base.Cleanup();
 
-            // 取消正在进行的加载
-            _loadingCts?.Cancel();
-            _loadingCts?.Dispose();
+            var cts = _loadingCts;
             _loadingCts = null;
+            cts?.Cancel();
+            cts?.Dispose();
 
-            // 释放所有持有的资源
             ReleaseAllResources();
         }
 
@@ -347,9 +342,10 @@ namespace Asaki.Unity.Services.Resources
         public T GetResource<T>(string location)
             where T : class
         {
-            if (!_resourceMap.TryGetValue(location, out var handle))
+            var key = (location, typeof(T));
+            if (!_resourceMap.TryGetValue(key, out var handle))
             {
-                ALog.Warn($"[{nameof(AsakiResourcePreloader)}] Resource not found: {location}");
+                ALog.Warn($"[{nameof(AsakiResourcePreloader)}] Resource not found: {location} (Type: {typeof(T).Name})");
                 return null;
             }
 
@@ -374,18 +370,36 @@ namespace Asaki.Unity.Services.Resources
         public bool TryGetResource<T>(string location, out T resource)
             where T : class
         {
-            resource = GetResource<T>(location);
-            return resource != null;
+            var key = (location, typeof(T));
+            if (_resourceMap.TryGetValue(key, out var handle) && handle.IsValid)
+            {
+                resource = handle.Asset as T;
+                return resource != null;
+            }
+            resource = null;
+            return false;
         }
 
         /// <summary>
         /// 检查资源是否已加载
         /// </summary>
         /// <param name="location">资源路径</param>
+        /// <param name="type">资源类型 (可选，默认检查任意类型)</param>
         /// <returns>是否已加载</returns>
-        public bool IsResourceLoaded(string location)
+        public bool IsResourceLoaded(string location, Type type = null)
         {
-            return _resourceMap.TryGetValue(location, out var handle) && handle.IsValid;
+            if (type != null)
+            {
+                var key = (location, type);
+                return _resourceMap.TryGetValue(key, out var handle) && handle.IsValid;
+            }
+
+            foreach (var kvp in _resourceMap)
+            {
+                if (kvp.Key.Location == location && kvp.Value.IsValid)
+                    return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -410,21 +424,48 @@ namespace Asaki.Unity.Services.Resources
         /// 释放指定的资源
         /// </summary>
         /// <param name="location">资源路径</param>
-        public void ReleaseResource(string location)
+        /// <param name="type">资源类型 (可选，默认释放所有匹配 location 的资源)</param>
+        public void ReleaseResource(string location, Type type = null)
         {
-            if (_resourceMap.TryGetValue(location, out var handle))
+            if (type != null)
             {
-                handle.Dispose();
-                _resourceMap.Remove(location);
-                _loadedHandles.Remove(handle);
-
-                // 从组映射中移除
-                foreach (var groupList in _groupHandlesMap.Values)
+                var key = (location, type);
+                if (_resourceMap.TryGetValue(key, out var handle))
                 {
-                    groupList.Remove(handle);
+                    handle.Dispose();
+                    _resourceMap.Remove(key);
+                    _loadedHandles.Remove(handle);
+
+                    foreach (var groupList in _groupHandlesMap.Values)
+                    {
+                        groupList.Remove(handle);
+                    }
+
+                    ALog.Info($"[{nameof(AsakiResourcePreloader)}] Released resource: {location} (Type: {type.Name})");
+                }
+            }
+            else
+            {
+                var keysToRemove = _resourceMap.Where(kvp => kvp.Key.Location == location).Select(kvp => kvp.Key).ToList();
+                foreach (var key in keysToRemove)
+                {
+                    if (_resourceMap.TryGetValue(key, out var handle))
+                    {
+                        handle.Dispose();
+                        _loadedHandles.Remove(handle);
+
+                        foreach (var groupList in _groupHandlesMap.Values)
+                        {
+                            groupList.Remove(handle);
+                        }
+                    }
+                    _resourceMap.Remove(key);
                 }
 
-                ALog.Info($"[{nameof(AsakiResourcePreloader)}] Released resource: {location}");
+                if (keysToRemove.Count > 0)
+                {
+                    ALog.Info($"[{nameof(AsakiResourcePreloader)}] Released {keysToRemove.Count} resource(s): {location}");
+                }
             }
         }
 
@@ -439,12 +480,13 @@ namespace Asaki.Unity.Services.Resources
 
             foreach (var handle in handles)
             {
+                var key = (handle.Location, handle.Asset?.GetType() ?? typeof(Object));
                 if (
-                    _resourceMap.TryGetValue(handle.Location, out var mapHandle)
+                    _resourceMap.TryGetValue(key, out var mapHandle)
                     && mapHandle == handle
                 )
                 {
-                    _resourceMap.Remove(handle.Location);
+                    _resourceMap.Remove(key);
                 }
                 handle.Dispose();
                 _loadedHandles.Remove(handle);
@@ -572,12 +614,6 @@ namespace Asaki.Unity.Services.Resources
                 $"[{nameof(AsakiResourcePreloader)}] Loading group '{group.GroupName}' with {entries.Count} resources..."
             );
 
-            var locations = entries.Select(e => e.Location).ToList();
-            var types = entries
-                .Select(e => e.ResourceType?.GetResourceType() ?? typeof(Object))
-                .ToList();
-
-            // 为每个资源单独加载以支持不同类型
             var handles = new List<ResHandle<Object>>();
             float[] progresses = new float[entries.Count];
 
@@ -585,15 +621,10 @@ namespace Asaki.Unity.Services.Resources
             {
                 int index = i;
                 var entry = entries[i];
-                var type = types[i];
+                var type = entry.ResourceType?.GetResourceType() ?? typeof(Object);
 
                 try
                 {
-                    // 使用反射调用泛型方法
-                    var method = _resourceService.GetType().GetMethod("LoadAsync");
-                    var genericMethod = method.MakeGenericMethod(type);
-
-                    // 创建进度回调
                     Action<float> itemProgress = (p) =>
                     {
                         progresses[index] = p;
@@ -601,27 +632,15 @@ namespace Asaki.Unity.Services.Resources
                         onProgress?.Invoke(overall);
                     };
 
-                    // 调用加载方法
-                    var task = (UniTask)
-                        genericMethod.Invoke(
-                            _resourceService,
-                            new object[] { entry.Location, itemProgress, token }
-                        );
-                    await task;
+                    var handle = await _resourceService.LoadAsync(
+                        entry.Location,
+                        type,
+                        itemProgress,
+                        token
+                    );
 
-                    // 获取结果
-                    var resultProperty = task.GetType().GetProperty("Result");
-                    var handle = resultProperty?.GetValue(task);
-
-                    if (handle != null)
-                    {
-                        var resHandle = handle as ResHandle<Object>;
-                        if (resHandle != null)
-                        {
-                            handles.Add(resHandle);
-                            _resourceMap[entry.Location] = resHandle;
-                        }
-                    }
+                    handles.Add(handle);
+                    _resourceMap[(entry.Location, type)] = handle;
 
                     progresses[i] = 1f;
                 }
@@ -634,7 +653,6 @@ namespace Asaki.Unity.Services.Resources
                 }
             }
 
-            // 保存组内资源句柄
             if (!_groupHandlesMap.TryGetValue(group.GroupName, out var groupHandles))
             {
                 groupHandles = new List<ResHandle<Object>>();

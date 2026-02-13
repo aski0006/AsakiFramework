@@ -8,3 +8,14 @@ E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenera
 E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.csproj.CoreCompileInputs.cache
 E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.dll
 E:\Projects\C#\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.pdb
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.deps.json
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.dll
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\bin\Release\netstandard2.0\Asaki.CodeGen.pdb
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.csproj.AssemblyReference.cache
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.GeneratedMSBuildEditorConfig.editorconfig
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.AssemblyInfoInputs.cache
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.AssemblyInfo.cs
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.csproj.CoreCompileInputs.cache
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\CodeGenerator.sourcelink.json
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.dll
+E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\obj\Release\netstandard2.0\Asaki.CodeGen.pdb

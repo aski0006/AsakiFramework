@@ -22,12 +22,11 @@ namespace Asaki.Unity.Services.Resources
         private class ResRecord
         {
             public string Location;
-            public Type AssetType; // [新增] 记录资源类型
-            public int CacheKey; // [新增] 记录缓存Key
+            public Type AssetType;
+            public int CacheKey;
             public Object Asset;
             public int RefCount;
 
-            // [修改] 使用 int 类型的 HashKey 防止重复依赖 (因为依赖也是通过 HashKey 索引的)
             public HashSet<int> DependencyKeys = new HashSet<int>();
             public TaskCompletionSource<Object> LoadingTcs = new TaskCompletionSource<Object>(
                 TaskCreationOptions.RunContinuationsAsynchronously
@@ -37,15 +36,28 @@ namespace Asaki.Unity.Services.Resources
 
             public void ReportProgress(float progress)
             {
-                ProgressCallbacks?.Invoke(progress);
+                var handlers = ProgressCallbacks;
+                if (handlers == null) return;
+
+                foreach (var handler in handlers.GetInvocationList())
+                {
+                    try
+                    {
+                        ((Action<float>)handler).Invoke(progress);
+                    }
+                    catch (Exception e)
+                    {
+                        ALog.Error("[Resources] Progress callback failed", e);
+                    }
+                }
             }
         }
 
-        // [修改] Key 从 string 变为 int (Hash)
         private readonly Dictionary<int, ResRecord> _cache = new Dictionary<int, ResRecord>();
         private readonly object _lock = new object();
-        private int _timeoutSeconds = DefaultTimeoutSeconds;
-        private const int DefaultTimeoutSeconds = 10000;
+        private int _timeoutMs = DefaultTimeoutMs;
+        private const int DefaultTimeoutMs = 30000;
+        private const int MinTimeoutMs = 1000;
 
         public AsakiResourceService(
             IAsakiResStrategy strategy,
@@ -77,7 +89,7 @@ namespace Asaki.Unity.Services.Resources
 
         public void SetTimeoutSeconds(int timeoutSeconds)
         {
-            _timeoutSeconds = Mathf.Max(DefaultTimeoutSeconds, timeoutSeconds);
+            _timeoutMs = Math.Max(MinTimeoutMs, timeoutSeconds * 1000);
         }
 
         public UniTask OnInitAsync()
@@ -256,6 +268,21 @@ namespace Asaki.Unity.Services.Resources
             {
                 await LoadTaskInternal(record, token);
             }
+            catch (OperationCanceledException)
+            {
+                record.LoadingTcs.TrySetCanceled(token);
+
+                lock (_lock)
+                {
+                    _cache.Remove(record.CacheKey);
+                }
+
+                lock (record.DependencyKeys)
+                {
+                    foreach (int depKey in record.DependencyKeys)
+                        ReleaseInternalByKey(depKey);
+                }
+            }
             catch (Exception ex)
             {
                 if (!record.LoadingTcs.Task.IsCompleted)
@@ -263,14 +290,11 @@ namespace Asaki.Unity.Services.Resources
                     record.LoadingTcs.TrySetException(ex);
                 }
 
-                // [修改] 使用 CacheKey 移除
                 lock (_lock)
                 {
                     _cache.Remove(record.CacheKey);
                 }
 
-                // 错误回滚：释放已加载的依赖
-                // [修改] 遍历 Int Key
                 lock (record.DependencyKeys)
                 {
                     foreach (int depKey in record.DependencyKeys)
@@ -325,7 +349,7 @@ namespace Asaki.Unity.Services.Resources
                             .LoadingTcs.Task.AsUniTask()
                             .AttachExternalCancellation(token);
                         UniTask timeoutTask = UniTask.Delay(
-                            _timeoutSeconds,
+                            _timeoutMs,
                             false,
                             PlayerLoopTiming.Update,
                             token,
@@ -415,9 +439,9 @@ namespace Asaki.Unity.Services.Resources
             ReleaseInternalByKey(key);
         }
 
-        // 内部递归核心，使用 Key 操作
         private void ReleaseInternalByKey(int rootKey)
         {
+            var assetsToUnload = new List<(string Location, Object Asset)>();
             var pendingRelease = new Stack<int>();
             pendingRelease.Push(rootKey);
 
@@ -434,17 +458,9 @@ namespace Asaki.Unity.Services.Resources
                     if (record.RefCount > 0)
                         continue;
 
-                    // 引用归零，卸载
                     if (record.Asset != null)
                     {
-                        try
-                        {
-                            _strategy.UnloadAssetInternal(record.Location, record.Asset);
-                        }
-                        catch (Exception e)
-                        {
-                            ALog.Error("[Resources] Unload Asset Failed", e);
-                        }
+                        assetsToUnload.Add((record.Location, record.Asset));
                     }
 
                     _cache.Remove(currentKey);
@@ -456,6 +472,18 @@ namespace Asaki.Unity.Services.Resources
                     {
                         pendingRelease.Push(depKey);
                     }
+                }
+            }
+
+            foreach (var (location, asset) in assetsToUnload)
+            {
+                try
+                {
+                    _strategy.UnloadAssetInternal(location, asset);
+                }
+                catch (Exception e)
+                {
+                    ALog.Error("[Resources] Unload Asset Failed", e);
                 }
             }
         }
