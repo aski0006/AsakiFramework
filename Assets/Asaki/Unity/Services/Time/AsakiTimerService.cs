@@ -36,11 +36,14 @@ namespace Asaki.Unity.Services.Time
         }
 
         private readonly List<TimerData> _timers;
+        private readonly Dictionary<int, int> _idToIndex; // O(1) 查找映射
         private readonly Dictionary<string, List<int>> _taggedTimers;
         private readonly List<int> _pendingRemoveIndices; // 延迟删除列表
         private int _idCounter = 0;
+        private ulong _versionCounter = 0; // 递增版本号
         private bool _isDisposed = false;
         private bool _isTicking = false; // 标记是否正在 Tick 中
+        private const int MAX_LOOP_ITERATIONS = 10; // 单帧最大循环次数
 #if UNITY_EDITOR
         private float _globalTimeScale = 1f;
 #endif
@@ -48,6 +51,7 @@ namespace Asaki.Unity.Services.Time
         public AsakiTimerService(int initialCapacity = 64)
         {
             _timers = new List<TimerData>(initialCapacity);
+            _idToIndex = new Dictionary<int, int>(initialCapacity);
             _taggedTimers = new Dictionary<string, List<int>>();
             _pendingRemoveIndices = new List<int>(initialCapacity);
         }
@@ -60,11 +64,20 @@ namespace Asaki.Unity.Services.Time
                 return;
             _isDisposed = true;
 
+            for (int i = 0; i < _timers.Count; i++)
+            {
+                TimerData t = _timers[i];
+                t.OnComplete = null;
+                t.OnUpdate = null;
+                _timers[i] = t;
+            }
+
             _timers.Clear();
+            _idToIndex.Clear();
             _taggedTimers.Clear();
             _pendingRemoveIndices.Clear();
 
-            ALog.Info("[AsakiTimer] Service Disposed & Memory Released.");
+            ALog.Trace("[AsakiTimer] Service Disposed & Memory Released.");
         }
 
         #endregion
@@ -147,8 +160,12 @@ namespace Asaki.Unity.Services.Time
                 // 处理计时器完成（支持一帧内多次触发循环计时器）
                 if (t.Elapsed >= t.Duration)
                 {
-                    while (t.Elapsed >= t.Duration && !t.IsCancelled)
+                    int loopCount = 0;
+                    while (
+                        t.Elapsed >= t.Duration && !t.IsCancelled && loopCount < MAX_LOOP_ITERATIONS
+                    )
                     {
+                        loopCount++;
                         try
                         {
                             t.OnComplete?.Invoke();
@@ -168,9 +185,7 @@ namespace Asaki.Unity.Services.Time
 
                         if (t.IsLooped)
                         {
-                            // 循环：扣除周期，保留溢出时间以保持节奏
                             t.Elapsed -= t.Duration;
-                            // 如果 Duration 极小可能导致死循环，加个最小值保护
                             if (t.Duration < 0.0001f)
                             {
                                 t.Elapsed = 0;
@@ -181,12 +196,18 @@ namespace Asaki.Unity.Services.Time
                         }
                         else
                         {
-                            // 标记为待删除
                             t.IsCancelled = true;
                             _timers[i] = t;
                             _pendingRemoveIndices.Add(i);
                             break;
                         }
+                    }
+
+                    if (loopCount >= MAX_LOOP_ITERATIONS && t.IsLooped && !t.IsCancelled)
+                    {
+                        ALog.Warn(
+                            $"[AsakiTimer] Loop timer (Id={t.Id}) hit max iterations ({MAX_LOOP_ITERATIONS}) in single frame"
+                        );
                     }
                 }
                 else
@@ -245,12 +266,18 @@ namespace Asaki.Unity.Services.Time
             if (_isDisposed)
                 return default(AsakiTimerHandle);
 
+            if (duration < 0)
+            {
+                ALog.Warn($"[AsakiTimer] Duration ({duration}) cannot be negative, using 0.");
+                duration = 0;
+            }
+
             _idCounter++;
-            // 简单处理 ID 溢出 (实际项目中 21亿次很难达到，或者使用 long)
             if (_idCounter < 0)
                 _idCounter = 1;
 
-            ulong version = (ulong)UnityEngine.Random.Range(1, int.MaxValue);
+            _versionCounter++;
+            ulong version = _versionCounter;
 
             TimerData timer = new TimerData
             {
@@ -269,6 +296,7 @@ namespace Asaki.Unity.Services.Time
 
             int index = _timers.Count;
             _timers.Add(timer);
+            _idToIndex[timer.Id] = index;
 
             if (!string.IsNullOrEmpty(tag))
             {
@@ -334,7 +362,7 @@ namespace Asaki.Unity.Services.Time
             {
                 foreach (int index in indices)
                 {
-                    if (index < _timers.Count)
+                    if (index >= 0 && index < _timers.Count)
                     {
                         TimerData t = _timers[index];
                         if (!t.IsCancelled)
@@ -344,9 +372,7 @@ namespace Asaki.Unity.Services.Time
                         }
                     }
                 }
-                _taggedTimers.Remove(tag);
 
-                // 如果不在 Tick 中，立即执行删除
                 if (!_isTicking)
                 {
                     ProcessPendingRemovals();
@@ -386,15 +412,19 @@ namespace Asaki.Unity.Services.Time
             }
             _taggedTimers.Clear();
 
-            // 如果不在 Tick 中，立即执行删除
             if (!_isTicking)
             {
-                ProcessPendingRemovals();
+                _idToIndex.Clear();
+                _timers.Clear();
+                _pendingRemoveIndices.Clear();
             }
         }
 
         public void PauseAll()
         {
+            if (_isDisposed)
+                return;
+
             for (int i = 0; i < _timers.Count; i++)
             {
                 TimerData t = _timers[i];
@@ -405,6 +435,9 @@ namespace Asaki.Unity.Services.Time
 
         public void ResumeAll()
         {
+            if (_isDisposed)
+                return;
+
             for (int i = 0; i < _timers.Count; i++)
             {
                 TimerData t = _timers[i];
@@ -423,7 +456,18 @@ namespace Asaki.Unity.Services.Time
             if (_isDisposed || string.IsNullOrEmpty(tag))
                 return 0;
 
-            return _taggedTimers.TryGetValue(tag, out var list) ? list.Count : 0;
+            if (!_taggedTimers.TryGetValue(tag, out var list))
+                return 0;
+
+            int count = 0;
+            foreach (int index in list)
+            {
+                if (index >= 0 && index < _timers.Count && !_timers[index].IsCancelled)
+                {
+                    count++;
+                }
+            }
+            return count;
         }
 
         #endregion
@@ -432,14 +476,17 @@ namespace Asaki.Unity.Services.Time
 
         private int FindIndex(AsakiTimerHandle handle)
         {
-            for (int i = 0; i < _timers.Count; i++)
-            {
-                if (_timers[i].Id == handle.Id && _timers[i].Version == handle.Version)
-                {
-                    return i;
-                }
-            }
-            return -1;
+            if (!_idToIndex.TryGetValue(handle.Id, out int index))
+                return -1;
+
+            if (index < 0 || index >= _timers.Count)
+                return -1;
+
+            TimerData t = _timers[index];
+            if (t.Version != handle.Version)
+                return -1;
+
+            return index;
         }
 
         /// <summary>
@@ -452,17 +499,29 @@ namespace Asaki.Unity.Services.Time
                 return;
 
             TimerData removed = _timers[index];
+            _idToIndex.Remove(removed.Id);
 
             int lastIndex = _timers.Count - 1;
-            TimerData movedTimer = default;
             if (index < lastIndex)
             {
-                movedTimer = _timers[lastIndex];
+                TimerData movedTimer = _timers[lastIndex];
                 _timers[index] = movedTimer;
+                _idToIndex[movedTimer.Id] = index;
+
+                if (!string.IsNullOrEmpty(movedTimer.Tag))
+                {
+                    if (_taggedTimers.TryGetValue(movedTimer.Tag, out var movedList))
+                    {
+                        int oldIndexPos = movedList.IndexOf(lastIndex);
+                        if (oldIndexPos != -1)
+                        {
+                            movedList[oldIndexPos] = index;
+                        }
+                    }
+                }
             }
             _timers.RemoveAt(lastIndex);
 
-            // 更新被删除计时器的标签索引
             if (
                 !string.IsNullOrEmpty(removed.Tag)
                 && _taggedTimers.TryGetValue(removed.Tag, out var removedList)
@@ -472,20 +531,6 @@ namespace Asaki.Unity.Services.Time
                 if (removedList.Count == 0)
                 {
                     _taggedTimers.Remove(removed.Tag);
-                }
-            }
-
-            // 更新被移动计时器的标签索引（如果发生了移动）
-            if (index < lastIndex && !string.IsNullOrEmpty(movedTimer.Tag))
-            {
-                if (_taggedTimers.TryGetValue(movedTimer.Tag, out var movedList))
-                {
-                    // 找到旧索引并更新为新索引
-                    int oldIndexPos = movedList.IndexOf(lastIndex);
-                    if (oldIndexPos != -1)
-                    {
-                        movedList[oldIndexPos] = index;
-                    }
                 }
             }
         }
