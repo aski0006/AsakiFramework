@@ -11,22 +11,27 @@ namespace Asaki.Unity.Services.Serialization
     /// </summary>
     /// <remarks>
     /// 此类包装了AsakiBinaryReader，在反序列化时自动检测版本不匹配并应用迁移。
+    /// 实现了IDisposable接口，确保资源正确释放。
     /// </remarks>
-    public class AsakiMigrationBinaryReader : IAsakiReader
+    public class AsakiMigrationBinaryReader : IAsakiReader, IDisposable
     {
         private readonly AsakiBinaryReader _innerReader;
         private readonly IAsakiMigrationRegistry _migrationRegistry;
+        private readonly Stream _baseStream;
         private int _readVersion;
         private bool _versionRead;
+        private bool _disposed;
 
         public AsakiMigrationBinaryReader(
             Stream stream,
             IAsakiMigrationRegistry migrationRegistry = null
         )
         {
+            _baseStream = stream ?? throw new ArgumentNullException(nameof(stream));
             _innerReader = new AsakiBinaryReader(stream);
             _migrationRegistry = migrationRegistry;
             _versionRead = false;
+            _disposed = false;
         }
 
         public int ReadVersion()
@@ -98,7 +103,6 @@ namespace Asaki.Unity.Services.Serialization
                 $"[AsakiMigration] Applying {migrationPath.Count} migration(s) for {typeName}..."
             );
 
-            // 应用迁移链
             try
             {
                 // 读取原始数据
@@ -111,22 +115,39 @@ namespace Asaki.Unity.Services.Serialization
                         $"[AsakiMigration] Applying migration: {typeName} v{migration.FromVersion} -> v{migration.ToVersion}"
                     );
 
-                    // 如果是强类型迁移，直接调用
+                    // 如果是强类型迁移，直接在已读取的数据上应用
                     if (migration is IAsakiMigration<T> typedMigration)
                     {
                         typedMigration.Migrate(data);
                     }
                     else
                     {
-                        // 低级迁移：序列化 -> 迁移 -> 反序列化
-                        using (var tempStream = new MemoryStream())
+                        // 低级迁移：需要序列化当前数据 -> 迁移 -> 反序列化
+                        // 注意：这里使用已读取的数据，而不是重新从流中读取
+                        using (var tempReadStream = new MemoryStream())
+                        using (var tempWriteStream = new MemoryStream())
                         {
-                            var tempWriter = new AsakiBinaryWriter(tempStream);
-                            migration.Migrate(_innerReader, tempWriter);
-                            tempStream.Position = 0;
+                            // 1. 将当前数据序列化到临时流（模拟旧版本数据）
+                            var tempWriter = new AsakiBinaryWriter(tempReadStream, true);
+                            data.Serialize(tempWriter);
+                            tempWriter.Dispose();
 
-                            var tempReader = new AsakiBinaryReader(tempStream);
-                            data.Deserialize(tempReader);
+                            // 2. 准备读取
+                            tempReadStream.Position = 0;
+                            var migrationReader = new AsakiBinaryReader(tempReadStream, true);
+                            var migrationWriter = new AsakiBinaryWriter(tempWriteStream, true);
+
+                            // 3. 执行迁移
+                            migration.Migrate(migrationReader, migrationWriter);
+
+                            // 4. 从迁移后的数据反序列化
+                            tempWriteStream.Position = 0;
+                            var resultReader = new AsakiBinaryReader(tempWriteStream, true);
+                            data.Deserialize(resultReader);
+
+                            migrationReader.Dispose();
+                            migrationWriter.Dispose();
+                            resultReader.Dispose();
                         }
                     }
                 }
@@ -182,5 +203,17 @@ namespace Asaki.Unity.Services.Serialization
         public int BeginList(string key) => _innerReader.BeginList(key);
 
         public void EndList() => _innerReader.EndList();
+
+        /// <summary>
+        /// 释放读取器使用的资源。
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _innerReader?.Dispose();
+            _disposed = true;
+        }
     }
 }

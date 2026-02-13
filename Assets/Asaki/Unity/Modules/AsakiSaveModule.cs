@@ -1,4 +1,7 @@
+using System;
+using System.IO;
 using Asaki.Core.Attributes;
+using Asaki.Core.Blackboard.Variables;
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
 using Asaki.Core.FrameworkSettings;
@@ -34,6 +37,9 @@ namespace Asaki.Unity.Modules
             _asakiSaveService = new AsakiSaveService(_eventService, _saveConfig);
             _asakiSaveService.OnInit();
             AsakiContext.Register(_asakiSaveService);
+
+            // 设置深度克隆委托，支持 IAsakiSavable 类型的深度克隆
+            AsakiValue<IAsakiSavable>.DeepCloneSavableFunc = DeepCloneSavable;
         }
 
         public async UniTask OnInitAsync()
@@ -44,6 +50,33 @@ namespace Asaki.Unity.Modules
         public void OnDispose()
         {
             _asakiSaveService.OnDispose();
+            AsakiValue<IAsakiSavable>.DeepCloneSavableFunc = null;
+        }
+
+        /// <summary>
+        /// 深度克隆 IAsakiSavable 对象
+        /// </summary>
+        private static IAsakiSavable DeepCloneSavable(IAsakiSavable source)
+        {
+            if (source == null)
+                return null;
+
+            var type = source.GetType();
+            var cloned = (IAsakiSavable)Activator.CreateInstance(type);
+
+            using (var stream = new MemoryStream())
+            {
+                var writer = new AsakiBinaryWriter(stream, true);
+                source.Serialize(writer);
+                writer.Dispose();
+
+                stream.Position = 0;
+                var reader = new AsakiBinaryReader(stream, true);
+                cloned.Deserialize(reader);
+                reader.Dispose();
+            }
+
+            return cloned;
         }
     }
 }

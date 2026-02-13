@@ -4,6 +4,7 @@ using System.Threading;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
+using Asaki.Core.Simulation;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -11,11 +12,13 @@ namespace Asaki.Unity.Services.Serialization
 {
     /// <summary>
     /// 自动保存服务实现
+    /// 实现 IAsakiTickable 接口以集成到 Simulation 系统中
     /// </summary>
-    public class AsakiAutoSaveService : IAsakiAutoSaveService
+    public class AsakiAutoSaveService : IAsakiAutoSaveService, IAsakiTickable
     {
         private IAsakiSaveSlotManager _slotManager;
         private IAsakiEventService _eventService;
+        private IAsakiSimulationService _simulationService;
         private IAsakiAutoSaveConfig _config;
         private Func<IAsakiSavable> _dataProvider;
 
@@ -85,11 +88,32 @@ namespace Asaki.Unity.Services.Serialization
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
         }
 
+        /// <summary>
+        /// 设置 Simulation 服务（用于注册 Tick 更新）
+        /// </summary>
+        public void SetSimulationService(IAsakiSimulationService simulationService)
+        {
+            _simulationService = simulationService;
+        }
+
         public void OnInit()
         {
             // 注册应用生命周期事件
             Application.focusChanged += OnApplicationFocusChanged;
             Application.quitting += OnApplicationQuitting;
+
+            // 注册到 Simulation 系统
+            if (_simulationService != null)
+            {
+                _simulationService.Register(this, (int)TickPriority.Low);
+                ALog.Info("[AsakiAutoSaveService] Registered to Simulation system");
+            }
+            else
+            {
+                ALog.Warn(
+                    "[AsakiAutoSaveService] SimulationService not set, time-based auto-save will not work"
+                );
+            }
         }
 
         public UniTask OnInitAsync()
@@ -99,9 +123,35 @@ namespace Asaki.Unity.Services.Serialization
 
         public void OnDispose()
         {
+            // 从 Simulation 系统注销
+            if (_simulationService != null)
+            {
+                _simulationService.Unregister(this);
+            }
+
             StopService();
             Application.focusChanged -= OnApplicationFocusChanged;
             Application.quitting -= OnApplicationQuitting;
+        }
+
+        /// <summary>
+        /// 实现 IAsakiTickable.Tick，由 Simulation 系统每帧调用
+        /// </summary>
+        void IAsakiTickable.Tick(float deltaTime)
+        {
+            if (!_isRunning || _isPaused)
+                return;
+
+            if (!_config.Triggers.HasFlag(AsakiAutoSaveTrigger.TimeInterval))
+                return;
+
+            _timer += deltaTime;
+
+            if (_timer >= _config.TimeIntervalSeconds)
+            {
+                _timer = 0f;
+                ExecuteAutoSaveWithCountdown(AsakiAutoSaveTrigger.TimeInterval).Forget();
+            }
         }
 
         /// <inheritdoc />
@@ -251,9 +301,10 @@ namespace Asaki.Unity.Services.Serialization
             if (_dataProvider == null)
                 return false;
 
-            // 检查最小间隔
-            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            if (now - _lastSaveTime < _config.MinIntervalBetweenSaves)
+            // 检查最小间隔（MinIntervalBetweenSaves 单位为秒，转换为毫秒比较）
+            var nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var minIntervalMs = _config.MinIntervalBetweenSaves * 1000;
+            if (nowMs - _lastSaveTime < minIntervalMs)
                 return false;
 
             return true;
@@ -275,27 +326,6 @@ namespace Asaki.Unity.Services.Serialization
         // =========================================================
         // 私有方法
         // =========================================================
-
-        private void Update()
-        {
-            if (!_isRunning || _isPaused)
-            {
-                return;
-            }
-
-            if (!_config.Triggers.HasFlag(AsakiAutoSaveTrigger.TimeInterval))
-            {
-                return;
-            }
-
-            _timer += UnityEngine.Time.unscaledDeltaTime;
-
-            if (_timer >= _config.TimeIntervalSeconds)
-            {
-                _timer = 0f;
-                ExecuteAutoSaveWithCountdown(AsakiAutoSaveTrigger.TimeInterval).Forget();
-            }
-        }
 
         private void OnApplicationFocusChanged(bool hasFocus)
         {
@@ -438,7 +468,7 @@ namespace Asaki.Unity.Services.Serialization
                 slot = await _slotManager.AutoSaveAsync(data, externalToken) as AsakiSaveSlot;
                 success = true;
                 _saveCount++;
-                _lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                _lastSaveTime = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                 _timer = 0f;
 
                 ALog.Info(

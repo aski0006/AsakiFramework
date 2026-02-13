@@ -13,10 +13,14 @@ namespace Asaki.Unity.Services.Serialization
     /// <remarks>
     /// 此实现忽略键名以优化性能和减小数据大小，适用于需要高性能和小体积的场景。
     /// 它使用标准的BinaryWriter进行底层数据写入，并针对Unity数学类型进行了优化。
+    /// 实现了IDisposable接口，确保资源正确释放。
     /// </remarks>
-    public class AsakiBinaryWriter : IAsakiWriter
+    public class AsakiBinaryWriter : IAsakiWriter, IDisposable
     {
         private BinaryWriter _bw;
+        private Stream _stream;
+        private bool _ownsStream;
+        private bool _disposed;
 
         /// <summary>
         /// 初始化AsakiBinaryWriter的新实例。
@@ -28,6 +32,7 @@ namespace Asaki.Unity.Services.Serialization
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _ownsStream = ownsStream;
             _bw = new BinaryWriter(stream, System.Text.Encoding.UTF8, true);
+            _disposed = false;
         }
 
         /// <summary>
@@ -288,8 +293,26 @@ namespace Asaki.Unity.Services.Serialization
         /// </remarks>
         public void EndObject() { }
 
-        private Stream _stream;
-        private bool _ownsStream;
+        /// <summary>
+        /// 释放写入器使用的资源。
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            _bw?.Flush();
+
+            if (_ownsStream && _stream != null)
+            {
+                _stream.Dispose();
+                _stream = null;
+            }
+
+            _bw?.Dispose();
+            _bw = null;
+            _disposed = true;
+        }
     }
 
     // ==================================================================================
@@ -301,12 +324,14 @@ namespace Asaki.Unity.Services.Serialization
     /// <remarks>
     /// 此实现提供了高效的二进制数据反序列化，支持对象复用以减少垃圾回收。
     /// 它与AsakiBinaryWriter配对使用，必须按照与写入时相同的顺序读取数据。
+    /// 实现了IDisposable接口，确保资源正确释放。
     /// </remarks>
-    public class AsakiBinaryReader : IAsakiReader
+    public class AsakiBinaryReader : IAsakiReader, IDisposable
     {
         private BinaryReader _br;
         private Stream _stream;
         private bool _ownsStream;
+        private bool _disposed;
 
         /// <summary>
         /// 获取当前流的位置。
@@ -328,6 +353,7 @@ namespace Asaki.Unity.Services.Serialization
             _stream = stream ?? throw new ArgumentNullException(nameof(stream));
             _ownsStream = ownsStream;
             _br = new BinaryReader(stream, System.Text.Encoding.UTF8, true);
+            _disposed = false;
         }
 
         /// <summary>
@@ -591,5 +617,24 @@ namespace Asaki.Unity.Services.Serialization
         /// 在二进制实现中，列表不需要结束符，因此此方法为空实现。
         /// </remarks>
         public void EndList() { }
+
+        /// <summary>
+        /// 释放读取器使用的资源。
+        /// </summary>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            if (_ownsStream && _stream != null)
+            {
+                _stream.Dispose();
+                _stream = null;
+            }
+
+            _br?.Dispose();
+            _br = null;
+            _disposed = true;
+        }
     }
 }

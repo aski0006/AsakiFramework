@@ -288,6 +288,27 @@ namespace Asaki.Core.Serialization
             int targetSlotId,
             CancellationToken cancellationToken = default
         );
+
+        /// <summary>
+        /// 获取指定槽位的目录路径
+        /// </summary>
+        /// <param name="slotId">存档槽位ID</param>
+        /// <returns>槽位目录的完整路径</returns>
+        string GetSlotDirectory(int slotId);
+
+        /// <summary>
+        /// 获取指定槽位的数据文件路径
+        /// </summary>
+        /// <param name="slotId">存档槽位ID</param>
+        /// <returns>数据文件的完整路径</returns>
+        string GetSlotDataPath(int slotId);
+
+        /// <summary>
+        /// 获取指定槽位的元数据文件路径
+        /// </summary>
+        /// <param name="slotId">存档槽位ID</param>
+        /// <returns>元数据文件的完整路径</returns>
+        string GetSlotMetaPath(int slotId);
     }
 
     /// <summary>

@@ -127,8 +127,13 @@ namespace Asaki.Core.Serialization
     /// 保存槽位信息默认实现
     /// </summary>
     [Serializable]
-    public class AsakiSaveSlot : IAsakiSaveSlot
+    public class AsakiSaveSlot : IAsakiSaveSlot, IAsakiVersionedSavable
     {
+        /// <summary>
+        /// 当前数据版本号
+        /// </summary>
+        public const int CURRENT_VERSION = 1;
+
         /// <inheritdoc />
         public int SlotId { get; set; }
 
@@ -227,6 +232,7 @@ namespace Asaki.Core.Serialization
         public void Serialize(IAsakiWriter writer)
         {
             writer.BeginObject(nameof(AsakiSaveSlot));
+            writer.WriteVersion(CURRENT_VERSION);
             writer.WriteInt(nameof(SlotId), SlotId);
             writer.WriteLong(nameof(LastSaveTime), LastSaveTime);
             writer.WriteString(nameof(SaveName), SaveName ?? string.Empty);
@@ -282,6 +288,8 @@ namespace Asaki.Core.Serialization
         /// </summary>
         public void Deserialize(IAsakiReader reader)
         {
+            int version = reader.ReadVersion();
+
             SlotId = reader.ReadInt(nameof(SlotId));
             LastSaveTime = reader.ReadLong(nameof(LastSaveTime));
             SaveName = reader.ReadString(nameof(SaveName));
@@ -321,5 +329,10 @@ namespace Asaki.Core.Serialization
             }
             reader.EndList();
         }
+
+        /// <summary>
+        /// 获取当前数据版本号
+        /// </summary>
+        public int GetDataVersion() => CURRENT_VERSION;
     }
 }

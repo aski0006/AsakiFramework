@@ -438,7 +438,10 @@ namespace Asaki.Unity.Services.Serialization
                 }
                 catch (Exception cleanupEx)
                 {
-                    ALog.Warn($"[AsakiSave] Cleanup failed after cancel: {cleanupEx.Message}");
+                    ALog.Warn(
+                        $"[AsakiSave] Cleanup failed after cancel: {cleanupEx.Message}",
+                        cleanupEx
+                    );
                 }
 
                 // 发布取消事件（视为失败）
@@ -733,7 +736,7 @@ namespace Asaki.Unity.Services.Serialization
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiSave] Failed to delete slot {slotId}: {ex.Message}");
+                    ALog.Error($"[AsakiSave] Failed to delete slot {slotId}: {ex.Message}", ex);
                     return false;
                 }
             }
@@ -824,7 +827,8 @@ namespace Asaki.Unity.Services.Serialization
             catch (Exception ex)
             {
                 ALog.Error(
-                    $"[AsakiSave] Failed to copy slot {sourceSlotId} to {targetSlotId}: {ex.Message}"
+                    $"[AsakiSave] Failed to copy slot {sourceSlotId} to {targetSlotId}: {ex.Message}",
+                    ex
                 );
                 return UniTask.FromResult(false);
             }
@@ -861,7 +865,7 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiSave] Failed to export slot {slotId}: {ex.Message}");
+                ALog.Error($"[AsakiSave] Failed to export slot {slotId}: {ex.Message}", ex);
                 return false;
             }
         }
@@ -896,9 +900,30 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiSave] Failed to import to slot {targetSlotId}: {ex.Message}");
+                ALog.Error(
+                    $"[AsakiSave] Failed to import to slot {targetSlotId}: {ex.Message}",
+                    ex
+                );
                 return false;
             }
+        }
+
+        /// <inheritdoc />
+        public string GetSlotDirectory(int slotId)
+        {
+            return GetSlotDir(slotId);
+        }
+
+        /// <inheritdoc />
+        public string GetSlotDataPath(int slotId)
+        {
+            return GetDataPath(slotId);
+        }
+
+        /// <inheritdoc />
+        public string GetSlotMetaPath(int slotId)
+        {
+            return GetMetaPath(slotId);
         }
     }
 }

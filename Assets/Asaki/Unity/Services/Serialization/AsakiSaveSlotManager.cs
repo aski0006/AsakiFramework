@@ -224,7 +224,10 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiSaveSlotManager] Failed to lock slot {slotId}: {ex.Message}");
+                ALog.Error(
+                    $"[AsakiSaveSlotManager] Failed to lock slot {slotId}: {ex.Message}",
+                    ex
+                );
                 return false;
             }
         }
@@ -249,7 +252,10 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiSaveSlotManager] Failed to unlock slot {slotId}: {ex.Message}");
+                ALog.Error(
+                    $"[AsakiSaveSlotManager] Failed to unlock slot {slotId}: {ex.Message}",
+                    ex
+                );
                 return false;
             }
         }
@@ -378,7 +384,10 @@ namespace Asaki.Unity.Services.Serialization
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiSaveSlotManager] Failed to delete slot {slotId}: {ex.Message}");
+                ALog.Error(
+                    $"[AsakiSaveSlotManager] Failed to delete slot {slotId}: {ex.Message}",
+                    ex
+                );
                 return false;
             }
         }
@@ -443,7 +452,7 @@ namespace Asaki.Unity.Services.Serialization
             if (!IsSlotValid(slotId))
                 throw new FileNotFoundException($"Slot {slotId} not found");
 
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var backupDir = Path.Combine(_backupPath, $"Slot_{slotId}_Backup_{timestamp}");
 
             Directory.CreateDirectory(backupDir);
@@ -541,17 +550,20 @@ namespace Asaki.Unity.Services.Serialization
 
         private string GetSlotDir(int slotId)
         {
-            return Path.Combine(_rootPath, $"Slot_{slotId}");
+            return _saveService?.GetSlotDirectory(slotId)
+                ?? Path.Combine(_rootPath, $"Slot_{slotId}");
         }
 
         private string GetMetaPath(int slotId)
         {
-            return Path.Combine(GetSlotDir(slotId), META_FILE_NAME);
+            return _saveService?.GetSlotMetaPath(slotId)
+                ?? Path.Combine(GetSlotDir(slotId), META_FILE_NAME);
         }
 
         private string GetDataPath(int slotId)
         {
-            return Path.Combine(GetSlotDir(slotId), DATA_FILE_NAME);
+            return _saveService?.GetSlotDataPath(slotId)
+                ?? Path.Combine(GetSlotDir(slotId), DATA_FILE_NAME);
         }
 
         private AsakiSaveSlot GetOrCreateSlotInfo(int slotId)
@@ -616,7 +628,8 @@ namespace Asaki.Unity.Services.Serialization
                 catch (Exception ex)
                 {
                     ALog.Warn(
-                        $"[AsakiSaveSlotManager] Failed to read meta for slot {slotId}: {ex.Message}"
+                        $"[AsakiSaveSlotManager] Failed to read meta for slot {slotId}: {ex.Message}",
+                        ex
                     );
                 }
             }

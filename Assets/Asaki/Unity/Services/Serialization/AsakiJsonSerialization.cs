@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
@@ -30,14 +30,15 @@ namespace Asaki.Unity.Services.Serialization
     /// writer.WriteVector3("value", new Vector3(1, 2, 3));
     /// writer.EndObject();
     /// string json = writer.GetResult();
+    /// writer.Dispose();
     /// </code>
     /// </remarks>
-    public class AsakiJsonWriter : IAsakiWriter
+    public class AsakiJsonWriter : IAsakiWriter, IDisposable
     {
         /// <summary>
         /// 内部字符串构建器，用于高效构建JSON字符串内容。
         /// </summary>
-        private readonly StringBuilder _sb;
+        private StringBuilder _sb;
 
         /// <summary>
         /// 当前JSON结构的缩进层级，每层级对应4个空格。
@@ -59,6 +60,11 @@ namespace Asaki.Unity.Services.Serialization
         /// 指示当前<see cref="_sb"/>是否从对象池租用，决定是否需要归还。
         /// </summary>
         private bool _isRented;
+
+        /// <summary>
+        /// 指示是否已释放资源。
+        /// </summary>
+        private bool _disposed;
 
         /// <summary>
         /// 容器上下文，存储当前JSON容器的状态信息。
@@ -126,12 +132,46 @@ namespace Asaki.Unity.Services.Serialization
         /// </summary>
         /// <returns>格式化后的完整JSON字符串。</returns>
         /// <remarks>
-        /// 若使用对象池模式，此方法会触发StringBuilder归还操作。
-        /// 调用后不应再使用当前写入器实例进行写入操作。
+        /// 此方法不会触发StringBuilder归还操作。
+        /// 如需归还StringBuilder到对象池，请调用<see cref="Dispose"/>方法。
         /// </remarks>
         public string GetResult()
         {
-            return _sb.ToString();
+            return _sb?.ToString() ?? string.Empty;
+        }
+
+        /// <summary>
+        /// 获取序列化后的JSON字符串结果，并自动释放资源。
+        /// </summary>
+        /// <returns>格式化后的完整JSON字符串。</returns>
+        /// <remarks>
+        /// 此方法会触发StringBuilder归还操作（如果是从对象池租用的）。
+        /// 调用后不应再使用当前写入器实例进行写入操作。
+        /// </remarks>
+        public string GetResultAndDispose()
+        {
+            string result = _sb?.ToString() ?? string.Empty;
+            Dispose();
+            return result;
+        }
+
+        /// <summary>
+        /// 释放写入器使用的资源。
+        /// </summary>
+        /// <remarks>
+        /// 如果StringBuilder是从对象池租用的，会将其归还到池中。
+        /// </remarks>
+        public void Dispose()
+        {
+            if (_disposed)
+                return;
+
+            if (_isRented && _sb != null)
+            {
+                AsakiStringBuilderPool.Return(_sb);
+            }
+            _sb = null;
+            _disposed = true;
         }
 
         /// <summary>
@@ -237,8 +277,49 @@ namespace Asaki.Unity.Services.Serialization
         public void WriteString(string key, string value)
         {
             WritePrefix(key);
-            string escaped = value?.Replace("\"", "\\\"").Replace("\n", "\\n") ?? "";
-            _sb.Append($"\"{escaped}\"");
+            _sb.Append('"');
+            if (!string.IsNullOrEmpty(value))
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char c = value[i];
+                    switch (c)
+                    {
+                        case '"':
+                            _sb.Append("\\\"");
+                            break;
+                        case '\\':
+                            _sb.Append("\\\\");
+                            break;
+                        case '\n':
+                            _sb.Append("\\n");
+                            break;
+                        case '\r':
+                            _sb.Append("\\r");
+                            break;
+                        case '\t':
+                            _sb.Append("\\t");
+                            break;
+                        case '\b':
+                            _sb.Append("\\b");
+                            break;
+                        case '\f':
+                            _sb.Append("\\f");
+                            break;
+                        default:
+                            if (char.IsControl(c))
+                            {
+                                _sb.Append($"\\u{((int)c):x4}");
+                            }
+                            else
+                            {
+                                _sb.Append(c);
+                            }
+                            break;
+                    }
+                }
+            }
+            _sb.Append('"');
             _skipNextComma = false;
         }
 
@@ -595,11 +676,13 @@ namespace Asaki.Unity.Services.Serialization
         {
             object childNode = GetValue(key);
             if (childNode == null)
-                return default(T);
+                return existingObj;
 
             AsakiJsonReader childReader = new AsakiJsonReader(childNode);
 
-            T instance = existingObj ?? new T();
+            T instance = existingObj;
+            if (instance == null)
+                instance = new T();
             instance.Deserialize(childReader);
             return instance;
         }
@@ -835,16 +918,70 @@ namespace Asaki.Unity.Services.Serialization
         private static string ParseString(string json, ref int index)
         {
             StringBuilder sb = new StringBuilder();
-            index++; // skip start quote
+            index++;
             while (index < json.Length)
             {
                 char c = json[index++];
                 if (c == '"')
                     break;
                 if (c == '\\')
-                    index++; // Simple skip escape
+                {
+                    if (index >= json.Length)
+                        break;
+                    char escaped = json[index++];
+                    switch (escaped)
+                    {
+                        case '"':
+                            sb.Append('"');
+                            break;
+                        case '\\':
+                            sb.Append('\\');
+                            break;
+                        case '/':
+                            sb.Append('/');
+                            break;
+                        case 'n':
+                            sb.Append('\n');
+                            break;
+                        case 'r':
+                            sb.Append('\r');
+                            break;
+                        case 't':
+                            sb.Append('\t');
+                            break;
+                        case 'b':
+                            sb.Append('\b');
+                            break;
+                        case 'f':
+                            sb.Append('\f');
+                            break;
+                        case 'u':
+                            if (index + 4 <= json.Length)
+                            {
+                                string hex = json.Substring(index, 4);
+                                if (
+                                    int.TryParse(
+                                        hex,
+                                        NumberStyles.HexNumber,
+                                        CultureInfo.InvariantCulture,
+                                        out int codePoint
+                                    )
+                                )
+                                {
+                                    sb.Append((char)codePoint);
+                                }
+                                index += 4;
+                            }
+                            break;
+                        default:
+                            sb.Append(escaped);
+                            break;
+                    }
+                }
                 else
+                {
                     sb.Append(c);
+                }
             }
             return sb.ToString();
         }
