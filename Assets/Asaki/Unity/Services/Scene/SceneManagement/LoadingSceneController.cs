@@ -43,12 +43,22 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         private ILoadingSceneView _loadingSceneView;
         private SceneLoadPayload _payload;
         private CancellationTokenSource _loadingCts;
+        private CancellationTokenSource _linkedCts;
         private float _currentProgress;
 
         /// <summary>
-        /// 预加载资源句柄列表 - 用于防止资源泄漏
+        /// 预加载资源句柄列表
+        /// 注意：这些句柄在场景切换时不会被释放，预加载的资源由目标场景继承使用
+        /// 资源生命周期由资源服务的引用计数机制管理
         /// </summary>
         private readonly List<ResHandle<Object>> _preloadHandles = new List<ResHandle<Object>>();
+
+        /// <summary>
+        /// 是否保留预加载资源句柄（默认为 true，预加载资源供目标场景使用）
+        /// </summary>
+        [SerializeField]
+        [Tooltip("是否在场景切换时保留预加载资源（预加载资源供目标场景使用）")]
+        private bool _preservePreloadedResources = true;
 
         [AsakiInject]
         public void Init(
@@ -70,7 +80,6 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             // 初始化视图接口
             InitializeView();
 
-            // 使用 Service 实例获取 Payload，替代静态 SceneLoadStateService
             _payload = _sceneManager?.CurrentPayload;
 
             if (_payload == null)
@@ -122,17 +131,31 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             _loadingCts?.Dispose();
             _loadingCts = null;
 
-            // 修复：释放所有预加载的资源句柄，防止资源泄漏
+            _linkedCts?.Cancel();
+            _linkedCts?.Dispose();
+            _linkedCts = null;
+
             ReleasePreloadedResources();
         }
 
         /// <summary>
         /// 释放所有预加载的资源句柄
+        /// 注意：默认情况下预加载资源不会被释放，因为它们是供目标场景使用的
+        /// 只有在加载失败或显式配置时才会释放
         /// </summary>
         private void ReleasePreloadedResources()
         {
             if (_preloadHandles.Count == 0)
                 return;
+
+            if (_preservePreloadedResources)
+            {
+                ALog.Info(
+                    $"[LoadingSceneController] Preserving {_preloadHandles.Count} preloaded resources for target scene"
+                );
+                _preloadHandles.Clear();
+                return;
+            }
 
             ALog.Info(
                 $"[LoadingSceneController] Releasing {_preloadHandles.Count} preloaded resources"
@@ -182,8 +205,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                             "[LoadingSceneController] AutoTransition enabled, loading target scene..."
                         );
                         await UniTask.Delay(TimeSpan.FromSeconds(0.3f), cancellationToken: token);
-                        // 使用 CancellationToken.None 加载目标场景，因为场景切换时当前对象会被销毁
-                        await LoadTargetSceneAsync(CancellationToken.None);
+                        await LoadTargetSceneWithCancelSupportAsync();
                     }
                     else
                     {
@@ -197,18 +219,66 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                     ALog.Info(
                         "[LoadingSceneController] UsePreload=false, loading target scene directly..."
                     );
-                    // 使用 CancellationToken.None 加载目标场景，因为场景切换时当前对象会被销毁
-                    await LoadTargetSceneAsync(CancellationToken.None);
+                    await LoadTargetSceneWithCancelSupportAsync();
                 }
             }
             catch (OperationCanceledException)
             {
                 ALog.Info("[LoadingSceneController] Loading cancelled");
+                ForceReleasePreloadedResources();
             }
             catch (Exception ex)
             {
                 ALog.Error($"[LoadingSceneController] Loading failed: {ex}");
+                ForceReleasePreloadedResources();
             }
+        }
+
+        /// <summary>
+        /// 加载目标场景，支持在加载前取消，加载后不可取消（场景切换时当前对象会被销毁）
+        /// </summary>
+        private async UniTask LoadTargetSceneWithCancelSupportAsync()
+        {
+            if (_loadingCts != null && _loadingCts.IsCancellationRequested)
+            {
+                ALog.Info("[LoadingSceneController] Cancelled before loading target scene");
+                _sceneManager?.NotifyPreloadFinished(false, _payload?.TargetSceneName ?? "Unknown");
+                return;
+            }
+
+            _linkedCts = new CancellationTokenSource();
+            try
+            {
+                await LoadTargetSceneAsync(_linkedCts.Token);
+            }
+            finally
+            {
+                _linkedCts?.Dispose();
+                _linkedCts = null;
+            }
+        }
+
+        /// <summary>
+        /// 强制释放预加载资源（仅在加载失败或取消时调用）
+        /// </summary>
+        private void ForceReleasePreloadedResources()
+        {
+            if (_preloadHandles.Count == 0)
+                return;
+
+            ALog.Warn(
+                $"[LoadingSceneController] Force releasing {_preloadHandles.Count} preloaded resources due to failure/cancellation"
+            );
+
+            foreach (var handle in _preloadHandles)
+            {
+                if (handle != null && handle.IsValid)
+                {
+                    handle.Dispose();
+                }
+            }
+
+            _preloadHandles.Clear();
         }
 
         private ScenePreloadConfig GetPreloadConfig()
@@ -363,11 +433,12 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         }
 
         /// <summary>
-        /// 取消加载
+        /// 取消加载（包括预加载和目标场景加载）
         /// </summary>
         public void CancelLoading()
         {
             _loadingCts?.Cancel();
+            _linkedCts?.Cancel();
         }
     }
 }

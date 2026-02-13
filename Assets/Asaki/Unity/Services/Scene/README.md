@@ -8,11 +8,7 @@
 Unity/Services/Scene/
 ├── AsakiSceneManagerService.cs              # 场景管理器服务实现
 └── SceneManagement/                         # 场景管理相关组件
-    ├── LoadingSceneController.cs            # 过渡场景控制器
-    ├── SceneLoadPayload.cs                  # 场景加载参数
-    ├── SceneLoadStateService.cs             # 场景加载状态服务
-    ├── ScenePreloadConfig.cs                # 场景预加载配置
-    └── ScenePreloadDatabase.cs              # 场景预加载配置数据库
+    └── LoadingSceneController.cs            # 过渡场景控制器
 ```
 
 ## 核心实现
@@ -24,10 +20,11 @@ Unity/Services/Scene/
 #### 功能特性
 
 - **场景验证**: 自动验证场景是否在 BuildSettings 中注册
-- **资源清理**: 单场景模式下自动卸载未使用资源并触发 GC
+- **资源清理**: 单场景模式下自动卸载未使用资源
 - **进度报告**: 实时报告加载进度（0% ~ 90% 为实际加载，90% ~ 100% 为激活）
 - **取消支持**: 支持通过 CancellationToken 取消加载
 - **过渡动画**: 支持自定义过渡动画（进入/退出/进度更新）
+- **超时控制**: 支持设置加载超时时间
 
 #### 依赖注入
 
@@ -65,7 +62,7 @@ public AsakiSceneManagerService(
 
 #### SceneLoadPayload
 
-场景加载参数，用于在场景间传递加载信息。
+场景加载参数，通过 `IAsakiSceneManagerService.CurrentPayload` 获取。
 
 ```csharp
 public class SceneLoadPayload
@@ -80,24 +77,6 @@ public class SceneLoadPayload
 }
 ```
 
-#### SceneLoadStateService
-
-静态状态服务，用于跨场景传递场景加载参数。
-
-```csharp
-// 设置参数（在发起场景切换前）
-SceneLoadStateService.SetPayload(payload);
-
-// 获取参数（在 LoadingScene 中，获取后自动清空）
-var payload = SceneLoadStateService.GetPayload();
-
-// 查看参数（不清空）
-var payload = SceneLoadStateService.PeekPayload();
-
-// 清空参数
-SceneLoadStateService.ClearPayload();
-```
-
 #### LoadingSceneController
 
 过渡场景控制器，挂载在 LoadingScene 中，负责执行资源预加载。
@@ -108,9 +87,8 @@ SceneLoadStateService.ClearPayload();
 |------|------|------|
 | `_preloadDatabase` | ScenePreloadDatabase | 预加载配置数据库 |
 | `_defaultLoadingSceneName` | string | 默认过渡场景名称 |
-| `_progressBar` | RectTransform | 进度条变换组件 |
-| `_progressText` | TextMeshProUGUI | 进度百分比文本 |
-| `_tipText` | TextMeshProUGUI | 提示信息文本 |
+| `_loadingView` | MonoBehaviour | 加载视图组件（实现 ILoadingSceneView） |
+| `_preservePreloadedResources` | bool | 是否保留预加载资源供目标场景使用 |
 
 **公共方法:**
 
@@ -118,7 +96,7 @@ SceneLoadStateService.ClearPayload();
 // 手动触发场景切换（用于非自动过渡模式）
 public void TriggerSceneTransition()
 
-// 取消加载
+// 取消加载（包括预加载和目标场景加载）
 public void CancelLoading()
 ```
 
