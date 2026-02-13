@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -93,7 +93,12 @@ namespace Asaki.Core.Logging
                                 StackWrapper wrapper = JsonUtility.FromJson<StackWrapper>(json);
                                 model.StackFrames = wrapper.F;
                             }
-                            catch { }
+                            catch (Exception stackEx)
+                            {
+                                Debug.LogWarning(
+                                    $"[AsakiReader] Failed to parse stack trace for log ID {model.ID}: {stackEx.Message}"
+                                );
+                            }
                         }
 
                         idMap[model.ID] = model;

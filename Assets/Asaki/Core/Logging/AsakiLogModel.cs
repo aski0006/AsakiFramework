@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace Asaki.Core.Logging
@@ -12,9 +12,10 @@ namespace Asaki.Core.Logging
     public class AsakiLogModel
     {
         /// <summary>
-        /// 聚合计数，记录该日志项出现的次数，确保在多线程环境下的可见性。
+        /// 聚合计数，记录该日志项出现的次数。
+        /// 使用 <see cref="System.Threading.Interlocked.Increment"/> 进行线程安全的更新。
         /// </summary>
-        public volatile int Count = 1;
+        public int Count = 1;
 
         /// <summary>
         /// 最后一次发生时间，以长整型时间戳表示。

@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Diagnostics;
 using Asaki.Core.Context;
 using Asaki.Core.FrameworkSettings;
 
@@ -27,13 +28,15 @@ namespace Asaki.Core.Logging
         /// <param name="payloadJson">负载 JSON 数据，可用于传递与日志相关的额外结构化信息。</param>
         /// <param name="file">产生日志的代码文件路径，有助于定位问题。</param>
         /// <param name="line">产生日志的代码在文件中的行号，有助于定位问题。</param>
+        /// <param name="stackTrace">调用方捕获的堆栈跟踪，用于保留真实的调用链。</param>
         /// </summary>
         void LogTrace(
             AsakiLogLevel level,
             string message,
             string payloadJson,
             string file,
-            int line
+            int line,
+            StackTrace stackTrace = null
         );
 
         /// <summary>

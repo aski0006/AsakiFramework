@@ -24,7 +24,7 @@ namespace Asaki.Core.Logging
         // === 内部结构体定义 ===
         /// <summary>
         /// 表示日志数据包的内部结构体。
-        /// 包含日志的各种属性，如级别、消息、负载、文件、行号、异常和时间戳。
+        /// 包含日志的各种属性，如级别、消息、负载、文件、行号、异常、时间戳和堆栈跟踪。
         /// </summary>
         private struct LogPacket
         {
@@ -62,6 +62,12 @@ namespace Asaki.Core.Logging
             /// 日志记录的时间戳（以Utc时间的Ticks表示）。
             /// </summary>
             public long Timestamp;
+
+            /// <summary>
+            /// 调用方捕获的堆栈跟踪信息。
+            /// 在日志入队时立即捕获，确保堆栈信息指向真实的调用位置。
+            /// </summary>
+            public StackTrace CapturedStackTrace;
         }
 
         /// <summary>
@@ -206,6 +212,7 @@ namespace Asaki.Core.Logging
         /// <param name="file">记录日志的文件路径。</param>
         /// <param name="line">记录日志的行号。</param>
         /// <param name="ex">相关的异常对象，如果有的话。</param>
+        /// <param name="stackTrace">调用方捕获的堆栈跟踪，用于保留真实的调用链。</param>
         /// <remarks>此方法线程安全，可在任意线程调用</remarks>
         public void Log(
             AsakiLogLevel level,
@@ -213,13 +220,12 @@ namespace Asaki.Core.Logging
             string payload,
             string file,
             int line,
-            Exception ex
+            Exception ex,
+            StackTrace stackTrace = null
         )
         {
-            // [优化] 使用Interlocked读取队列深度，避免竞态条件
             if (GetQueueDepth() >= MAX_QUEUE_DEPTH)
             {
-                // 队列爆了，丢弃 Trace/Info，保留 Error，或者直接丢弃并报错
                 if (level < AsakiLogLevel.Error)
                     return;
             }
@@ -234,6 +240,7 @@ namespace Asaki.Core.Logging
                     Line = line,
                     Exception = ex,
                     Timestamp = DateTime.UtcNow.Ticks,
+                    CapturedStackTrace = stackTrace,
                 }
             );
         }
@@ -373,8 +380,8 @@ namespace Asaki.Core.Logging
                 else
                 {
                     // === Def ===
-                    // 解析堆栈
-                    var stack = CaptureSmartStackTrace(p.Exception);
+                    // 解析堆栈（优先使用调用方捕获的堆栈）
+                    var stack = CaptureSmartStackTrace(p.Exception, p.CapturedStackTrace);
                     string stackJson =
                         stack != null && stack.Count > 0
                             ? JsonUtility.ToJson(new StackWrapper { F = stack })
@@ -422,18 +429,32 @@ namespace Asaki.Core.Logging
 
         /// <summary>
         /// 捕获智能堆栈跟踪信息。
-        /// 如果有异常，从异常中获取堆栈信息；否则抓取当前调用栈。
+        /// 优先使用调用方传入的堆栈跟踪（保留真实调用链），其次从异常获取，最后才使用当前调用栈。
         /// 对堆栈信息进行处理，过滤出用户代码相关的堆栈帧，并返回处理后的堆栈帧模型列表。
         /// </summary>
         /// <param name="ex">相关的异常对象，如果有的话。</param>
+        /// <param name="capturedTrace">调用方捕获的堆栈跟踪，优先级最高。</param>
         /// <returns>处理后的堆栈帧模型列表。</returns>
-        private List<StackFrameModel> CaptureSmartStackTrace(Exception ex)
+        private List<StackFrameModel> CaptureSmartStackTrace(
+            Exception ex,
+            StackTrace capturedTrace = null
+        )
         {
             var list = new List<StackFrameModel>();
 
-            // 如果有异常，从异常取；否则抓取当前调用栈
-            // 3 表示跳过: CaptureSmartStackTrace -> Log -> ALog.Trace -> UserCode
-            StackTrace trace = ex != null ? new StackTrace(ex, true) : new StackTrace(3, true);
+            StackTrace trace;
+            if (capturedTrace != null)
+            {
+                trace = capturedTrace;
+            }
+            else if (ex != null)
+            {
+                trace = new StackTrace(ex, true);
+            }
+            else
+            {
+                trace = new StackTrace(3, true);
+            }
 
             var frames = trace.GetFrames();
             if (frames == null)

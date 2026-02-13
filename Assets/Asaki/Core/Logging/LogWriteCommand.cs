@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 
 namespace Asaki.Core.Logging
 {
@@ -150,6 +150,9 @@ namespace Asaki.Core.Logging
     /// <seealso cref="AsakiLogAggregator.Sync"/>
     public static class LogCommandPool
     {
+        /// <summary>对象池最大容量，防止高负载场景下内存无限增长</summary>
+        private const int MAX_POOL_SIZE = 256;
+
         /// <summary>线程安全的并发栈，存储可复用的命令对象</summary>
         /// <remarks>
         /// <para>使用 <see cref="ConcurrentStack{T}"/> 而非普通 Stack + lock，减少锁竞争</para>
@@ -192,6 +195,7 @@ namespace Asaki.Core.Logging
         /// <para>线程安全：可在任意线程调用，与 <see cref="Get"/> 无锁并发</para>
         /// <para>调用责任：通常由 <see cref="AsakiLogAggregator"/> 自动调用，业务代码不应直接调用</para>
         /// <para>空安全：若 <paramref name="cmd"/> 为 <see langword="null"/> 则静默忽略，不抛出异常</para>
+        /// <para>容量限制：池大小超过 <see cref="MAX_POOL_SIZE"/> 时，对象将被丢弃而非归还</para>
         /// </remarks>
         /// <example>
         /// <code>
@@ -213,7 +217,8 @@ namespace Asaki.Core.Logging
             if (cmd == null)
                 return;
             cmd.Reset();
-            _pool.Push(cmd);
+            if (_pool.Count < MAX_POOL_SIZE)
+                _pool.Push(cmd);
         }
     }
 }

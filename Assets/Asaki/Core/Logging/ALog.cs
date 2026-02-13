@@ -140,6 +140,10 @@ namespace Asaki.Core.Logging
         /// <param name="payload">附带的数据，建议传递基础类型或 struct，默认为 null。</param>
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
+        /// <remarks>
+        /// Trace 级别日志仅保存调用位置（文件:行号），不捕获完整调用堆栈以优化性能。
+        /// 如需完整堆栈信息，请使用 <see cref="Warn"/> 级别。
+        /// </remarks>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -153,7 +157,6 @@ namespace Asaki.Core.Logging
             string pJson = FormatPayload(payload);
 
 #if UNITY_EDITOR
-            // 实时输出到 Unity 控制台，获得原生堆栈跳转
             ALogBridgeManager
                 .GetBridge()
                 ?.ForwardToUnityConsole(AsakiLogLevel.Debug, message, pJson, file, line);
@@ -180,6 +183,10 @@ namespace Asaki.Core.Logging
         /// <param name="payload">附带的数据，默认为 null。</param>
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
+        /// <remarks>
+        /// Info 级别日志仅保存调用位置（文件:行号），不捕获完整调用堆栈以优化性能。
+        /// 如需完整堆栈信息，请使用 <see cref="Warn"/> 级别。
+        /// </remarks>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -193,7 +200,6 @@ namespace Asaki.Core.Logging
             string pJson = FormatPayload(payload);
 
 #if UNITY_EDITOR
-            // 实时输出到 Unity 控制台，获得原生堆栈跳转
             ALogBridgeManager
                 .GetBridge()
                 ?.ForwardToUnityConsole(AsakiLogLevel.Info, message, pJson, file, line);
@@ -216,6 +222,9 @@ namespace Asaki.Core.Logging
         /// <param name="payload">附带的数据，默认为 null。</param>
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
+        /// <remarks>
+        /// Warn 级别日志会捕获完整的调用堆栈，便于问题排查。
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Warn(
             string message,
@@ -227,7 +236,6 @@ namespace Asaki.Core.Logging
             string pJson = FormatPayload(payload);
 
 #if UNITY_EDITOR
-            // 实时输出到 Unity 控制台，获得原生堆栈跳转
             ALogBridgeManager
                 .GetBridge()
                 ?.ForwardToUnityConsole(AsakiLogLevel.Warning, message, pJson, file, line);
@@ -239,7 +247,8 @@ namespace Asaki.Core.Logging
                 return;
             }
 
-            s.LogTrace(AsakiLogLevel.Warning, message, pJson, file, line);
+            var stackTrace = new StackTrace(1, true);
+            s.LogTrace(AsakiLogLevel.Warning, message, pJson, file, line, stackTrace);
         }
 
         // ========================================================================
@@ -294,6 +303,9 @@ namespace Asaki.Core.Logging
         /// <param name="payload">附带的数据，默认为 null。</param>
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
+        /// <remarks>
+        /// Error 级别日志会捕获完整的调用堆栈，便于问题排查。
+        /// </remarks>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Error(
             string message,
@@ -305,7 +317,6 @@ namespace Asaki.Core.Logging
             string pJson = FormatPayload(payload);
 
 #if UNITY_EDITOR
-            // 实时输出到 Unity 控制台，获得原生堆栈跳转
             ALogBridgeManager
                 .GetBridge()
                 ?.ForwardToUnityConsole(AsakiLogLevel.Error, message, pJson, file, line);
@@ -317,8 +328,8 @@ namespace Asaki.Core.Logging
                 return;
             }
 
-            // 走 Trace 通道，但级别为 Error
-            s.LogTrace(AsakiLogLevel.Error, message, pJson, file, line);
+            var stackTrace = new StackTrace(1, true);
+            s.LogTrace(AsakiLogLevel.Error, message, pJson, file, line, stackTrace);
         }
 
         /// <summary>

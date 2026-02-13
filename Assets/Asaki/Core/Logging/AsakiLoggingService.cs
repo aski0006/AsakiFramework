@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Asaki.Core.FrameworkSettings;
 using UnityEngine;
 
@@ -85,7 +86,7 @@ namespace Asaki.Core.Logging
         /// <list type="number">
         ///   <item>创建 <see cref="AsakiLogAggregator"/> 实例</item>
         ///   <item>创建 <see cref="AsakiLogFileWriter"/> 并启动后台写入线程</item>
-        ///   <item>创建 <see cref="LogUpdateDriver"/> Unity 组件，绑定 Update 循环</item>
+        ///   <item>创建 <see cref="LogUpdateDriver"/> Unity 组件，绑定 LateUpdate 循环</item>
         /// </list>
         /// <para>注意：构造函数会创建 DontDestroyOnLoad 的隐藏 GameObject，确保跨场景持久化</para>
         /// </remarks>
@@ -151,6 +152,7 @@ namespace Asaki.Core.Logging
         /// <param name="payloadJson">附加载荷的 JSON 字符串，若无则传 <c>null</c> 或空</param>
         /// <param name="file">调用源文件路径（由编译器自动插入）</param>
         /// <param name="line">调用行号（由编译器自动插入）</param>
+        /// <param name="stackTrace">调用方捕获的堆栈跟踪，用于保留真实的调用链。</param>
         /// <remarks>
         /// <para>零成本过滤：在获取调用栈前执行级别检查，避免高开销操作</para>
         /// <para>线程安全：可在任意线程调用，日志会被缓冲到 <see cref="Aggregator"/></para>
@@ -171,12 +173,13 @@ namespace Asaki.Core.Logging
             string message,
             string payloadJson,
             string file,
-            int line
+            int line,
+            StackTrace stackTrace = null
         )
         {
             if (_isDisposed || level < _minLevel)
                 return;
-            Aggregator.Log(level, message, payloadJson, file, line, null);
+            Aggregator.Log(level, message, payloadJson, file, line, null, stackTrace);
         }
 
         /// <summary>
@@ -244,21 +247,34 @@ namespace Asaki.Core.Logging
         /// </example>
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// 释放资源的核心实现
+        /// </summary>
+        /// <param name="disposing">为 true 时释放托管和非托管资源；为 false 时仅释放非托管资源</param>
+        protected virtual void Dispose(bool disposing)
+        {
             if (_isDisposed)
                 return;
             _isDisposed = true;
 
-            if (_driver != null)
+            if (disposing)
             {
-                if (Application.isPlaying)
-                    UnityEngine.Object.Destroy(_driver.gameObject);
-                else
-                    UnityEngine.Object.DestroyImmediate(_driver.gameObject);
-            }
+                if (_driver != null)
+                {
+                    if (Application.isPlaying)
+                        UnityEngine.Object.Destroy(_driver.gameObject);
+                    else
+                        UnityEngine.Object.DestroyImmediate(_driver.gameObject);
+                }
 
-            _writer?.Dispose();
-            Aggregator.Clear();
-            Aggregator.Dispose();
+                _writer?.Dispose();
+                Aggregator.Clear();
+                Aggregator.Dispose();
+            }
         }
 
         /// <summary>
