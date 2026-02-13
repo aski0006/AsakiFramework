@@ -1,6 +1,6 @@
 ﻿using System;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 
 namespace Asaki.Core.Logging
 {

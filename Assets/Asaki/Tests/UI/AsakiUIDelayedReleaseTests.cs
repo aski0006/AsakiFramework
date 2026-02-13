@@ -1,8 +1,8 @@
 // File: Assets/Tests/UI/AsakiUIDelayedReleaseTests.cs
 
 using System.Collections;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
@@ -77,7 +77,7 @@ namespace Asaki.Tests.UI
             // Arrange
             SetupUIService();
             var mockWindow = CreateMockWindow("UI/TestWindow", false);
-            _uiService.Close(mockWindow);
+            ((IAsakiUIService)_uiService).Close(mockWindow);
 
             // Act - 模拟一帧
             yield return null;
@@ -337,7 +337,7 @@ namespace Asaki.Tests.UI
         /// </summary>
         private async UniTask CloseWindowAsync(IAsakiWindow window)
         {
-            _uiService.Close(window);
+            ((IAsakiUIService)_uiService).Close(window);
             // 等待一帧让 Unity 处理
             await UniTask.Yield();
             // 手动驱动 Tick 处理 _pendingDestroyQueue 并执行 HandleCloseAsync

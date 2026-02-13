@@ -24,7 +24,10 @@ namespace Asaki.Core.Scene.SceneManagement
     /// <summary>
     /// 场景预加载配置
     /// </summary>
-    [CreateAssetMenu(fileName = "ScenePreloadConfig", menuName = "Asaki/Scene/Scene Preload Config")]
+    [CreateAssetMenu(
+        fileName = "ScenePreloadConfig",
+        menuName = "Asaki/Scene/Scene Preload Config"
+    )]
     public class ScenePreloadConfig : ScriptableObject
     {
         [Tooltip("目标场景名称")]
@@ -55,11 +58,9 @@ namespace Asaki.Core.Scene.SceneManagement
 
         public void AddResource(string location, SerializableResourceType resourceType)
         {
-            _resources.Add(new ScenePreloadResourceEntry
-            {
-                Location = location,
-                ResourceType = resourceType
-            });
+            _resources.Add(
+                new ScenePreloadResourceEntry { Location = location, ResourceType = resourceType }
+            );
         }
 
         public void ClearResources()

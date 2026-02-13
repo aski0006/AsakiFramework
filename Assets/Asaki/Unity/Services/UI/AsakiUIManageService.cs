@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Factories;
 using Asaki.Core.Pooling.Interfaces;
@@ -18,46 +18,33 @@ using Object = UnityEngine.Object;
 
 namespace Asaki.Unity.Services.UI
 {
+    /// <summary>
+    /// UI管理服务，协调窗口生命周期、导航和资源管理。
+    /// </summary>
     public class AsakiUIManageService : IAsakiUIService, IAsakiTickable
     {
-        private AsakiUIRoot _asakiUIRoot;
+        private AsakiUIRoot _uiRoot;
         private IAsakiResourceService _resourceService;
         private IAsakiPoolService _poolService;
-        private IAsakiEventService _eventService;
-        private IAsakiSimulationService _asakiSimulationService;
+        private IAsakiSimulationService _simulationService;
         private AsakiUIConfig _uiConfig;
         private readonly Vector2 _refRes;
         private readonly float _matchMode;
 
-        // 窗口栈 (Normal层)
-        private Stack<IAsakiWindow> _normalStack = new Stack<IAsakiWindow>();
-        private readonly Stack<object> _returnValueStack = new Stack<object>();
+        private readonly UINavigationStack _navigationStack = new UINavigationStack();
+        private UIInputBlocker _inputBlocker;
+        private UIResourceManager _resourceManager;
 
-        // [新增] Popup层计数器 (用于判断是否需要恢复 Normal 层输入)
-        private int _activePopupCount = 0;
-
-        // [新增] 窗口实例到层级的映射缓存 (避免 Close 时无法获知层级)
-        private readonly Dictionary<IAsakiWindow, AsakiUILayer> _windowLayerMap =
-            new Dictionary<IAsakiWindow, AsakiUILayer>();
-        private readonly Dictionary<int, IAsakiWindow> _windowInstanceMap =
-            new Dictionary<int, IAsakiWindow>();
-        private readonly Dictionary<Type, int> _typeToIdCache = new Dictionary<Type, int>();
+        private readonly ConcurrentDictionary<IAsakiWindow, AsakiUILayer> _windowLayerMap =
+            new ConcurrentDictionary<IAsakiWindow, AsakiUILayer>();
+        private readonly ConcurrentDictionary<int, IAsakiWindow> _windowInstanceMap =
+            new ConcurrentDictionary<int, IAsakiWindow>();
+        private readonly ConcurrentDictionary<Type, int> _typeToIdCache =
+            new ConcurrentDictionary<Type, int>();
         private readonly HashSet<string> _pooledAssets = new HashSet<string>();
 
-        // 线程安全的销毁队列
         private readonly ConcurrentQueue<IAsakiWindow> _pendingDestroyQueue =
             new ConcurrentQueue<IAsakiWindow>();
-
-        // [新增] 延迟释放资源管理
-        private class PendingReleaseInfo
-        {
-            public string AssetPath;
-            public AsakiUIResourceHandleAdapter Handle;
-            public float RemainingSeconds;
-        }
-
-        private readonly Dictionary<string, PendingReleaseInfo> _pendingReleaseHandles =
-            new Dictionary<string, PendingReleaseInfo>();
 
         public AsakiUIManageService(
             AsakiUIConfig configAsset,
@@ -68,26 +55,31 @@ namespace Asaki.Unity.Services.UI
             IAsakiPoolService poolService
         )
         {
+            if (eventService == null)
+                throw new ArgumentNullException(nameof(eventService));
+            _resourceService =
+                resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+            _poolService = poolService ?? throw new ArgumentNullException(nameof(poolService));
             _uiConfig = configAsset;
             _refRes = refRes;
             _matchMode = matchMode;
-            _eventService = eventService;
-            _resourceService = resourceService;
-            _poolService = poolService;
         }
 
         public void OnInit()
         {
-            _asakiSimulationService = AsakiContext.Get<IAsakiSimulationService>();
-            _asakiSimulationService.Register(this);
+            _simulationService = AsakiContext.Get<IAsakiSimulationService>();
+            _simulationService.Register(this);
 
-            if (_asakiUIRoot == null)
+            if (_uiRoot == null)
             {
                 GameObject rootGo = new GameObject("Asaki_UIRoot");
                 Object.DontDestroyOnLoad(rootGo);
-                _asakiUIRoot = rootGo.AddComponent<AsakiUIRoot>();
-                _asakiUIRoot.Initialize(_refRes, _matchMode);
+                _uiRoot = rootGo.AddComponent<AsakiUIRoot>();
+                _uiRoot.Initialize(_refRes, _matchMode);
             }
+
+            _inputBlocker = new UIInputBlocker(_uiRoot);
+            _resourceManager = new UIResourceManager(_uiConfig?.ResourceReleaseDelaySeconds ?? 0f);
         }
 
         public UniTask OnInitAsync()
@@ -106,11 +98,10 @@ namespace Asaki.Unity.Services.UI
         public async UniTask<T> OpenAsync<T>(
             int uiId,
             object args = null,
-            CancellationToken token = default(CancellationToken)
+            CancellationToken token = default
         )
             where T : class, IAsakiWindow
         {
-            // 基础检查
             if (token.IsCancellationRequested)
                 return null;
 
@@ -126,162 +117,160 @@ namespace Asaki.Unity.Services.UI
 
             try
             {
-                Transform parent = _asakiUIRoot.GetLayerNode(info.Layer);
+                Transform parent = _uiRoot.GetLayerNode(info.Layer);
 
-                // === V5.1 池化分支 ===
                 if (info.UsePool)
                 {
-                    // [Step 1] 确保对象池存在
-                    if (!_poolService.HasPool(info.AssetPath))
-                    {
-                        // 加载预制体
-                        var prefabHandle = await _resourceService.LoadAsync<GameObject>(
-                            info.AssetPath,
-                            token
-                        );
-                        if (!prefabHandle.IsValid)
-                            return null;
-
-                        // 创建对象工厂
-                        GameObjectFactory factory = new GameObjectFactory(
-                            prefabHandle.Asset,
-                            parent
-                        );
-
-                        // 创建对象池
-                        await _poolService.CreatePoolAsync(info.AssetPath, factory, token: token);
-                    }
-
-                    // [Step 2] 获取对象池
-                    var pool = _poolService.GetPool<GameObject>(info.AssetPath);
-                    if (pool == null)
+                    window = await CreatePooledWindowAsync<T>(info, parent, token);
+                    if (window == null)
                         return null;
-
-                    // [Step 3] 获取对象
-                    instance = await pool.GetAsync(token);
-                    if (token.IsCancellationRequested)
-                        return null;
-
-                    _pooledAssets.Add(info.AssetPath);
-
-                    window = instance.GetComponent<T>();
-                    if (window is AsakiUIWindow baseWindow)
-                    {
-                        baseWindow.IsPooled = true;
-                        baseWindow.PoolKey = info.AssetPath;
-                        baseWindow.ResHandle = null;
-                    }
+                    instance = (window as Component)?.gameObject;
                 }
-                // === V5.1 普通分支 ===
                 else
                 {
-                    // [Step 1] 检查是否有可复用的延迟释放资源
-                    if (
-                        TryGetReusableHandle(
-                            info.AssetPath,
-                            out AsakiUIResourceHandleAdapter reusableHandle
-                        )
-                    )
-                    {
-                        // 复用已有资源，无需重新加载
-                        instance = Object.Instantiate(reusableHandle.Asset, parent);
-                        window = instance.GetComponent<T>();
-                        if (window is AsakiUIWindow baseWindow)
-                        {
-                            baseWindow.IsPooled = false;
-                            baseWindow.ResHandle = reusableHandle;
-                        }
-                    }
-                    else
-                    {
-                        // [Step 1] 异步加载
-                        rawHandle = await _resourceService.LoadAsync<GameObject>(
-                            info.AssetPath,
-                            token
-                        );
-                        if (!rawHandle.IsValid)
-                            return null;
-                        if (token.IsCancellationRequested)
-                        {
-                            rawHandle.Dispose();
-                            return null;
-                        }
-
-                        // [Step 2] 实例化
-                        instance = Object.Instantiate(rawHandle.Asset, parent);
-                        window = instance.GetComponent<T>();
-                        if (window is AsakiUIWindow baseWindow)
-                        {
-                            baseWindow.IsPooled = false;
-                            baseWindow.ResHandle = new AsakiUIResourceHandleAdapter(rawHandle);
-                            rawHandle = null;
-                        }
-                    }
+                    (window, rawHandle, instance) = await CreateWindowAsync<T>(info, parent, token);
+                    if (window == null)
+                        return null;
                 }
 
-                if (window == null)
-                    throw new Exception($"Window component missing on {instance.name}");
-
-                // [新增] 记录窗口层级，便于 Close 时处理逻辑
                 _windowLayerMap[window] = info.Layer;
 
-                // === [核心优化] 输入屏蔽逻辑 ===
-                // 如果打开的是 Popup，物理屏蔽 Normal 层的输入
-                if (info.Layer == AsakiUILayer.Popup)
-                {
-                    _activePopupCount++;
-                    if (_activePopupCount == 1) // 只要有一个 Popup 存在，就屏蔽下层
-                    {
-                        _asakiUIRoot.SetLayerRaycast(AsakiUILayer.Normal, false);
-                    }
-                }
+                _inputBlocker.OnWindowOpened(info.Layer);
 
                 await window.OnOpenAsync(args, token);
 
-                // 栈管理 (仅 Normal 层入栈)
                 if (info.Layer == AsakiUILayer.Normal)
                 {
-                    if (_normalStack.Count > 0)
-                        _normalStack.Peek().OnCover();
-                    _normalStack.Push(window);
+                    _navigationStack.Push(window);
                 }
                 _windowInstanceMap[uiId] = window;
                 return window;
             }
             catch (Exception e)
             {
-                // 异常回滚
-                if (instance != null)
-                {
-                    if (info.UsePool)
-                    {
-                        var pool = _poolService.GetPool<GameObject>(info.AssetPath);
-                        if (pool != null)
-                            pool.Return(instance);
-                        else
-                            Object.Destroy(instance);
-                    }
-                    else
-                        Object.Destroy(instance);
-                }
-                rawHandle?.Dispose();
-
+                HandleOpenFailure(instance, info, rawHandle);
                 ALog.Error($"[AsakiUI] OpenUI Failed: {e.Message}", e);
                 return null;
             }
         }
 
-        // [修改] 泛型关闭接口
-        public void Close<T>()
-            where T : IAsakiWindow
+        private async UniTask<T> CreatePooledWindowAsync<T>(
+            UIInfo info,
+            Transform parent,
+            CancellationToken token
+        )
+            where T : class, IAsakiWindow
         {
-            if (_normalStack.Count > 0 && _normalStack.Peek() is T)
+            if (!_poolService.HasPool(info.AssetPath))
             {
-                Close(_normalStack.Peek());
+                var prefabHandle = await _resourceService.LoadAsync<GameObject>(
+                    info.AssetPath,
+                    token
+                );
+                if (!prefabHandle.IsValid)
+                    return null;
+
+                var factory = new GameObjectFactory(prefabHandle.Asset, parent);
+                await _poolService.CreatePoolAsync(info.AssetPath, factory, token: token);
+            }
+
+            var pool = _poolService.GetPool<GameObject>(info.AssetPath);
+            if (pool == null)
+                return null;
+
+            var instance = await pool.GetAsync(token);
+            if (token.IsCancellationRequested)
+                return null;
+
+            _pooledAssets.Add(info.AssetPath);
+
+            var window = instance.GetComponent<T>();
+            if (window is AsakiUIWindow baseWindow)
+            {
+                baseWindow.IsPooled = true;
+                baseWindow.PoolKey = info.AssetPath;
+                baseWindow.ResHandle = null;
+            }
+
+            return window;
+        }
+
+        private async UniTask<(
+            T window,
+            ResHandle<GameObject> handle,
+            GameObject instance
+        )> CreateWindowAsync<T>(UIInfo info, Transform parent, CancellationToken token)
+            where T : class, IAsakiWindow
+        {
+            ResHandle<GameObject> rawHandle = null;
+            GameObject instance = null;
+
+            if (_resourceManager.TryGetReusableHandle(info.AssetPath, out var reusableHandle))
+            {
+                instance = Object.Instantiate(reusableHandle.Asset, parent);
+                var window = instance.GetComponent<T>();
+                if (window is AsakiUIWindow baseWindow)
+                {
+                    baseWindow.IsPooled = false;
+                    baseWindow.ResHandle = reusableHandle;
+                }
+                return (window, null, instance);
+            }
+
+            rawHandle = await _resourceService.LoadAsync<GameObject>(info.AssetPath, token);
+            if (!rawHandle.IsValid)
+                return (null, rawHandle, null);
+
+            if (token.IsCancellationRequested)
+            {
+                rawHandle.Dispose();
+                return (null, null, null);
+            }
+
+            instance = Object.Instantiate(rawHandle.Asset, parent);
+            var result = instance.GetComponent<T>();
+            if (result is AsakiUIWindow uiWindow)
+            {
+                uiWindow.IsPooled = false;
+                uiWindow.ResHandle = new AsakiUIResourceHandleAdapter(rawHandle);
+                rawHandle = null;
+            }
+
+            return (result, rawHandle, instance);
+        }
+
+        private void HandleOpenFailure(
+            GameObject instance,
+            UIInfo info,
+            ResHandle<GameObject> handle
+        )
+        {
+            if (instance != null)
+            {
+                if (info.UsePool)
+                {
+                    var pool = _poolService.GetPool<GameObject>(info.AssetPath);
+                    if (pool != null)
+                        pool.Return(instance);
+                    else
+                        Object.Destroy(instance);
+                }
+                else
+                    Object.Destroy(instance);
+            }
+            handle?.Dispose();
+        }
+
+        public void Close<T>()
+            where T : class, IAsakiWindow
+        {
+            if (_navigationStack.Peek() is T)
+            {
+                Close(_navigationStack.Peek());
                 return;
             }
 
-            IAsakiWindow target = _normalStack.FirstOrDefault(w => w is T);
+            var target = _navigationStack.FindWindow<T>();
             if (target != null)
             {
                 Close(target);
@@ -292,7 +281,6 @@ namespace Asaki.Unity.Services.UI
             }
         }
 
-        // [修改] 线程安全的关闭入口
         public void Close(IAsakiWindow window)
         {
             if (window == null)
@@ -302,72 +290,75 @@ namespace Asaki.Unity.Services.UI
 
         public void Back()
         {
-            if (_normalStack.Count > 0)
+            if (_navigationStack.Count > 0)
             {
-                Close(_normalStack.Peek());
+                Close(_navigationStack.Peek());
             }
         }
 
-        // [新增] 心跳驱动，处理销毁列表
         public void Tick(float deltaTime)
         {
-            // 处理待关闭窗口
-            while (_pendingDestroyQueue.TryDequeue(out IAsakiWindow window))
+            while (_pendingDestroyQueue.TryDequeue(out var window))
             {
                 ProcessCloseRequest(window);
             }
 
-            // [新增] 处理延迟释放的资源
-            ProcessDelayedRelease(deltaTime);
+            _resourceManager.ProcessDelayedRelease(deltaTime);
         }
 
-        /// <summary>
-        /// 处理延迟释放的资源，每帧调用
-        /// </summary>
-        private void ProcessDelayedRelease(float deltaTime)
+        private void ProcessCloseRequest(IAsakiWindow window)
         {
-            if (_pendingReleaseHandles.Count == 0)
-                return;
-
-            var keysToRemove = new List<string>();
-
-            foreach (var kvp in _pendingReleaseHandles)
+            if (_navigationStack.Peek() == window)
             {
-                var info = kvp.Value;
-                info.RemainingSeconds -= deltaTime;
+                _navigationStack.Pop();
+            }
+            else if (_navigationStack.Contains(window))
+            {
+                _navigationStack.RemoveFromMiddle(window);
+            }
 
-                if (info.RemainingSeconds <= 0)
+            if (_windowLayerMap.TryGetValue(window, out var layer))
+            {
+                _inputBlocker.OnWindowClosed(layer);
+                _windowLayerMap.TryRemove(window, out _);
+            }
+
+            HandleCloseAsync(window).Forget();
+
+            foreach (var pair in _windowInstanceMap)
+            {
+                if (pair.Value == window)
                 {
-                    // 时间到，真正释放资源
-                    ALog.Info(
-                        $"[AsakiUI] Delay the expiration of the released resource: {info.AssetPath}"
-                    );
-                    info.Handle.Dispose();
-                    keysToRemove.Add(kvp.Key);
+                    _windowInstanceMap.TryRemove(pair.Key, out _);
+                    _typeToIdCache.Clear();
+                    break;
                 }
             }
-
-            foreach (string key in keysToRemove)
-            {
-                _pendingReleaseHandles.Remove(key);
-            }
         }
 
-        /// <summary>
-        /// 尝试获取可复用的待释放资源句柄
-        /// </summary>
-        private bool TryGetReusableHandle(string assetPath, out AsakiUIResourceHandleAdapter handle)
+        private async UniTask HandleCloseAsync(IAsakiWindow window)
         {
-            handle = default(AsakiUIResourceHandleAdapter);
-            if (_pendingReleaseHandles.TryGetValue(assetPath, out PendingReleaseInfo info))
+            AsakiUIResourceHandleAdapter handle = default;
+            string assetPath = null;
+            bool isPooled = false;
+
+            if (window is AsakiUIWindow uiWindow && uiWindow != null)
             {
-                // 复用该句柄，取消延迟释放
-                handle = info.Handle;
-                _pendingReleaseHandles.Remove(assetPath);
-                ALog.Info($"[AsakiUI] Reuse deferred resources: {assetPath}");
-                return true;
+                if (uiWindow.ResHandle is AsakiUIResourceHandleAdapter adapter)
+                {
+                    handle = adapter;
+                    assetPath = handle.Location;
+                }
+                isPooled = uiWindow.IsPooled;
+                uiWindow.ResHandle = null;
             }
-            return false;
+
+            await window.OnCloseAsync(CancellationToken.None);
+
+            if (!isPooled && handle.HasResource && !string.IsNullOrEmpty(assetPath))
+            {
+                _resourceManager.ScheduleRelease(assetPath, handle);
+            }
         }
 
         #region 查询接口实现
@@ -390,7 +381,7 @@ namespace Asaki.Unity.Services.UI
 
         public IAsakiWindow GetWindow(int uiId)
         {
-            return _windowInstanceMap.TryGetValue(uiId, out IAsakiWindow window) ? window : null;
+            return _windowInstanceMap.TryGetValue(uiId, out var window) ? window : null;
         }
 
         public IReadOnlyList<IAsakiWindow> GetOpenedWindows(AsakiUILayer? layer = null)
@@ -406,7 +397,7 @@ namespace Asaki.Unity.Services.UI
 
         public bool HasPopup()
         {
-            return _activePopupCount > 0;
+            return _inputBlocker.HasActivePopup;
         }
 
         public int GetActiveWindowCount(AsakiUILayer layer)
@@ -419,9 +410,9 @@ namespace Asaki.Unity.Services.UI
         #region 导航控制实现
 
         public void BackTo<T>()
-            where T : IAsakiWindow
+            where T : class, IAsakiWindow
         {
-            IAsakiWindow target = _normalStack.FirstOrDefault(w => w is T);
+            var target = _navigationStack.FindWindow<T>();
             if (target == null)
             {
                 ALog.Warn($"[AsakiUI] Target window {typeof(T).Name} not in stack.");
@@ -432,8 +423,8 @@ namespace Asaki.Unity.Services.UI
 
         public void BackTo(int uiId)
         {
-            IAsakiWindow target = _windowInstanceMap.GetValueOrDefault(uiId);
-            if (target == null || !_normalStack.Contains(target))
+            var target = GetWindow(uiId);
+            if (target == null || !_navigationStack.Contains(target))
             {
                 ALog.Warn($"[AsakiUI] UI ID {uiId} not in navigation stack.");
                 return;
@@ -443,46 +434,39 @@ namespace Asaki.Unity.Services.UI
 
         private void BackTo(IAsakiWindow target)
         {
-            // 强制关闭目标上方的所有窗口
-            while (_normalStack.Count > 0 && _normalStack.Peek() != target)
+            while (_navigationStack.Count > 0 && _navigationStack.Peek() != target)
             {
-                Close(_normalStack.Peek()); // 使用异步关闭保证动画
+                Close(_navigationStack.Peek());
             }
         }
 
         public async UniTask Back(object returnValue)
         {
-            if (_normalStack.Count == 0)
+            if (_navigationStack.Count == 0)
                 return;
 
-            // 压入返回值
-            _returnValueStack.Push(returnValue);
+            _navigationStack.PushReturnValue(returnValue);
 
-            // 触发关闭（动画完成后会自动处理返回值）
-            IAsakiWindow topWindow = _normalStack.Peek();
+            var topWindow = _navigationStack.Peek();
             await topWindow.OnCloseAsync(CancellationToken.None);
 
-            // 通知下方窗口接收返回值
-            if (_normalStack.Count > 0)
+            if (_navigationStack.Count > 0)
             {
-                IAsakiWindow nextWindow = _normalStack.Peek();
-                // 约定：窗口实现 IAsakiWindowWithResult 接口来接收
+                var nextWindow = _navigationStack.Peek();
                 (nextWindow as IAsakiWindowWithResult)?.OnReturnValue(returnValue);
             }
 
-            _returnValueStack.Pop(); // 清理
+            _navigationStack.PopReturnValue();
         }
 
         public void ClearStack(bool includePopup = false)
         {
-            // 清空Normal层
-            while (_normalStack.Count > 0)
+            while (_navigationStack.Count > 0)
             {
-                IAsakiWindow window = _normalStack.Pop();
+                var window = _navigationStack.Pop();
                 _pendingDestroyQueue.Enqueue(window);
             }
 
-            // 清空Popup层（可选）
             if (includePopup)
             {
                 var popupWindows = _windowLayerMap
@@ -490,7 +474,7 @@ namespace Asaki.Unity.Services.UI
                     .Select(kvp => kvp.Key)
                     .ToList();
 
-                foreach (IAsakiWindow popup in popupWindows)
+                foreach (var popup in popupWindows)
                 {
                     _pendingDestroyQueue.Enqueue(popup);
                 }
@@ -500,162 +484,34 @@ namespace Asaki.Unity.Services.UI
         public async UniTask<T> ReplaceAsync<T>(
             int uiId,
             object args = null,
-            CancellationToken token = default(CancellationToken)
+            CancellationToken token = default
         )
             where T : class, IAsakiWindow
         {
-            // 关闭当前栈顶
-            if (_normalStack.Count > 0)
+            if (_navigationStack.Count > 0)
             {
-                IAsakiWindow oldWindow = _normalStack.Peek();
+                var oldWindow = _navigationStack.Peek();
                 await oldWindow.OnCloseAsync(token);
             }
 
-            // 打开新窗口
             return await OpenAsync<T>(uiId, args, token);
         }
 
         #endregion
 
-        // [修改] 实际的主线程关闭逻辑
-        private void ProcessCloseRequest(IAsakiWindow window)
-        {
-            // 1. 栈状态维护
-            if (_normalStack.Count > 0 && _normalStack.Peek() == window)
-            {
-                _normalStack.Pop();
-                if (_normalStack.Count > 0)
-                    _normalStack.Peek().OnReveal();
-            }
-            else if (_normalStack.Contains(window))
-            {
-                RemoveWindowFromStackMiddle(window);
-            }
-
-            // 2. === [核心优化] 恢复输入逻辑 ===
-            if (_windowLayerMap.TryGetValue(window, out AsakiUILayer layer))
-            {
-                if (layer == AsakiUILayer.Popup)
-                {
-                    _activePopupCount--;
-                    if (_activePopupCount <= 0)
-                    {
-                        _activePopupCount = 0; // 防御性归零
-                        // 如果没有 Popup 了，恢复 Normal 层输入
-                        _asakiUIRoot.SetLayerRaycast(AsakiUILayer.Normal, true);
-                    }
-                }
-                _windowLayerMap.Remove(window); // 清理映射
-            }
-
-            // 3. 执行关闭（传入延迟释放配置）
-            HandleCloseAsync(window, _uiConfig?.ResourceReleaseDelaySeconds ?? 0f).Forget();
-
-            foreach (var pair in _windowInstanceMap)
-            {
-                if (pair.Value == window)
-                {
-                    _windowInstanceMap.Remove(pair.Key);
-                    _typeToIdCache.Clear(); // 清理类型缓存
-                    break;
-                }
-            }
-        }
-
-        private void RemoveWindowFromStackMiddle(IAsakiWindow target)
-        {
-            var temp = new Stack<IAsakiWindow>();
-            while (_normalStack.Count > 0)
-            {
-                IAsakiWindow cur = _normalStack.Pop();
-                if (cur == target)
-                    break; // 找到并丢弃
-                temp.Push(cur);
-            }
-            while (temp.Count > 0)
-            {
-                _normalStack.Push(temp.Pop());
-            }
-        }
-
-        private async UniTask HandleCloseAsync(IAsakiWindow window, float releaseDelaySeconds)
-        {
-            // 获取窗口的资源句柄（用于延迟释放）
-            AsakiUIResourceHandleAdapter handle = default(AsakiUIResourceHandleAdapter);
-            string assetPath = null;
-            bool isPooled = false;
-
-            if (window is AsakiUIWindow uiWindow && uiWindow != null)
-            {
-                // [修复] 安全获取句柄，避免null引用
-                if (uiWindow.ResHandle is AsakiUIResourceHandleAdapter adapter)
-                {
-                    handle = adapter;
-                    assetPath = handle.Location;
-                }
-                isPooled = uiWindow.IsPooled;
-
-                // [关键] 先备份资源句柄，然后清空，防止 CloseInternal 重复释放
-                uiWindow.ResHandle = null;
-            }
-
-            // Window 内部处理回收/销毁（此时 ResHandle 已为 null，不会释放资源）
-            await window.OnCloseAsync(CancellationToken.None);
-
-            // [新增] 资源释放逻辑
-            if (!isPooled && handle.HasResource && !string.IsNullOrEmpty(assetPath))
-            {
-                if (releaseDelaySeconds > 0)
-                {
-                    // 延迟释放：检查是否已有相同资源的待释放项（快速重开重关场景）
-                    if (
-                        _pendingReleaseHandles.TryGetValue(
-                            assetPath,
-                            out PendingReleaseInfo existingInfo
-                        )
-                    )
-                    {
-                        // 已存在，说明是快速重开重关，释放旧的句柄（防止重复释放同一句柄）
-                        existingInfo.Handle.Dispose();
-                        _pendingReleaseHandles.Remove(assetPath);
-                    }
-
-                    // 加入延迟释放队列
-                    _pendingReleaseHandles[assetPath] = new PendingReleaseInfo
-                    {
-                        AssetPath = assetPath,
-                        Handle = handle,
-                        RemainingSeconds = releaseDelaySeconds,
-                    };
-
-                    ALog.Info(
-                        $"[AsakiUI] The resource enters the delayed release queue: {assetPath}, delay: {releaseDelaySeconds}s"
-                    );
-                }
-                else
-                {
-                    // 立即释放资源（releaseDelaySeconds == 0）
-                    handle.Dispose();
-                }
-            }
-        }
-
         public void OnDispose()
         {
-            // 1. 同步关闭所有窗口（避免异步操作访问已销毁的资源）
-            while (_normalStack.Count > 0)
+            while (_navigationStack.Count > 0)
             {
-                IAsakiWindow window = _normalStack.Pop();
-                // 同步执行关闭，不等待动画
+                var window = _navigationStack.Pop();
                 if (window is AsakiUIWindow uiWindow && uiWindow != null)
                 {
                     uiWindow.DisposeImmediately();
                 }
             }
-            _normalStack.Clear();
+            _navigationStack.Clear();
 
-            // 2. 清空待销毁队列
-            while (_pendingDestroyQueue.TryDequeue(out IAsakiWindow window))
+            while (_pendingDestroyQueue.TryDequeue(out var window))
             {
                 if (window is AsakiUIWindow uiWindow && uiWindow != null)
                 {
@@ -663,37 +519,35 @@ namespace Asaki.Unity.Services.UI
                 }
             }
 
-            // 3. 立即释放所有延迟释放队列中的资源
-            foreach (var kvp in _pendingReleaseHandles)
-            {
-                kvp.Value.Handle.Dispose();
-            }
-            _pendingReleaseHandles.Clear();
+            _resourceManager.ReleaseAll();
 
-            // 4. 释放池
             if (_poolService != null)
             {
                 foreach (string assetPath in _pooledAssets)
                 {
-                    _poolService?.DestroyPool(assetPath);
+                    _poolService.DestroyPool(assetPath);
                 }
+            }
+            else
+            {
+                ALog.Warn("[AsakiUI] PoolService is null during disposal, pooled assets may leak.");
             }
             _pooledAssets.Clear();
             _windowLayerMap.Clear();
             _windowInstanceMap.Clear();
             _typeToIdCache.Clear();
 
-            // 5. 注销 Tick
-            if (_asakiSimulationService != null)
+            _inputBlocker?.Reset();
+
+            if (_simulationService != null)
             {
-                _asakiSimulationService.Unregister(this);
+                _simulationService.Unregister(this);
             }
 
-            // 6. 销毁 Root
-            if (_asakiUIRoot != null)
+            if (_uiRoot != null)
             {
-                Object.Destroy(_asakiUIRoot.gameObject);
-                _asakiUIRoot = null;
+                Object.Destroy(_uiRoot.gameObject);
+                _uiRoot = null;
             }
         }
     }

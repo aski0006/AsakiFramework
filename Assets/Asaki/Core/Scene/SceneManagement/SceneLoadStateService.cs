@@ -11,7 +11,9 @@ namespace Asaki.Core.Scene.SceneManagement
     /// [已废弃] 请使用 IAsakiSceneManagerService.CurrentPayload 替代。
     /// 此静态服务在下一版本中将移除。
     /// </remarks>
-    [Obsolete("Use IAsakiSceneManagerService.CurrentPayload instead. This class will be removed in a future version.")]
+    [Obsolete(
+        "Use IAsakiSceneManagerService.CurrentPayload instead. This class will be removed in a future version."
+    )]
     public static class SceneLoadStateService
     {
         private static SceneLoadPayload _currentPayload;
@@ -48,7 +50,9 @@ namespace Asaki.Core.Scene.SceneManagement
 
             if (_hasPayload)
             {
-                ALog.Info($"[SceneLoadStateService] Payload set for scene: {payload.TargetSceneName}");
+                ALog.Info(
+                    $"[SceneLoadStateService] Payload set for scene: {payload.TargetSceneName}"
+                );
             }
         }
 

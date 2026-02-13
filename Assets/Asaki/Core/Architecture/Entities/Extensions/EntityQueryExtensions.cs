@@ -163,7 +163,6 @@ namespace Asaki.Core.Architecture.Entities.Extensions
             }
         }
 
-
         /// <summary>
         /// 批量处理组件（最高性能）
         /// </summary>

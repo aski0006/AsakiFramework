@@ -43,32 +43,41 @@ namespace Asaki.Core.Architecture.Entities
             get => _isActive;
             set
             {
-                if (_isActive == value) return;
+                if (_isActive == value)
+                    return;
                 _isActive = value;
                 // 数组遍历比 Dictionary Values 遍历更快
                 for (int i = 0; i < _componentsArray.Length; i++)
                 {
                     var c = _componentsArray[i];
-                    if (c == null) continue;
-                    if (_isActive) c.OnEnable(); else c.OnDisable();
+                    if (c == null)
+                        continue;
+                    if (_isActive)
+                        c.OnEnable();
+                    else
+                        c.OnDisable();
                 }
             }
         }
 
-        public T AddComponent<T>() where T : class, IEntityComponent, new()
+        public T AddComponent<T>()
+            where T : class, IEntityComponent, new()
         {
             var component = new T();
             return AddComponentInternal(component, ComponentTypeRegistry.GetTypeId<T>(), typeof(T));
         }
 
-        public T AddComponent<T>(T component) where T : class, IEntityComponent
+        public T AddComponent<T>(T component)
+            where T : class, IEntityComponent
         {
             return AddComponentInternal(component, ComponentTypeRegistry.GetTypeId<T>(), typeof(T));
         }
 
-        private T AddComponentInternal<T>(T component, int typeId, Type type) where T : class, IEntityComponent
+        private T AddComponentInternal<T>(T component, int typeId, Type type)
+            where T : class, IEntityComponent
         {
-            if (_isDisposed) throw new ObjectDisposedException(nameof(Entity));
+            if (_isDisposed)
+                throw new ObjectDisposedException(nameof(Entity));
 
             // 数组扩容检查
             if (typeId >= _componentsArray.Length)
@@ -79,7 +88,9 @@ namespace Asaki.Core.Architecture.Entities
             }
 
             if (_componentsArray[typeId] != null)
-                throw new InvalidOperationException($"Entity {Id} already has component {type.Name}");
+                throw new InvalidOperationException(
+                    $"Entity {Id} already has component {type.Name}"
+                );
 
             component.Entity = this;
             _componentsArray[typeId] = component;
@@ -90,27 +101,34 @@ namespace Asaki.Core.Architecture.Entities
             _worldImpl.OnComponentAdded(this, typeId);
 
             component.OnAttach();
-            if (_isActive) component.OnEnable();
+            if (_isActive)
+                component.OnEnable();
 
-            AsakiBroker.Publish(new ComponentAddedEvent { EntityId = Id, ComponentTypeName = type.Name });
+            AsakiBroker.Publish(
+                new ComponentAddedEvent { EntityId = Id, ComponentTypeName = type.Name }
+            );
             return component;
         }
 
-        public T GetComponent<T>() where T : class, IEntityComponent
+        public T GetComponent<T>()
+            where T : class, IEntityComponent
         {
             int typeId = ComponentTypeRegistry.GetTypeId<T>();
-            if (typeId >= _componentsArray.Length) return null;
+            if (typeId >= _componentsArray.Length)
+                return null;
             // 数组直接访问，极快
             return _componentsArray[typeId] as T;
         }
 
-        public bool TryGetComponent<T>(out T component) where T : class, IEntityComponent
+        public bool TryGetComponent<T>(out T component)
+            where T : class, IEntityComponent
         {
             component = GetComponent<T>();
             return component != null;
         }
 
-        public bool RemoveComponent<T>() where T : class, IEntityComponent
+        public bool RemoveComponent<T>()
+            where T : class, IEntityComponent
         {
             return RemoveComponent(typeof(T));
         }
@@ -118,13 +136,16 @@ namespace Asaki.Core.Architecture.Entities
         public bool RemoveComponent(Type componentType)
         {
             int typeId = ComponentTypeRegistry.GetTypeId(componentType);
-            if (typeId >= _componentsArray.Length) return false;
+            if (typeId >= _componentsArray.Length)
+                return false;
 
             var component = _componentsArray[typeId];
-            if (component == null) return false;
+            if (component == null)
+                return false;
 
             // 1. 生命周期处理
-            if (_isActive) component.OnDisable();
+            if (_isActive)
+                component.OnDisable();
             component.OnDetach();
             component.Dispose();
 
@@ -136,11 +157,14 @@ namespace Asaki.Core.Architecture.Entities
             // 3. 通知 World
             _worldImpl.OnComponentRemoved(this, typeId);
 
-            AsakiBroker.Publish(new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = componentType.Name });
+            AsakiBroker.Publish(
+                new ComponentRemovedEvent { EntityId = Id, ComponentTypeName = componentType.Name }
+            );
             return true;
         }
 
-        public bool HasComponent<T>() where T : class, IEntityComponent
+        public bool HasComponent<T>()
+            where T : class, IEntityComponent
         {
             int typeId = ComponentTypeRegistry.GetTypeId<T>();
             return HasComponent(typeId);
@@ -148,7 +172,8 @@ namespace Asaki.Core.Architecture.Entities
 
         internal bool HasComponent(int typeId)
         {
-            if (typeId >= _componentMask.Length) return false;
+            if (typeId >= _componentMask.Length)
+                return false;
             return _componentMask[typeId];
         }
 
@@ -162,13 +187,15 @@ namespace Asaki.Core.Architecture.Entities
             for (int i = 0; i < _componentsArray.Length; i++)
             {
                 var c = _componentsArray[i];
-                if (c != null) yield return c;
+                if (c != null)
+                    yield return c;
             }
         }
 
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
             _isDisposed = true;
 
             // 倒序删除更安全? 这里直接遍历即可
@@ -183,7 +210,8 @@ namespace Asaki.Core.Architecture.Entities
                         // 但如果单纯调用 entity.Dispose，也需要保持一致性)
                         _worldImpl.OnComponentRemoved(this, i);
 
-                        if (_isActive) c.OnDisable();
+                        if (_isActive)
+                            c.OnDisable();
                         c.OnDetach();
                         c.Dispose();
                     }

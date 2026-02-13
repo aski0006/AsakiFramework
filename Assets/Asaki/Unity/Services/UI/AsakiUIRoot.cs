@@ -9,6 +9,16 @@ namespace Asaki.Unity.Services.UI
 {
     public class AsakiUIRoot : AsakiMono
     {
+        private static class SortingOrders
+        {
+            public const int Scene = 0;
+            public const int Normal = 1000;
+            public const int Popup = 2000;
+            public const int System = 3000;
+            public const int Hidden = 4000;
+            public const int LayerInterval = 1000;
+        }
+
         // 存储层级节点
         private readonly Dictionary<AsakiUILayer, Transform> _layers =
             new Dictionary<AsakiUILayer, Transform>();
@@ -39,10 +49,10 @@ namespace Asaki.Unity.Services.UI
 
             // 3. [核心优化] 创建分离的 Canvas 层级
             // Order 间隔 1000，确保层级绝对分离且中间有足够的空间插入动态层(如果有)
-            CreateLayerNode("0_Scene", AsakiUILayer.Scene, 0); // 0-999
-            CreateLayerNode("1_Normal", AsakiUILayer.Normal, 1000); // 1000-1999
-            CreateLayerNode("2_Popup", AsakiUILayer.Popup, 2000); // 2000-2999
-            CreateLayerNode("3_System", AsakiUILayer.System, 3000); // 3000+
+            CreateLayerNode("0_Scene", AsakiUILayer.Scene, SortingOrders.Scene);
+            CreateLayerNode("1_Normal", AsakiUILayer.Normal, SortingOrders.Normal);
+            CreateLayerNode("2_Popup", AsakiUILayer.Popup, SortingOrders.Popup);
+            CreateLayerNode("3_System", AsakiUILayer.System, SortingOrders.System);
 
             DontDestroyOnLoad(gameObject);
         }

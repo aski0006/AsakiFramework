@@ -388,7 +388,13 @@ namespace Asaki.Tests.Scene.Mocks
             LoadAsyncCallCount++;
             return UniTask.FromResult(new ResHandle<T>(location, null, this));
         }
-        public async UniTask<ResHandle<Object>> LoadAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+
+        public async UniTask<ResHandle<Object>> LoadAsync(
+            string location,
+            Type type,
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             throw new NotImplementedException();
         }
@@ -439,17 +445,15 @@ namespace Asaki.Tests.Scene.Mocks
             ReleaseCallCount = 0;
             UnloadUnusedAssetsCallCount = 0;
         }
-        public void OnInit()
-        {
 
-        }
+        public void OnInit() { }
+
         public async UniTask OnInitAsync()
         {
             await UniTask.CompletedTask;
         }
-        public void OnDispose()
-        {
-        }
+
+        public void OnDispose() { }
     }
 
     /// <summary>

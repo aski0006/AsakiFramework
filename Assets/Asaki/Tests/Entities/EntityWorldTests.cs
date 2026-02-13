@@ -308,7 +308,6 @@ namespace Asaki.Tests.Entities
             Assert.AreEqual(3, ids.Count, "Should process all 3 entities");
         }
 
-
         #endregion
 
         #region Query
@@ -397,7 +396,6 @@ namespace Asaki.Tests.Entities
         #endregion
 
 
-
         #region Dispose
 
         [Test]
@@ -415,7 +413,6 @@ namespace Asaki.Tests.Entities
             // If dispose works correctly, no exception should occur
             Assert.Pass();
         }
-
 
         #endregion
     }

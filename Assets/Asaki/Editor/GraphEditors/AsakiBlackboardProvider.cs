@@ -17,8 +17,7 @@ namespace Asaki.Editor.GraphEditors
     /// </summary>
     public class AsakiBlackboardProvider
     {
-        private const string AssetPath =
-            "Assets/Resources/Asaki/DataTable/GlobalBlackboard.asset";
+        private const string AssetPath = "Assets/Resources/Asaki/DataTable/GlobalBlackboard.asset";
         public Blackboard Blackboard { get; private set; }
 
         private readonly AsakiGraphView _graphView;

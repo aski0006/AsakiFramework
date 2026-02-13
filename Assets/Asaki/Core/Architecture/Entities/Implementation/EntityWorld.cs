@@ -20,7 +20,10 @@ namespace Asaki.Core.Architecture.Entities
         // 核心优化：组件组缓存 (Component System Groups)
         // 映射：组件类型ID -> 拥有该组件的所有实体集合
         // 这将 Query 的复杂度从 O(TotalEntities) 降低为 O(EntitiesWithComponent)
-        private readonly Dictionary<int, HashSet<Entity>> _componentGroups = new Dictionary<int, HashSet<Entity>>(64);
+        private readonly Dictionary<int, HashSet<Entity>> _componentGroups = new Dictionary<
+            int,
+            HashSet<Entity>
+        >(64);
 
         public int EntityCount => _entities.Count;
 
@@ -41,7 +44,8 @@ namespace Asaki.Core.Architecture.Entities
             else
             {
                 generation = 0;
-                while (_generations.Count <= handle) _generations.Add(0);
+                while (_generations.Count <= handle)
+                    _generations.Add(0);
             }
 
             entity.Initialize(new EntityId(handle, generation));
@@ -57,11 +61,13 @@ namespace Asaki.Core.Architecture.Entities
         /// </summary>
         public void DestroyEntity(EntityId id)
         {
-            if (!IsValidId(id)) return;
+            if (!IsValidId(id))
+                return;
 
             // 1. 获取实体
             var entity = _entities.Get(id.Handle);
-            if (entity == null) return;
+            if (entity == null)
+                return;
 
             // 2. 清理组缓存 (必须在 Dispose 之前做，因为 Dispose 会清空组件信息)
             // 优化：Entity.Dispose 会逐个移除组件，进而触发 OnComponentRemoved 更新缓存
@@ -77,7 +83,8 @@ namespace Asaki.Core.Architecture.Entities
 
         public IEntity GetEntity(EntityId id)
         {
-            if (!IsValidId(id)) return null;
+            if (!IsValidId(id))
+                return null;
             return _entities.Get(id.Handle);
         }
 
@@ -119,13 +126,15 @@ namespace Asaki.Core.Architecture.Entities
             }
         }
 
-        public IEnumerable<IEntity> Query<T1>() where T1 : class, IEntityComponent
+        public IEnumerable<IEntity> Query<T1>()
+            where T1 : class, IEntityComponent
         {
             int typeId = ComponentTypeRegistry.GetTypeId<T1>();
             if (_componentGroups.TryGetValue(typeId, out var group))
             {
                 // 直接返回 HashSet 的枚举器，无 GC，极快
-                foreach (var entity in group) yield return entity;
+                foreach (var entity in group)
+                    yield return entity;
             }
         }
 
@@ -137,15 +146,18 @@ namespace Asaki.Core.Architecture.Entities
             int t2 = ComponentTypeRegistry.GetTypeId<T2>();
 
             // 优化：总是遍历数量较小的那个组
-            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0) yield break;
-            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0) yield break;
+            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0)
+                yield break;
 
             var smallerGroup = g1.Count < g2.Count ? g1 : g2;
             var otherTypeId = g1.Count < g2.Count ? t2 : t1;
 
             foreach (var entity in smallerGroup)
             {
-                if (entity.HasComponent(otherTypeId)) yield return entity;
+                if (entity.HasComponent(otherTypeId))
+                    yield return entity;
             }
         }
 
@@ -158,7 +170,8 @@ namespace Asaki.Core.Architecture.Entities
             int t2 = ComponentTypeRegistry.GetTypeId<T2>();
             int t3 = ComponentTypeRegistry.GetTypeId<T3>();
 
-            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0) yield break;
+            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
+                yield break;
 
             // 简单策略：遍历 g1，检查 t2 和 t3
             foreach (var entity in g1)
@@ -174,7 +187,11 @@ namespace Asaki.Core.Architecture.Entities
         {
             _entities.ForEach(e =>
             {
-                try { e.Dispose(); } catch { }
+                try
+                {
+                    e.Dispose();
+                }
+                catch { }
             });
             _entities.Clear();
             _generations.Clear();
@@ -185,8 +202,10 @@ namespace Asaki.Core.Architecture.Entities
 
         private bool IsValidId(EntityId id)
         {
-            if (!id.IsValid) return false;
-            if (id.Handle >= _generations.Count) return false;
+            if (!id.IsValid)
+                return false;
+            if (id.Handle >= _generations.Count)
+                return false;
             return _generations[id.Handle] == id.Generation;
         }
     }

@@ -1,8 +1,8 @@
 using System;
 using Asaki.Core.Broker;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -50,7 +50,8 @@ namespace Asaki.Unity.Bootstrapper
             _instance = this;
             DontDestroyOnLoad(gameObject);
 
-            if (frameworkSetting == null) frameworkSetting = LoadConfigAsset();
+            if (frameworkSetting == null)
+                frameworkSetting = LoadConfigAsset();
 
             AsakiContext.ClearAll(); // 或者是 Reset
             Application.targetFrameRate = frameworkSetting ? frameworkSetting.TickRate : 60;
@@ -63,7 +64,8 @@ namespace Asaki.Unity.Bootstrapper
 
             ALog.Info("== ASAKI FRAMEWORK V2 BOOT START ==");
 
-            if (frameworkSetting != null) AsakiContext.Register(frameworkSetting);
+            if (frameworkSetting != null)
+                AsakiContext.Register(frameworkSetting);
             RegisterGlobalBehaviourServices();
         }
 
@@ -75,7 +77,9 @@ namespace Asaki.Unity.Bootstrapper
             {
                 string[] guids = UnityEditor.AssetDatabase.FindAssets("t:AsakiFrameworkSetting");
                 if (guids.Length > 0)
-                    config = UnityEditor.AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]));
+                    config = UnityEditor.AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(
+                        UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0])
+                    );
             }
 #endif
             return config;
@@ -112,15 +116,21 @@ namespace Asaki.Unity.Bootstrapper
 
         private void RegisterGlobalBehaviourServices()
         {
-            if (_globalBehaviourServices == null) return;
+            if (_globalBehaviourServices == null)
+                return;
             foreach (MonoBehaviour behaviour in _globalBehaviourServices)
             {
-                if (behaviour is not IAsakiGlobalService service) continue;
+                if (behaviour is not IAsakiGlobalService service)
+                    continue;
                 Type type = behaviour.GetType();
                 AsakiContext.Register(type, service);
                 foreach (Type i in type.GetInterfaces())
                 {
-                    if (typeof(IAsakiService).IsAssignableFrom(i) && i != typeof(IAsakiGlobalService) && i != typeof(IAsakiService))
+                    if (
+                        typeof(IAsakiService).IsAssignableFrom(i)
+                        && i != typeof(IAsakiGlobalService)
+                        && i != typeof(IAsakiService)
+                    )
                     {
                         AsakiContext.Register(i, service);
                     }
@@ -130,7 +140,8 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InitializeGlobalBehaviourServices()
         {
-            if (_globalBehaviourServices == null) return;
+            if (_globalBehaviourServices == null)
+                return;
             foreach (MonoBehaviour behaviour in _globalBehaviourServices)
             {
                 if (behaviour is IAsakiGlobalService service)
@@ -165,7 +176,8 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InjectSceneManual(Scene scene)
         {
-            if (_manualTargets == null || _manualTargets.Length == 0) return;
+            if (_manualTargets == null || _manualTargets.Length == 0)
+                return;
 
             // 查找场景 Context
             IAsakiResolver resolver = AsakiGlobalResolver.Instance;
@@ -190,12 +202,14 @@ namespace Asaki.Unity.Bootstrapper
                     count++;
                 }
             }
-            if(count > 0) ALog.Info($"[AsakiBootstrapper] Manually injected {count} targets in {scene.name}");
+            if (count > 0)
+                ALog.Info($"[AsakiBootstrapper] Manually injected {count} targets in {scene.name}");
         }
 
         private void OnDestroy()
         {
-            if (_instance != this) return;
+            if (_instance != this)
+                return;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             AsakiContext.ClearAll();
             ALog.Reset();

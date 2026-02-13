@@ -10,12 +10,22 @@ using UnityEngine.SceneManagement;
 
 namespace Asaki.Unity
 {
-    public sealed class AsakiMonoLifecycleManager : IAsakiHandler<OnAsakiFrameworkReadyEvent>, IDisposable
+    public sealed class AsakiMonoLifecycleManager
+        : IAsakiHandler<OnAsakiFrameworkReadyEvent>,
+            IDisposable
     {
-        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() => new AsakiMonoLifecycleManager());
+        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() =>
+            new AsakiMonoLifecycleManager()
+        );
         public static AsakiMonoLifecycleManager Instance => _instance.Value;
 
-        private enum InitState { Pending, Injected, Activated, Destroyed }
+        private enum InitState
+        {
+            Pending,
+            Injected,
+            Activated,
+            Destroyed,
+        }
 
         private class ComponentState
         {
@@ -23,12 +33,20 @@ namespace Asaki.Unity
             public InitState State;
             public int SceneHandle;
 
-            public void Reset() { Component = null; State = InitState.Destroyed; SceneHandle = 0; }
+            public void Reset()
+            {
+                Component = null;
+                State = InitState.Destroyed;
+                SceneHandle = 0;
+            }
         }
 
         // 简单的对象池
         private readonly Stack<ComponentState> _statePool = new Stack<ComponentState>(128);
-        private readonly Dictionary<int, ComponentState> _trackedComponents = new Dictionary<int, ComponentState>(512);
+        private readonly Dictionary<int, ComponentState> _trackedComponents = new Dictionary<
+            int,
+            ComponentState
+        >(512);
         private readonly Queue<ComponentState> _pendingInjection = new Queue<ComponentState>(64);
 
         private readonly object _lock = new object();
@@ -60,13 +78,15 @@ namespace Asaki.Unity
 
         public void Dispose()
         {
-            if (_isDisposed) return;
+            if (_isDisposed)
+                return;
             _isDisposed = true;
             this.AsakiUnregister();
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
 
-            lock(_lock) {
+            lock (_lock)
+            {
                 _trackedComponents.Clear();
                 _pendingInjection.Clear();
                 _statePool.Clear();
@@ -75,7 +95,8 @@ namespace Asaki.Unity
 
         public int RegisterComponent(AsakiMono component)
         {
-            if (_isDisposed || component == null) return -1;
+            if (_isDisposed || component == null)
+                return -1;
 
             int sceneHandle = component.gameObject.scene.handle;
 
@@ -110,7 +131,8 @@ namespace Asaki.Unity
         // 提供给 AsakiMono.Awake 调用的快速通道
         public void ProcessComponentImmediately(AsakiMono component)
         {
-            if (!_isFrameworkReady || component == null) return;
+            if (!_isFrameworkReady || component == null)
+                return;
 
             try
             {
@@ -147,7 +169,8 @@ namespace Asaki.Unity
             while (_pendingInjection.Count > 0)
             {
                 var state = _pendingInjection.Dequeue();
-                if (state.Component == null) continue; // 已销毁
+                if (state.Component == null)
+                    continue; // 已销毁
 
                 ProcessComponentImmediately(state.Component);
                 state.State = InitState.Activated;
@@ -157,7 +180,8 @@ namespace Asaki.Unity
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             // 场景加载后，再次检查队列（处理那些在 Loading 期间创建的对象）
-            if (_isFrameworkReady) ProcessQueue();
+            if (_isFrameworkReady)
+                ProcessQueue();
         }
 
         private void OnSceneUnloaded(Scene scene)
@@ -184,7 +208,8 @@ namespace Asaki.Unity
         {
             // 简单查找，可进一步优化缓存
             var context = component.GetComponentInParent<AsakiSceneContext>();
-            if (context) return context;
+            if (context)
+                return context;
             return AsakiGlobalResolver.Instance;
         }
     }

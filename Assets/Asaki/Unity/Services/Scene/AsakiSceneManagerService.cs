@@ -195,7 +195,9 @@ namespace Asaki.Unity.Services.Scene
                     }
                     catch (OperationCanceledException)
                     {
-                        ALog.Warn($"[SceneService] Scene activation cancelled or timeout: {targetScene}");
+                        ALog.Warn(
+                            $"[SceneService] Scene activation cancelled or timeout: {targetScene}"
+                        );
                         return CancelSceneLoadOperation(targetScene);
                     }
                 }
@@ -323,7 +325,9 @@ namespace Asaki.Unity.Services.Scene
                 // 使用 AttachExternalCancellation 确保 token 取消时能正确处理
                 var finalResult = await _preloadFlowSource.Task.AttachExternalCancellation(token);
 
-                ALog.Info($"[SceneService] Preload flow completed with result: {finalResult.IsSuccess}");
+                ALog.Info(
+                    $"[SceneService] Preload flow completed with result: {finalResult.IsSuccess}"
+                );
                 return finalResult;
             }
             catch (OperationCanceledException)
@@ -354,7 +358,9 @@ namespace Asaki.Unity.Services.Scene
         {
             if (_preloadFlowSource == null)
             {
-                ALog.Warn("[SceneService] NotifyPreloadFinished called but no preload flow is active");
+                ALog.Warn(
+                    "[SceneService] NotifyPreloadFinished called but no preload flow is active"
+                );
                 return;
             }
 
@@ -364,7 +370,12 @@ namespace Asaki.Unity.Services.Scene
             }
             else
             {
-                _preloadFlowSource.TrySetResult(AsakiSceneResult.Failed(sceneName, "Target scene load failed in LoadingSceneController"));
+                _preloadFlowSource.TrySetResult(
+                    AsakiSceneResult.Failed(
+                        sceneName,
+                        "Target scene load failed in LoadingSceneController"
+                    )
+                );
             }
 
             // 清理 Payload

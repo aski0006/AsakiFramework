@@ -202,7 +202,7 @@ namespace Asaki.Tests.Scene
             var dictionary = new System.Collections.Generic.Dictionary<AsakiLoadSceneMode, string>
             {
                 [AsakiLoadSceneMode.Single] = "Single Mode Description",
-                [AsakiLoadSceneMode.Additive] = "Additive Mode Description"
+                [AsakiLoadSceneMode.Additive] = "Additive Mode Description",
             };
 
             // Act & Assert
@@ -230,10 +230,14 @@ namespace Asaki.Tests.Scene
         public void Enums_Parse_ConvertsStringToEnum()
         {
             // Arrange & Act
-            var singleMode = (AsakiLoadSceneMode)System.Enum.Parse(typeof(AsakiLoadSceneMode), "Single");
-            var additiveMode = (AsakiLoadSceneMode)System.Enum.Parse(typeof(AsakiLoadSceneMode), "Additive");
-            var immediateActivation = (AsakiSceneActivation)System.Enum.Parse(typeof(AsakiSceneActivation), "Immediate");
-            var manualActivation = (AsakiSceneActivation)System.Enum.Parse(typeof(AsakiSceneActivation), "ManualConfirm");
+            var singleMode = (AsakiLoadSceneMode)
+                System.Enum.Parse(typeof(AsakiLoadSceneMode), "Single");
+            var additiveMode = (AsakiLoadSceneMode)
+                System.Enum.Parse(typeof(AsakiLoadSceneMode), "Additive");
+            var immediateActivation = (AsakiSceneActivation)
+                System.Enum.Parse(typeof(AsakiSceneActivation), "Immediate");
+            var manualActivation = (AsakiSceneActivation)
+                System.Enum.Parse(typeof(AsakiSceneActivation), "ManualConfirm");
 
             // Assert
             Assert.AreEqual(AsakiLoadSceneMode.Single, singleMode);
@@ -246,8 +250,14 @@ namespace Asaki.Tests.Scene
         public void Enums_TryParse_HandlesInvalidValues()
         {
             // Arrange & Act
-            bool singleResult = System.Enum.TryParse<AsakiLoadSceneMode>("Single", out var singleMode);
-            bool invalidResult = System.Enum.TryParse<AsakiLoadSceneMode>("Invalid", out var invalidMode);
+            bool singleResult = System.Enum.TryParse<AsakiLoadSceneMode>(
+                "Single",
+                out var singleMode
+            );
+            bool invalidResult = System.Enum.TryParse<AsakiLoadSceneMode>(
+                "Invalid",
+                out var invalidMode
+            );
 
             // Assert
             Assert.IsTrue(singleResult);
@@ -260,7 +270,8 @@ namespace Asaki.Tests.Scene
         {
             // Arrange & Act
             var loadModes = (AsakiLoadSceneMode[])System.Enum.GetValues(typeof(AsakiLoadSceneMode));
-            var activationModes = (AsakiSceneActivation[])System.Enum.GetValues(typeof(AsakiSceneActivation));
+            var activationModes = (AsakiSceneActivation[])
+                System.Enum.GetValues(typeof(AsakiSceneActivation));
 
             // Assert
             Assert.AreEqual(2, loadModes.Length);
@@ -335,7 +346,8 @@ namespace Asaki.Tests.Scene
         public void AsakiSceneStateEvent_State_GetValues_ReturnsAllValues()
         {
             // Arrange & Act
-            var states = (AsakiSceneStateEvent.State[])System.Enum.GetValues(typeof(AsakiSceneStateEvent.State));
+            var states = (AsakiSceneStateEvent.State[])
+                System.Enum.GetValues(typeof(AsakiSceneStateEvent.State));
 
             // Assert
             Assert.AreEqual(4, states.Length);

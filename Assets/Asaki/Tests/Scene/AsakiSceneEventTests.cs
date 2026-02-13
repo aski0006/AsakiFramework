@@ -176,9 +176,19 @@ namespace Asaki.Tests.Scene
         {
             // Arrange & Act
             var startedEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Started);
-            var completedEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Completed);
-            var failedEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Failed, "Error");
-            var cancelledEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Cancelled);
+            var completedEvt = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Completed
+            );
+            var failedEvt = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Failed,
+                "Error"
+            );
+            var cancelledEvt = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Cancelled
+            );
 
             // Assert
             Assert.AreEqual(AsakiSceneStateEvent.State.Started, startedEvt.CurrentState);
@@ -221,7 +231,11 @@ namespace Asaki.Tests.Scene
         public void AsakiSceneStateEvent_IsReadonlyStruct()
         {
             // Arrange & Act
-            var evt = new AsakiSceneStateEvent("TestScene", AsakiSceneStateEvent.State.Started, "Error");
+            var evt = new AsakiSceneStateEvent(
+                "TestScene",
+                AsakiSceneStateEvent.State.Started,
+                "Error"
+            );
 
             // Assert - readonly struct fields cannot be modified after creation
             Assert.AreEqual("TestScene", evt.SceneName);
@@ -249,7 +263,11 @@ namespace Asaki.Tests.Scene
             var longMessage = new string('A', 10000);
 
             // Act
-            var evt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Failed, longMessage);
+            var evt = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Failed,
+                longMessage
+            );
 
             // Assert
             Assert.AreEqual(longMessage, evt.ErrorMessage);
@@ -281,7 +299,10 @@ namespace Asaki.Tests.Scene
         {
             // Arrange & Act
             var startedEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Started);
-            var completedEvt = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Completed);
+            var completedEvt = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Completed
+            );
 
             // Assert
             Assert.IsNull(startedEvt.ErrorMessage);
@@ -297,7 +318,10 @@ namespace Asaki.Tests.Scene
         {
             // Arrange
             var progressEvent = new AsakiSceneProgressEvent("LoadingScene", 0.5f);
-            var stateEvent = new AsakiSceneStateEvent("LoadingScene", AsakiSceneStateEvent.State.Started);
+            var stateEvent = new AsakiSceneStateEvent(
+                "LoadingScene",
+                AsakiSceneStateEvent.State.Started
+            );
 
             // Act & Assert - Both implement IAsakiEvent
             Assert.IsInstanceOf<IAsakiEvent>(progressEvent);
@@ -311,7 +335,10 @@ namespace Asaki.Tests.Scene
             var originalProgress = new AsakiSceneProgressEvent("Scene", 0.5f);
             var copyProgress = originalProgress;
 
-            var originalState = new AsakiSceneStateEvent("Scene", AsakiSceneStateEvent.State.Started);
+            var originalState = new AsakiSceneStateEvent(
+                "Scene",
+                AsakiSceneStateEvent.State.Started
+            );
             var copyState = originalState;
 
             // Act - Modify copies (create new structs)
@@ -334,7 +361,7 @@ namespace Asaki.Tests.Scene
                 new AsakiSceneProgressEvent("Scene1", 0.25f),
                 new AsakiSceneProgressEvent("Scene1", 0.5f),
                 new AsakiSceneProgressEvent("Scene1", 0.75f),
-                new AsakiSceneProgressEvent("Scene1", 1.0f)
+                new AsakiSceneProgressEvent("Scene1", 1.0f),
             };
 
             // Assert
@@ -374,7 +401,7 @@ namespace Asaki.Tests.Scene
             var stateSequence = new[]
             {
                 AsakiSceneStateEvent.State.Started,
-                AsakiSceneStateEvent.State.Completed
+                AsakiSceneStateEvent.State.Completed,
             };
             var events = new System.Collections.Generic.List<AsakiSceneStateEvent>();
 
@@ -396,8 +423,15 @@ namespace Asaki.Tests.Scene
             var errorMessage = "Failed to load assets";
 
             // Act
-            var startedEvt = new AsakiSceneStateEvent(sceneName, AsakiSceneStateEvent.State.Started);
-            var failedEvt = new AsakiSceneStateEvent(sceneName, AsakiSceneStateEvent.State.Failed, errorMessage);
+            var startedEvt = new AsakiSceneStateEvent(
+                sceneName,
+                AsakiSceneStateEvent.State.Started
+            );
+            var failedEvt = new AsakiSceneStateEvent(
+                sceneName,
+                AsakiSceneStateEvent.State.Failed,
+                errorMessage
+            );
 
             // Assert
             Assert.AreEqual(AsakiSceneStateEvent.State.Started, startedEvt.CurrentState);

@@ -89,7 +89,13 @@ namespace Asaki.Tests.UI
         {
             return LoadAsync<T>(location, null, token);
         }
-        public async UniTask<ResHandle<Object>> LoadAsync(string location, Type type, Action<float> onProgress, CancellationToken token)
+
+        public async UniTask<ResHandle<Object>> LoadAsync(
+            string location,
+            Type type,
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             throw new NotImplementedException();
         }

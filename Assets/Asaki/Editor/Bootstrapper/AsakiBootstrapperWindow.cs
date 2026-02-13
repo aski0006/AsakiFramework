@@ -1,6 +1,6 @@
 using System.Collections.Generic;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context.Resolvers;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Editor.Utilities.Tools;
 using Asaki.Unity.Bootstrapper;
 using UnityEditor;
@@ -307,7 +307,12 @@ namespace Asaki.Editor.Bootstrapper
             if (_frameworkSetting != null)
             {
                 GUILayout.Label("状态：已存在", _successStyle);
-                EditorGUILayout.ObjectField("Config Asset", _frameworkSetting, typeof(AsakiFrameworkSetting), false);
+                EditorGUILayout.ObjectField(
+                    "Config Asset",
+                    _frameworkSetting,
+                    typeof(AsakiFrameworkSetting),
+                    false
+                );
 
                 GUILayout.Space(10);
 
@@ -325,7 +330,10 @@ namespace Asaki.Editor.Bootstrapper
             else
             {
                 GUILayout.Label("状态：未创建", _warningStyle);
-                GUILayout.Label("AsakiFrameworkSetting 是必需的配置资源。", EditorStyles.wordWrappedLabel);
+                GUILayout.Label(
+                    "AsakiFrameworkSetting 是必需的配置资源。",
+                    EditorStyles.wordWrappedLabel
+                );
 
                 GUILayout.Space(10);
 

@@ -1,22 +1,20 @@
-﻿using Asaki.Core.Reactive;
 using UnityEngine.UI;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
-    public class AsakiToggleObserver : IAsakiObserver<bool>
+    /// <summary>
+    /// 将 bool 属性绑定到 Toggle。
+    /// </summary>
+    public class AsakiToggleObserver : AsakiObserverBase<bool, Toggle>
     {
-        private readonly Toggle _toggle;
-
         public AsakiToggleObserver(Toggle toggle)
-        {
-            _toggle = toggle;
-        }
+            : base(toggle) { }
 
-        public void OnValueChange(bool value)
+        protected override void ApplyValue(bool value)
         {
-            if (_toggle != null && _toggle.isOn != value)
+            if (_target.isOn != value)
             {
-                _toggle.isOn = value;
+                _target.isOn = value;
             }
         }
     }

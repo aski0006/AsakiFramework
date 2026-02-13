@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 
 namespace Asaki.Core.UI
 {
-    public interface IUIResourceHandle : IDisposable
+    public interface IAsakiUIResourceHandle : IDisposable
     {
         bool IsValid { get; }
     }

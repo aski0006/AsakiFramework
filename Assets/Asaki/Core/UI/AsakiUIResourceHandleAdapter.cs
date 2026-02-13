@@ -4,9 +4,9 @@ using UnityEngine;
 namespace Asaki.Core.UI
 {
     /// <summary>
-    /// 结构体适配器 (ZeroGC)，将 ResHandle<GameObject> 适配给 IUIResourceHandle
+    /// 结构体适配器 (ZeroGC)，将 ResHandle<GameObject> 适配给 IAsakiUIResourceHandle
     /// </summary>
-    public struct AsakiUIResourceHandleAdapter : IUIResourceHandle
+    public struct AsakiUIResourceHandleAdapter : IAsakiUIResourceHandle
     {
         private ResHandle<GameObject> _handle;
         private bool _isDisposed;

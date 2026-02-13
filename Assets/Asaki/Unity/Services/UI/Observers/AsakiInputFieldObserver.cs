@@ -1,26 +1,26 @@
-﻿using Asaki.Core.Reactive;
-using TMPro;
+﻿using TMPro;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
-    public class AsakiInputFieldObserver : IAsakiObserver<string>
+    /// <summary>
+    /// 将 string 属性绑定到 TMP_InputField。
+    /// </summary>
+    public class AsakiInputFieldObserver : AsakiObserverBase<string, TMP_InputField>
     {
-        private readonly TMP_InputField _input;
-
         public AsakiInputFieldObserver(TMP_InputField input)
+            : base(input) { }
+
+        protected override void ApplyValue(string value)
         {
-            _input = input;
+            if (_target.text != value)
+            {
+                _target.text = value ?? "";
+            }
         }
 
-        public void OnValueChange(string value)
+        protected override string GetDefaultValue()
         {
-            if (_input == null)
-                return;
-
-            if (_input.text != value)
-            {
-                _input.text = value ?? "";
-            }
+            return null;
         }
     }
 }

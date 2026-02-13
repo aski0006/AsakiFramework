@@ -134,7 +134,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             if (_preloadHandles.Count == 0)
                 return;
 
-            ALog.Info($"[LoadingSceneController] Releasing {_preloadHandles.Count} preloaded resources");
+            ALog.Info(
+                $"[LoadingSceneController] Releasing {_preloadHandles.Count} preloaded resources"
+            );
 
             foreach (var handle in _preloadHandles)
             {
@@ -272,7 +274,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
                 }
             }
 
-            ALog.Info($"[LoadingSceneController] Preloaded {_preloadHandles.Count} resources successfully");
+            ALog.Info(
+                $"[LoadingSceneController] Preloaded {_preloadHandles.Count} resources successfully"
+            );
         }
 
         private async UniTask<ResHandle<Object>> LoadResourceAsync(
@@ -333,7 +337,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             }
             else
             {
-                ALog.Info($"[LoadingSceneController] Target scene loaded successfully: {_payload.TargetSceneName}");
+                ALog.Info(
+                    $"[LoadingSceneController] Target scene loaded successfully: {_payload.TargetSceneName}"
+                );
                 // 修复：通知预加载流程成功完成
                 _sceneManager.NotifyPreloadFinished(true, _payload.TargetSceneName);
             }

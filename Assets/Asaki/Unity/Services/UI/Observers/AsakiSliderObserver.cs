@@ -1,28 +1,32 @@
-﻿using Asaki.Core.Reactive;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
     /// <summary>
-    /// [Slider专用] 将 float 属性绑定到进度条。
+    /// 将 float 属性绑定到 Slider。
     /// </summary>
-    public class AsakiSliderObserver : IAsakiObserver<float>
+    public class AsakiSliderObserver : AsakiObserverBase<float, Slider>
     {
-        private readonly Slider _slider;
-
         public AsakiSliderObserver(Slider slider)
+            : base(slider)
         {
-            _slider = slider;
+            _lastValue = float.NaN;
         }
 
-        public void OnValueChange(float value)
+        protected override bool ShouldUpdate(float value)
         {
-            if (_slider == null)
-                return;
-            if (!UnityEngine.Mathf.Approximately(_slider.value, value))
-            {
-                _slider.value = value;
-            }
+            return !Mathf.Approximately(value, _lastValue);
+        }
+
+        protected override void ApplyValue(float value)
+        {
+            _target.value = value;
+        }
+
+        protected override float GetDefaultValue()
+        {
+            return float.NaN;
         }
     }
 }

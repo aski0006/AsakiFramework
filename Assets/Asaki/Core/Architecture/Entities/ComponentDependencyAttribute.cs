@@ -6,8 +6,13 @@ namespace Asaki.Core.Architecture.Entities
     public class ComponentDependencyAttribute : Attribute
     {
         public bool Required { get; }
+
         public ComponentDependencyAttribute() { }
-        public ComponentDependencyAttribute(bool required) { Required = required; }
+
+        public ComponentDependencyAttribute(bool required)
+        {
+            Required = required;
+        }
     }
 
     public interface IGeneratedDependencyInjector

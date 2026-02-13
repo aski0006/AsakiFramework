@@ -89,13 +89,17 @@ namespace Asaki.Unity.Services.DataTable
                 .ToList();
             if (preloadTypes.Count > 0)
             {
-                ALog.Info($"[AsakiFrameworkSetting] Preloading {preloadTypes.Count} core configs...");
+                ALog.Info(
+                    $"[AsakiFrameworkSetting] Preloading {preloadTypes.Count} core configs..."
+                );
 
                 var tasks = preloadTypes.Select(LoadConfigInternalAsync).ToList();
 
                 await UniTask.WhenAll(tasks);
             }
-            ALog.Info($"[AsakiFrameworkSetting] Service Ready.  Preloaded {_configStore.Count} tables.");
+            ALog.Info(
+                $"[AsakiFrameworkSetting] Service Ready.  Preloaded {_configStore.Count} tables."
+            );
 #if UNITY_EDITOR
             if (_isEditor)
             {
@@ -129,6 +133,7 @@ namespace Asaki.Unity.Services.DataTable
             var tasks = allTypes.Select(LoadConfigInternalAsync).ToArray();
             await UniTask.WhenAll(tasks);
         }
+
         // ==================== 修改点结束 ====================
 
         public UniTask ReloadAsync<T>()
@@ -645,7 +650,9 @@ namespace Asaki.Unity.Services.DataTable
 
                 if (metadata.Dependencies is { Length: > 0 })
                 {
-                    ALog.Info($"[AsakiFrameworkSetting] Loading dependencies for {configType.Name}...");
+                    ALog.Info(
+                        $"[AsakiFrameworkSetting] Loading dependencies for {configType.Name}..."
+                    );
 
                     var depTasks = metadata.Dependencies.Select(LoadConfigInternalAsync).ToArray();
 
@@ -675,11 +682,16 @@ namespace Asaki.Unity.Services.DataTable
                 }
                 _statsCache[configType].LoadTime = DateTime.Now;
 
-                ALog.Info($"[AsakiFrameworkSetting] ✅ Loaded {configType.Name} ({metadata.Strategy})");
+                ALog.Info(
+                    $"[AsakiFrameworkSetting] ✅ Loaded {configType.Name} ({metadata.Strategy})"
+                );
             }
             catch (Exception ex)
             {
-                ALog.Error($"[AsakiFrameworkSetting] ❌ Failed to load {configType.Name}: {ex.Message}", ex);
+                ALog.Error(
+                    $"[AsakiFrameworkSetting] ❌ Failed to load {configType.Name}: {ex.Message}",
+                    ex
+                );
                 throw;
             }
             finally
@@ -695,6 +707,7 @@ namespace Asaki.Unity.Services.DataTable
                 }
             }
         }
+
         // ==================== 修改点结束 ====================
 
         private List<T> DeserializeBytes<T>(byte[] bytes)

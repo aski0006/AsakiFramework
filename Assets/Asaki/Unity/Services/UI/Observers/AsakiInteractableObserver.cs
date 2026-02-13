@@ -1,22 +1,20 @@
-﻿using Asaki.Core.Reactive;
-using UnityEngine.UI;
+﻿using UnityEngine.UI;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
-    public class AsakiInteractableObserver : IAsakiObserver<bool>
+    /// <summary>
+    /// 将 bool 属性绑定到 Selectable 的 interactable 状态。
+    /// </summary>
+    public class AsakiInteractableObserver : AsakiObserverBase<bool, Selectable>
     {
-        private readonly Selectable _selectable; // Button, Toggle, Slider 都是 Selectable
-
         public AsakiInteractableObserver(Selectable selectable)
-        {
-            _selectable = selectable;
-        }
+            : base(selectable) { }
 
-        public void OnValueChange(bool value)
+        protected override void ApplyValue(bool value)
         {
-            if (_selectable != null && _selectable.interactable != value)
+            if (_target.interactable != value)
             {
-                _selectable.interactable = value;
+                _target.interactable = value;
             }
         }
     }

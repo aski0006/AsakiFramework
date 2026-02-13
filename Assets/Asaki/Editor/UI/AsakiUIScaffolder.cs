@@ -13,7 +13,8 @@ namespace Asaki.Editor.UI
     public static class AsakiUIScaffolder
     {
         // [修改] 指向主配置
-        private const string CONFIG_PATH = "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
+        private const string CONFIG_PATH =
+            "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
 
         // =========================================================
         // 入口 1: 从 Project 窗口的脚本直接生成 (新需求)
@@ -98,7 +99,8 @@ namespace Asaki.Editor.UI
             System.Type type = targetScript.GetType();
 
             // [修改] 加载主配置
-            AsakiFrameworkSetting mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_PATH);
+            AsakiFrameworkSetting mainFrameworkSetting =
+                AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_PATH);
             if (mainFrameworkSetting == null)
             {
                 EditorUtility.DisplayDialog(

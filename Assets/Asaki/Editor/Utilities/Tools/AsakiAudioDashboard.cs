@@ -11,7 +11,8 @@ namespace Asaki.Editor.Utilities.Tools
     {
         // === 路径配置 ===
         // [修改] 指向唯一的 AsakiFrameworkSetting
-        private const string CONFIG_PATH = "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
+        private const string CONFIG_PATH =
+            "Assets/Resources/Asaki/DataTable/AsakiFrameworkSetting.asset";
         private const string CODE_GEN_PATH =
             "Assets/Asaki/Generated/AudioAsset_2_Id/AudioAssetID.cs";
 
@@ -91,7 +92,10 @@ namespace Asaki.Editor.Utilities.Tools
 
         private void DrawEmptyState()
         {
-            EditorGUILayout.HelpBox($"AsakiFrameworkSetting not found at: {CONFIG_PATH}", MessageType.Error);
+            EditorGUILayout.HelpBox(
+                $"AsakiFrameworkSetting not found at: {CONFIG_PATH}",
+                MessageType.Error
+            );
             if (GUILayout.Button("Create Config Asset"))
                 CreateConfigAsset();
         }
@@ -448,7 +452,9 @@ namespace Asaki.Editor.Utilities.Tools
         private void LoadConfig()
         {
             // [修改] 加载主配置
-            _mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_PATH);
+            _mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(
+                CONFIG_PATH
+            );
         }
 
         private void CreateConfigAsset()

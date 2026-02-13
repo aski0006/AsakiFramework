@@ -7,10 +7,15 @@ namespace Asaki.Unity.Services.DataTable
     public static class AsakiConfigRegistry
     {
         // 键：Type，值：加载器（接受 service + path）
-        private static readonly Dictionary<Type, Func<AsakiConfigService, string, UniTask?>> _loaders
-            = new Dictionary<Type, Func<AsakiConfigService, string, UniTask?>>();
+        private static readonly Dictionary<
+            Type,
+            Func<AsakiConfigService, string, UniTask?>
+        > _loaders = new Dictionary<Type, Func<AsakiConfigService, string, UniTask?>>();
 
-        public static void RegisterLoader(Type configType, Func<AsakiConfigService, string, UniTask?> loader)
+        public static void RegisterLoader(
+            Type configType,
+            Func<AsakiConfigService, string, UniTask?> loader
+        )
         {
             _loaders[configType] = loader;
         }

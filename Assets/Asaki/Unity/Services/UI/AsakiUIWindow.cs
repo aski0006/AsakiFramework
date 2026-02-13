@@ -38,7 +38,7 @@ namespace Asaki.Unity.Services.UI
         /// <summary>
         /// 获取或设置资源句柄（非池化模式下使用）
         /// </summary>
-        public IUIResourceHandle ResHandle { get; set; }
+        public IAsakiUIResourceHandle ResHandle { get; set; }
 
         /// <summary>
         /// 获取CanvasGroup组件

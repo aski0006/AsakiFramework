@@ -1,17 +1,18 @@
-﻿using System.Text;
-using Asaki.Core.Reactive;
+using System.Text;
 using Asaki.Unity.Utils;
 using TMPro;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
-    public class AsakiTMPTextFloatObserver : IAsakiObserver<float>
+    /// <summary>
+    /// [TMP专用] 零GC float 绑定器。
+    /// 利用 TextMeshPro 的 SetText(StringBuilder) 实现极致性能。
+    /// </summary>
+    public class AsakiTMPTextFloatObserver : AsakiObserverBase<float, TMP_Text>
     {
-        private readonly TMP_Text _target;
-        private readonly string _format; // 例如 "F1", "0.00"
+        private readonly string _format;
         private readonly string _prefix;
         private readonly string _suffix;
-        private float _lastValue = float.NaN; // 使用 NaN 确保第一次一定更新
 
         public AsakiTMPTextFloatObserver(
             TMP_Text target,
@@ -19,32 +20,41 @@ namespace Asaki.Unity.Services.UI.Observers
             string prefix = "",
             string suffix = ""
         )
+            : base(target)
         {
-            _target = target;
             _format = format;
             _prefix = prefix;
             _suffix = suffix;
+            _lastValue = float.NaN;
         }
 
-        public void OnValueChange(float value)
+        protected override bool ShouldUpdate(float value)
         {
-            if (!_target)
-                return;
-            if (UnityEngine.Mathf.Approximately(_lastValue, value))
-                return;
-            _lastValue = value;
+            return !UnityEngine.Mathf.Approximately(value, _lastValue);
+        }
 
+        protected override void ApplyValue(float value)
+        {
             StringBuilder sb = AsakiStringBuilderPool.Rent();
-            if (!string.IsNullOrEmpty(_prefix))
-                sb.Append(_prefix);
+            try
+            {
+                if (!string.IsNullOrEmpty(_prefix))
+                    sb.Append(_prefix);
+                sb.Append(value.ToString(_format));
+                if (!string.IsNullOrEmpty(_suffix))
+                    sb.Append(_suffix);
 
-            sb.Append(value.ToString(_format));
+                _target.SetText(sb);
+            }
+            finally
+            {
+                AsakiStringBuilderPool.Return(sb);
+            }
+        }
 
-            if (!string.IsNullOrEmpty(_suffix))
-                sb.Append(_suffix);
-
-            _target.SetText(sb);
-            AsakiStringBuilderPool.Return(sb);
+        protected override float GetDefaultValue()
+        {
+            return float.NaN;
         }
     }
 }

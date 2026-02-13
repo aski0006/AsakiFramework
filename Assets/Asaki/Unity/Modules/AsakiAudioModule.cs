@@ -2,8 +2,8 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
 using Asaki.Core.Audio;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
@@ -40,7 +40,11 @@ namespace Asaki.Unity.Modules
             if (!frameworkSetting)
                 return;
 
-            _audioService = new AsakiAudioService(_poolService, _resService, frameworkSetting.AudioConfig);
+            _audioService = new AsakiAudioService(
+                _poolService,
+                _resService,
+                frameworkSetting.AudioConfig
+            );
 
             _audioService.OnInit();
 

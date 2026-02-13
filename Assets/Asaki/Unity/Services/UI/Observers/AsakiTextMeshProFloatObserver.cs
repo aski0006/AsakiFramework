@@ -1,18 +1,19 @@
 ﻿using System.Text;
-using Asaki.Core.Reactive;
 using Asaki.Unity.Utils;
 using TMPro;
 using UnityEngine;
 
 namespace Asaki.Unity.Services.UI.Observers
 {
-    public class AsakiTextMeshProFloatObserver : IAsakiObserver<float>
+    /// <summary>
+    /// [TextMeshPro世界空间专用] 零GC float 绑定器。
+    /// 用于世界空间中的 TextMeshPro 组件。
+    /// </summary>
+    public class AsakiTextMeshProFloatObserver : AsakiObserverBase<float, TextMeshPro>
     {
-        private readonly TextMeshPro _target;
         private readonly string _format;
         private readonly string _prefix;
         private readonly string _suffix;
-        private float _lastValue = float.MinValue;
 
         public AsakiTextMeshProFloatObserver(
             TextMeshPro target,
@@ -20,32 +21,35 @@ namespace Asaki.Unity.Services.UI.Observers
             string prefix = "",
             string suffix = ""
         )
+            : base(target)
         {
-            _target = target;
             _format = format;
             _prefix = prefix;
             _suffix = suffix;
         }
 
-        public void OnValueChange(float value)
+        protected override bool ShouldUpdate(float value)
         {
-            if (!_target)
-                return;
-            if (Mathf.Approximately(value, _lastValue))
-                return; // 脏检查
-            _lastValue = value;
+            return !Mathf.Approximately(value, _lastValue);
+        }
 
-            // 1. 借出 Builder
+        protected override void ApplyValue(float value)
+        {
             StringBuilder sb = AsakiStringBuilderPool.Rent();
+            try
+            {
+                if (!string.IsNullOrEmpty(_prefix))
+                    sb.Append(_prefix);
+                sb.Append(value.ToString(_format));
+                if (!string.IsNullOrEmpty(_suffix))
+                    sb.Append(_suffix);
 
-            // 2. 拼接
-            if (!string.IsNullOrEmpty(_prefix))
-                sb.Append(_prefix);
-            sb.Append(value.ToString(_format));
-            if (!string.IsNullOrEmpty(_suffix))
-                sb.Append(_suffix);
-
-            _target.SetText(sb);
+                _target.SetText(sb);
+            }
+            finally
+            {
+                AsakiStringBuilderPool.Return(sb);
+            }
         }
     }
 }

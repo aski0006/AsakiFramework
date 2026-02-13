@@ -7,7 +7,10 @@ namespace Asaki.Core.Scene.SceneManagement
     /// <summary>
     /// 场景预加载配置数据库
     /// </summary>
-    [CreateAssetMenu(fileName = "ScenePreloadDatabase", menuName = "Asaki/Scene/Scene Preload Database")]
+    [CreateAssetMenu(
+        fileName = "ScenePreloadDatabase",
+        menuName = "Asaki/Scene/Scene Preload Database"
+    )]
     public class ScenePreloadDatabase : ScriptableObject
     {
         [Tooltip("所有场景预加载配置")]
@@ -24,7 +27,8 @@ namespace Asaki.Core.Scene.SceneManagement
 
         private void Initialize()
         {
-            if (_isInitialized) return;
+            if (_isInitialized)
+                return;
 
             _configMap.Clear();
             foreach (var config in _configs)

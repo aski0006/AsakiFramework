@@ -303,7 +303,10 @@ namespace Asaki.Editor.UI
             WriteFile(CODE_GEN_PATH, sb.ToString());
         }
 
-        private static void UpdateConfigData(AsakiFrameworkSetting mainFrameworkSetting, List<UIItem> items)
+        private static void UpdateConfigData(
+            AsakiFrameworkSetting mainFrameworkSetting,
+            List<UIItem> items
+        )
         {
             // [修改] 操作 UIConfig 属性
             AsakiUIConfig uiConfig = mainFrameworkSetting.UIConfig;
@@ -328,7 +331,8 @@ namespace Asaki.Editor.UI
         // [修改] 返回主配置类型
         private static AsakiFrameworkSetting LoadOrCreateConfig()
         {
-            AsakiFrameworkSetting frameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
+            AsakiFrameworkSetting frameworkSetting =
+                AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
             if (!frameworkSetting)
             {
                 frameworkSetting = CreateInstance<AsakiFrameworkSetting>();
@@ -344,7 +348,8 @@ namespace Asaki.Editor.UI
         private void LoadCurrentConfig()
         {
             // [修改] 加载主配置
-            AsakiFrameworkSetting mainFrameworkSetting = AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
+            AsakiFrameworkSetting mainFrameworkSetting =
+                AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
             if (mainFrameworkSetting == null)
                 return;
 

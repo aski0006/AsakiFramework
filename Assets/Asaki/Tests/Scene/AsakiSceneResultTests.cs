@@ -93,7 +93,10 @@ namespace Asaki.Tests.Scene
         public void OperationCanceled_WithCustomMessage_CreatesCanceledResultWithCustomMessage()
         {
             // Arrange & Act
-            var result = AsakiSceneResult.OperationCanceled("CanceledScene", "Custom cancel message");
+            var result = AsakiSceneResult.OperationCanceled(
+                "CanceledScene",
+                "Custom cancel message"
+            );
 
             // Assert
             Assert.IsFalse(result.Success);

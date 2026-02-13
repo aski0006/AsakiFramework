@@ -120,7 +120,7 @@ namespace Asaki.Tests.Scene
             {
                 Level = 10,
                 Difficulty = "Hard",
-                IsNewGame = true
+                IsNewGame = true,
             };
 
             // Act
