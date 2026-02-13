@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Threading;
 using Asaki.Core.Context;
 using Asaki.Core.Scene.SceneManagement;

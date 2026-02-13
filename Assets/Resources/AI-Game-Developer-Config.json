@@ -1,5 +1,5 @@
 {
-  "logLevel": 4,
+  "logLevel": 6,
   "keepServerRunning": false,
   "transportMethod": 1,
   "tools": [
