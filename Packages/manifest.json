@@ -1,7 +1,6 @@
 {
   "dependencies": {
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
-    "com.ivanmurzak.unity.mcp": "0.45.1",
     "com.unity.addressables": "2.2.2",
     "com.unity.cinemachine": "3.1.3",
     "com.unity.collab-proxy": "2.10.2",
@@ -49,7 +48,8 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0"
+    "com.unity.modules.xr": "1.0.0",
+    "com.ivanmurzak.unity.mcp": "0.46.2"
   },
   "scopedRegistries": [
     {
@@ -117,7 +117,12 @@
         "org.nuget.system.text.encodings.web",
         "org.nuget.system.text.json",
         "org.nuget.system.threading.channels",
-        "org.nuget.system.threading.tasks.extensions"
+        "org.nuget.system.threading.tasks.extensions",
+        "com.ivanmurzak",
+        "extensions.unity",
+        "org.nuget.com.ivanmurzak",
+        "org.nuget.microsoft",
+        "org.nuget.system"
       ]
     }
   ]
