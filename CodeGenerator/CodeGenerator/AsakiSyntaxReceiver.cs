@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -8,7 +8,7 @@ namespace Asaki.CodeGen
 	public class AsakiSyntaxReceiver : ISyntaxReceiver
 	{
 		public List<ClassDeclarationSyntax> CandidateClasses { get; } = new List<ClassDeclarationSyntax>();
-		public List<ClassDeclarationSyntax> PotentialSubscribers { get; } = new List<ClassDeclarationSyntax>();
+		public List<TypeDeclarationSyntax> PotentialSubscribers { get; } = new List<TypeDeclarationSyntax>();
 		public List<TypeDeclarationSyntax> SaveCandidates { get; } = new List<TypeDeclarationSyntax>();
 		public List<MethodDeclarationSyntax> ListenerMethods { get; } = new List<MethodDeclarationSyntax>();
 		public List<ClassDeclarationSyntax> CandidateConfigs { get; } = new List<ClassDeclarationSyntax>();
@@ -25,53 +25,49 @@ namespace Asaki.CodeGen
 
 		public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
 		{
-			// 1. 处理 Class ([AsakiBind], IAsakiHandler)
-			if (syntaxNode is ClassDeclarationSyntax classDeclaration)
+			// 1. 处理 TypeDeclaration (Class, Struct, etc.)
+			if (syntaxNode is TypeDeclarationSyntax typeDeclaration)
 			{
-				if (HasAttribute(classDeclaration.AttributeLists, "AsakiBind"))
+				if (typeDeclaration is ClassDeclarationSyntax classDecl)
 				{
-					CandidateClasses.Add(classDeclaration);
+					if (HasAttribute(classDecl.AttributeLists, "AsakiBind"))
+					{
+						CandidateClasses.Add(classDecl);
+					}
+
+					if (HasBaseType(classDecl, "IAsakiDataTable"))
+					{
+						CandidateConfigs.Add(classDecl);
+					}
+
+					if (HasAttribute(classDecl.AttributeLists, "AsakiModule"))
+					{
+						ModuleCandidates.Add(classDecl);
+					}
+
+					// 检查是否有 CustomGraphEditor 特性
+					if (HasAttribute(classDecl.AttributeLists, "CustomGraphEditor"))
+					{
+						GraphEditorCandidates.Add(classDecl);
+					}
 				}
 
-				if (classDeclaration.BaseList != null &&
-				    classDeclaration.BaseList.Types.Any(t =>
+				// 检查是否实现了 IAsakiHandler（支持 class 和 struct）
+				if (typeDeclaration.BaseList != null &&
+				    typeDeclaration.BaseList.Types.Any(t =>
 					    t.Type.ToString().Contains("IAsakiHandler")))
 				{
-					PotentialSubscribers.Add(classDeclaration);
+					PotentialSubscribers.Add(typeDeclaration);
 				}
 
-				if (HasBaseType(classDeclaration, "IAsakiDataTable"))
+				// 处理 [AsakiSave] 和 [AsakiBlackboardValueSchema]
+				if (HasAttribute(typeDeclaration.AttributeLists, "AsakiSave"))
 				{
-					CandidateConfigs.Add(classDeclaration);
+					SaveCandidates.Add(typeDeclaration);
 				}
-
-				if (HasAttribute(classDeclaration.AttributeLists, "AsakiModule"))
+				if (HasAttribute(typeDeclaration.AttributeLists, "AsakiBlackboardValueSchema"))
 				{
-					ModuleCandidates.Add(classDeclaration);
-				}
-			}
-
-			// 2. [新增] 处理 [AsakiSave] (Class 或 Struct)
-			if (syntaxNode is TypeDeclarationSyntax typeDecl)
-			{
-				if (HasAttribute(typeDecl.AttributeLists, "AsakiSave"))
-				{
-					SaveCandidates.Add(typeDecl);
-				}
-				if (HasAttribute(typeDecl.AttributeLists, "AsakiBlackboardValueSchema"))
-				{
-					SchemaCandidates.Add(typeDecl);
-				}
-
-			}
-
-
-			if (syntaxNode is ClassDeclarationSyntax classDecl)
-			{
-				// 检查是否有 CustomGraphEditor 特性
-				if (HasAttribute(classDecl.AttributeLists, "CustomGraphEditor"))
-				{
-					GraphEditorCandidates.Add(classDecl);
+					SchemaCandidates.Add(typeDeclaration);
 				}
 			}
 

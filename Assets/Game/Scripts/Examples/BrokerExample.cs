@@ -19,7 +19,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test
             this.AsakiUnregister();
         }
 
-        public void OnEvent(AsakiPlayerJumpExampleEvent e)
+        public void OnEvent(in AsakiPlayerJumpExampleEvent e)
         {
             Debug.LogError("OnEvent");
         }

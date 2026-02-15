@@ -458,24 +458,24 @@ namespace Asaki.Tests.Serialization
         public class TestEventService : IAsakiEventService
         {
             public void Subscribe<T>(IAsakiHandler<T> handler)
-                where T : struct, IAsakiEvent { }
+                where T : IAsakiEvent { }
 
             public void Unsubscribe<T>(IAsakiHandler<T> handler)
-                where T : struct, IAsakiEvent { }
+                where T : IAsakiEvent { }
 
-            void IAsakiEventService.Publish<T>(T e)
+            void IAsakiEventService.Publish<T>(in T e)
             {
-                Publish(e);
+                Publish<T>(e);
             }
 
-            public void Publish<T>(T eventData)
-                where T : struct { }
+            public void Publish<T>(in T eventData)
+                where T : IAsakiEvent { }
 
             public System.IDisposable Subscribe<T>(System.Action<T> handler)
-                where T : struct => null;
+                where T : IAsakiEvent => null;
 
             public void Unsubscribe<T>(System.Action<T> handler)
-                where T : struct { }
+                where T : IAsakiEvent { }
 
             public void Dispose()
             {

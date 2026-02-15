@@ -96,16 +96,17 @@ namespace Asaki.Core.Broker
 
             /// <summary>
             /// 发布事件到所有订阅的处理程序。
-            /// 首先检查脏标记，如果需要则更新缓存数组，然后遍历缓存数组并调用每个处理程序的 <see cref="IAsakiHandler{T}.OnEvent(T)"/> 方法。
+            /// 首先检查脏标记，如果需要则更新缓存数组，然后遍历缓存数组并调用每个处理程序的 <see cref="IAsakiHandler{T}.OnEvent(in T)"/> 方法。
             /// </summary>
-            /// <param name="e">要发布的事件实例。</param>
+            /// <param name="e">要发布的事件实例（只读引用传递）。</param>
             /// <remarks>
             /// <para>异常处理策略：不捕获异常，让异常冒泡到调用者。</para>
             /// <para>这意味着如果任一 handler 抛出异常，后续 handler 将不会被执行。</para>
             /// <para>此设计允许调用者获取完整的堆栈跟踪信息，便于调试。</para>
+            /// <para>使用 in 关键字避免结构体复制，优化栈空间使用。</para>
             /// </remarks>
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void Publish(T e)
+            public void Publish(in T e)
             {
                 // 1. 检查脏标记 (Double-Check Locking 变种)
                 if (_dirty)
@@ -167,10 +168,10 @@ namespace Asaki.Core.Broker
         /// 订阅事件处理程序到事件总线。
         /// 通过获取对应的事件桶，并调用其 <see cref="EventBucket{T}.Subscribe(IAsakiHandler{T})"/> 方法来完成订阅操作。
         /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
         public void Subscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent
+            where T : IAsakiEvent
         {
             GetBucket<T>().Subscribe(handler);
         }
@@ -179,22 +180,22 @@ namespace Asaki.Core.Broker
         /// 从事件总线中取消订阅事件处理程序。
         /// 通过获取对应的事件桶，并调用其 <see cref="EventBucket{T}.Unsubscribe(IAsakiHandler{T})"/> 方法来完成取消订阅操作。
         /// </summary>
-        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="handler">要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
         public void Unsubscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent
+            where T : IAsakiEvent
         {
             GetBucket<T>().Unsubscribe(handler);
         }
 
         /// <summary>
         /// 发布事件到事件总线。
-        /// 如果对应的事件桶存在，则调用其 <see cref="EventBucket{T}.Publish(T)"/> 方法发布事件；否则直接跳过。
+        /// 如果对应的事件桶存在，则调用其 <see cref="EventBucket{T}.Publish(in T)"/> 方法发布事件；否则直接跳过。
         /// </summary>
         /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
-        /// <param name="e">要发布的事件实例。</param>
-        public void Publish<T>(T e)
-            where T : struct, IAsakiEvent
+        /// <param name="e">要发布的事件实例（只读引用传递）。</param>
+        public void Publish<T>(in T e)
+            where T : IAsakiEvent
         {
             // 极速路径：如果桶不存在，说明没订阅者，直接跳过 (比静态类访问还快，因为省了泛型初始化检查)
             if (TryGetBucket<T>(out EventBucket<T> bucket))

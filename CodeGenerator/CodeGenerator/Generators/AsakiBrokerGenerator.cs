@@ -12,7 +12,7 @@ public static class AsakiBrokerGenerator
 
     public static void Execute(
         GeneratorExecutionContext context,
-        List<ClassDeclarationSyntax> handlerCandidates,
+        List<TypeDeclarationSyntax> handlerCandidates,
         List<MethodDeclarationSyntax> listenerCandidates)
     {
         var compilation = context.Compilation;
@@ -22,7 +22,7 @@ public static class AsakiBrokerGenerator
             globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Included
         );
 
-        // ----- 1. 收集 Handler 类 -----
+        // ----- 1. 收集 Handler 类/结构体 -----
         var handlerMap = new Dictionary<INamedTypeSymbol, List<INamedTypeSymbol>>(SymbolEqualityComparer.Default);
         foreach (var syntax in handlerCandidates)
         {
@@ -56,7 +56,7 @@ public static class AsakiBrokerGenerator
                 context.ReportDiagnostic(Diagnostic.Create(
                     new DiagnosticDescriptor("ASAKI002", "Invalid AsakiListener",
                         $"Method '{methodSymbol.Name}' is marked with [AsakiListener] but its signature is invalid. " +
-                        "Must be: void MethodName(TEvent e) where TEvent : struct, IAsakiEvent",
+                        "Must be: void MethodName(TEvent e) where TEvent : IAsakiEvent",
                         "AsakiBroker", DiagnosticSeverity.Error, true),
                     syntax.GetLocation()));
                 continue;
@@ -94,9 +94,6 @@ public static class AsakiBrokerGenerator
             return false;
 
         var paramType = method.Parameters[0].Type;
-        if (!paramType.IsValueType)
-            return false;
-
         var eventInterface = compilation.GetTypeByMetadataName("Asaki.Core.Broker.IAsakiEvent");
         return eventInterface != null && paramType.AllInterfaces.Any(i =>
             SymbolEqualityComparer.Default.Equals(i, eventInterface));
@@ -265,7 +262,7 @@ public static class AsakiBrokerGenerator
         sb.AppendLine("        {");
         sb.AppendLine($"            private readonly {containingType} _target;");
         sb.AppendLine($"            public {adapterName}({containingType} target) => _target = target;");
-        sb.AppendLine($"            public void OnEvent({eventType} e) => _target.{method.Name}(e);");
+        sb.AppendLine($"            public void OnEvent(in {eventType} e) => _target.{method.Name}(e);");
         sb.AppendLine("        }");
         sb.AppendLine();
     }

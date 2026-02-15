@@ -150,7 +150,7 @@ namespace Asaki.Unity
             }
         }
 
-        public void OnEvent(OnAsakiFrameworkReadyEvent e)
+        public void OnEvent(in OnAsakiFrameworkReadyEvent e)
         {
             _isFrameworkReady = true;
             lock (_lock)

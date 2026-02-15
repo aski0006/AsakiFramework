@@ -69,7 +69,7 @@ namespace Asaki.Unity
 
         protected virtual void OnStart() { }
 
-        public void OnEvent(OnAsakiFrameworkReadyEvent e)
+        public void OnEvent(in OnAsakiFrameworkReadyEvent e)
         {
             ActivateFrameworkReady();
         }
@@ -272,7 +272,7 @@ namespace Asaki.Unity
                 this.AsakiRegister();
             }
 
-            public void OnEvent(OnAsakiFrameworkReadyEvent e)
+            public void OnEvent(in OnAsakiFrameworkReadyEvent e)
             {
                 try
                 {

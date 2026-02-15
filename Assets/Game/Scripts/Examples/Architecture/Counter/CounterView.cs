@@ -154,7 +154,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
                 txtStatus.text = $"History: {_architecture.UndoCount} | {_architecture.RedoCount}";
         }
 
-        public void OnEvent(AchievementUnlockedEvent e)
+        public void OnEvent(in AchievementUnlockedEvent e)
         {
             Debug.Log(
                 $"<color=yellow>[CounterView] Achievement Unlocked: {e.AchievementName}</color>"

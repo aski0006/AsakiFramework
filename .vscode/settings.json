@@ -52,7 +52,6 @@
         "**/Builds": true,
         "**/MemoryCaptures": true,
         "**/UIElementsSchema": true,
-        "**/CodeGenerator": true,
         "**/TestServer": true,
         "**/.vs": true,
         "**/.idea": true,

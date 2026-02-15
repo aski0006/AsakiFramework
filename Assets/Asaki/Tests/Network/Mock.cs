@@ -320,18 +320,18 @@ namespace Asaki.Tests.Network
         public int PublishCallCount { get; private set; }
         public object LastPublishedEvent { get; private set; }
 
-        public void Publish<T>(T eventData)
-            where T : struct, IAsakiEvent
+        public void Publish<T>(in T eventData)
+            where T : IAsakiEvent
         {
             PublishCallCount++;
             LastPublishedEvent = eventData;
         }
 
         public void Subscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent { }
+            where T : IAsakiEvent { }
 
         public void Unsubscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent { }
+            where T : IAsakiEvent { }
 
         public void Dispose() { }
 

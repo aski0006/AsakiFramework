@@ -12,34 +12,34 @@ namespace Asaki.Core.Broker
     {
         /// <summary>
         /// 订阅一个事件处理程序到事件服务。
-        /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。
+        /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。
         /// <paramref name="handler"/> 是要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。
         /// 此方法将处理程序注册到事件服务中，以便在相应事件发布时能够被调用。
         /// </summary>
-        /// <typeparam name="T">要订阅的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
+        /// <typeparam name="T">要订阅的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
         void Subscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent;
+            where T : IAsakiEvent;
 
         /// <summary>
         /// 从事件服务中取消订阅一个事件处理程序。
-        /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。
+        /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。
         /// <paramref name="handler"/> 是要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。
         /// 此方法将处理程序从事件服务的订阅列表中移除，使其不再接收相应事件。
         /// </summary>
-        /// <typeparam name="T">要取消订阅的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口且为值类型。</typeparam>
+        /// <typeparam name="T">要取消订阅的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
         /// <param name="handler">要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
         void Unsubscribe<T>(IAsakiHandler<T> handler)
-            where T : struct, IAsakiEvent;
+            where T : IAsakiEvent;
 
         /// <summary>
         /// 在事件服务中发布一个事件。
         /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。
-        /// <paramref name="e"/> 是要发布的事件实例。此方法将触发所有已订阅该事件的处理程序的 <see cref="IAsakiHandler{T}.OnEvent(T)"/> 方法。
+        /// <paramref name="e"/> 是要发布的事件实例。此方法将触发所有已订阅该事件的处理程序的 <see cref="IAsakiHandler{T}.OnEvent(in T)"/> 方法。
         /// </summary>
         /// <typeparam name="T">要发布的事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
-        /// <param name="e">要发布的事件实例。</param>
-        void Publish<T>(T e)
-            where T : struct, IAsakiEvent;
+        /// <param name="e">要发布的事件实例（只读引用传递）。</param>
+        void Publish<T>(in T e)
+            where T : IAsakiEvent;
     }
 }
