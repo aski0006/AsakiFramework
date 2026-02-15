@@ -66,7 +66,10 @@
         /// 例如：输入处理、状态转换条件检查、动画更新等。
         /// 子类应重写此方法来实现特定状态的每帧更新逻辑。
         /// </remarks>
-        public virtual void OnUpdate(float deltaTime) { }
+        public virtual void OnUpdate(float deltaTime)
+        {
+            CheckTransition(deltaTime);
+        }
 
         /// <summary>
         /// 当状态处于激活状态时，每固定时间步调用的物理更新方法。

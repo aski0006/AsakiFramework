@@ -31,13 +31,13 @@ namespace Asaki.Unity
         {
             public AsakiMono Component;
             public InitState State;
-            public int SceneHandle;
+            public bool IsPersistent;
 
             public void Reset()
             {
                 Component = null;
                 State = InitState.Destroyed;
-                SceneHandle = 0;
+                IsPersistent = false;
             }
         }
 
@@ -61,13 +61,18 @@ namespace Asaki.Unity
             SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
-        private ComponentState RentState(AsakiMono component, int sceneHandle)
+        private ComponentState RentState(AsakiMono component)
         {
             ComponentState state = _statePool.Count > 0 ? _statePool.Pop() : new ComponentState();
             state.Component = component;
-            state.SceneHandle = sceneHandle;
             state.State = InitState.Pending;
+            state.IsPersistent = IsDontDestroyOnLoadScene(component.gameObject.scene);
             return state;
+        }
+
+        private static bool IsDontDestroyOnLoadScene(Scene scene)
+        {
+            return scene.name == "DontDestroyOnLoad";
         }
 
         private void ReturnState(ComponentState state)
@@ -98,20 +103,15 @@ namespace Asaki.Unity
             if (_isDisposed || component == null)
                 return -1;
 
-            int sceneHandle = component.gameObject.scene.handle;
-
             lock (_lock)
             {
-                // 状态池获取
-                var state = RentState(component, sceneHandle);
+                var state = RentState(component);
                 int trackingId = _nextTrackingId++;
                 _trackedComponents[trackingId] = state;
 
                 if (_isFrameworkReady)
                 {
                     _pendingInjection.Enqueue(state);
-                    // 只有在框架Ready时才触发立即处理，避免在Awake中进行过重的操作
-                    // 实际处理放在 ProcessPendingComponents 或下一次 Update 钩子中
                 }
                 return trackingId;
             }
@@ -179,20 +179,75 @@ namespace Asaki.Unity
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            // 场景加载后，再次检查队列（处理那些在 Loading 期间创建的对象）
-            if (_isFrameworkReady)
-                ProcessQueue();
+            if (!_isFrameworkReady)
+                return;
+
+            ProcessQueue();
+            ReinjectGlobalServices(scene);
+        }
+
+        private void ReinjectGlobalServices(Scene newScene)
+        {
+            IAsakiResolver newResolver = null;
+            var rootObjects = newScene.GetRootGameObjects();
+            foreach (var root in rootObjects)
+            {
+                var ctx = root.GetComponentInChildren<AsakiSceneContext>(true);
+                if (ctx != null)
+                {
+                    ctx.Build();
+                    newResolver = ctx;
+                    break;
+                }
+            }
+
+            if (newResolver == null)
+                newResolver = AsakiGlobalResolver.Instance;
+
+            lock (_lock)
+            {
+                foreach (var kvp in _trackedComponents)
+                {
+                    var state = kvp.Value;
+                    if (
+                        state.IsPersistent
+                        && state.Component != null
+                        && state.Component is IAsakiAutoInject
+                    )
+                    {
+                        try
+                        {
+                            AsakiGlobalInjector.Inject(state.Component, newResolver);
+                            ALog.Info(
+                                $"[Lifecycle] Re-injected persistent component: {state.Component.GetType().Name}"
+                            );
+                        }
+                        catch (Exception ex)
+                        {
+                            ALog.Error(
+                                $"[Lifecycle] Failed to re-inject {state.Component.name}: {ex}"
+                            );
+                        }
+                    }
+                }
+            }
         }
 
         private void OnSceneUnloaded(Scene scene)
         {
+            if (IsDontDestroyOnLoadScene(scene))
+                return;
+
             lock (_lock)
             {
                 var toRemove = new List<int>();
                 foreach (var kvp in _trackedComponents)
                 {
-                    if (kvp.Value.SceneHandle == scene.handle)
-                        toRemove.Add(kvp.Key);
+                    if (!kvp.Value.IsPersistent && kvp.Value.Component != null)
+                    {
+                        if (kvp.Value.Component.gameObject.scene == scene)
+                            toRemove.Add(kvp.Key);
+                    }
                 }
 
                 foreach (var id in toRemove)
@@ -207,26 +262,22 @@ namespace Asaki.Unity
         private IAsakiResolver GetResolverForComponent(AsakiMono component)
         {
             var context = component.GetComponentInParent<AsakiSceneContext>();
-            if (context)
+            if (context == null)
             {
-                if (!context.IsBuilt)
-                    context.Build();
-                return context;
-            }
-
-            var scene = component.gameObject.scene;
-            var rootObjects = scene.GetRootGameObjects();
-            foreach (var root in rootObjects)
-            {
-                var ctx = root.GetComponentInChildren<AsakiSceneContext>(true);
-                if (ctx != null)
+                var rootObjects = component.gameObject.scene.GetRootGameObjects();
+                foreach (var root in rootObjects)
                 {
-                    if (!ctx.IsBuilt)
-                        ctx.Build();
-                    return ctx;
+                    context = root.GetComponentInChildren<AsakiSceneContext>(true);
+                    if (context != null)
+                        break;
                 }
             }
 
+            if (context != null)
+            {
+                context.Build();
+                return context;
+            }
             return AsakiGlobalResolver.Instance;
         }
     }
