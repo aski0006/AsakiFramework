@@ -37,7 +37,8 @@ namespace Asaki.Unity.Services.Resources
             public void ReportProgress(float progress)
             {
                 var handlers = ProgressCallbacks;
-                if (handlers == null) return;
+                if (handlers == null)
+                    return;
 
                 foreach (var handler in handlers.GetInvocationList())
                 {

@@ -51,7 +51,8 @@ namespace Asaki.Unity.Services.Resources.Strategies
         public void RegisterLoader<T>()
             where T : Object
         {
-            _loadDelegates[typeof(T)] = (loc, prog, tok) => LoadAssetGenericAsync<T>(loc, prog, tok);
+            _loadDelegates[typeof(T)] = (loc, prog, tok) =>
+                LoadAssetGenericAsync<T>(loc, prog, tok);
         }
 
         public async UniTask InitializeAsync()

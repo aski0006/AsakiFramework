@@ -111,7 +111,8 @@ namespace Asaki.Unity.Services.Resources
         private IAsakiResourceService _resourceService;
 
         private readonly List<ResHandle<Object>> _loadedHandles = new();
-        private readonly Dictionary<(string Location, Type Type), ResHandle<Object>> _resourceMap = new();
+        private readonly Dictionary<(string Location, Type Type), ResHandle<Object>> _resourceMap =
+            new();
         private readonly Dictionary<string, List<ResHandle<Object>>> _groupHandlesMap = new();
 
         // 取消令牌源
@@ -345,7 +346,9 @@ namespace Asaki.Unity.Services.Resources
             var key = (location, typeof(T));
             if (!_resourceMap.TryGetValue(key, out var handle))
             {
-                ALog.Warn($"[{nameof(AsakiResourcePreloader)}] Resource not found: {location} (Type: {typeof(T).Name})");
+                ALog.Warn(
+                    $"[{nameof(AsakiResourcePreloader)}] Resource not found: {location} (Type: {typeof(T).Name})"
+                );
                 return null;
             }
 
@@ -441,12 +444,17 @@ namespace Asaki.Unity.Services.Resources
                         groupList.Remove(handle);
                     }
 
-                    ALog.Info($"[{nameof(AsakiResourcePreloader)}] Released resource: {location} (Type: {type.Name})");
+                    ALog.Info(
+                        $"[{nameof(AsakiResourcePreloader)}] Released resource: {location} (Type: {type.Name})"
+                    );
                 }
             }
             else
             {
-                var keysToRemove = _resourceMap.Where(kvp => kvp.Key.Location == location).Select(kvp => kvp.Key).ToList();
+                var keysToRemove = _resourceMap
+                    .Where(kvp => kvp.Key.Location == location)
+                    .Select(kvp => kvp.Key)
+                    .ToList();
                 foreach (var key in keysToRemove)
                 {
                     if (_resourceMap.TryGetValue(key, out var handle))
@@ -464,7 +472,9 @@ namespace Asaki.Unity.Services.Resources
 
                 if (keysToRemove.Count > 0)
                 {
-                    ALog.Info($"[{nameof(AsakiResourcePreloader)}] Released {keysToRemove.Count} resource(s): {location}");
+                    ALog.Info(
+                        $"[{nameof(AsakiResourcePreloader)}] Released {keysToRemove.Count} resource(s): {location}"
+                    );
                 }
             }
         }
@@ -481,10 +491,7 @@ namespace Asaki.Unity.Services.Resources
             foreach (var handle in handles)
             {
                 var key = (handle.Location, handle.Asset?.GetType() ?? typeof(Object));
-                if (
-                    _resourceMap.TryGetValue(key, out var mapHandle)
-                    && mapHandle == handle
-                )
+                if (_resourceMap.TryGetValue(key, out var mapHandle) && mapHandle == handle)
                 {
                     _resourceMap.Remove(key);
                 }

@@ -60,20 +60,21 @@ namespace Asaki.Core.Pooling
         /// <summary>
         /// 默认配置（每次返回新实例，防止被意外修改）
         /// </summary>
-        public static AsakiPoolConfig Default => new AsakiPoolConfig
-        {
-            InitialSize = _defaultTemplate.InitialSize,
-            MaxSize = _defaultTemplate.MaxSize,
-            EnableValidation = _defaultTemplate.EnableValidation,
-            EnableCollectionCheck = _defaultTemplate.EnableCollectionCheck,
-            AllowSyncCreation = _defaultTemplate.AllowSyncCreation,
-            OperationTimeout = _defaultTemplate.OperationTimeout,
-            EnableAutoShrink = _defaultTemplate.EnableAutoShrink,
-            CheckInterval = _defaultTemplate.CheckInterval,
-            IdleTimeout = _defaultTemplate.IdleTimeout,
-            KeepMinSize = _defaultTemplate.KeepMinSize,
-            ShrinkRatio = _defaultTemplate.ShrinkRatio,
-        };
+        public static AsakiPoolConfig Default =>
+            new AsakiPoolConfig
+            {
+                InitialSize = _defaultTemplate.InitialSize,
+                MaxSize = _defaultTemplate.MaxSize,
+                EnableValidation = _defaultTemplate.EnableValidation,
+                EnableCollectionCheck = _defaultTemplate.EnableCollectionCheck,
+                AllowSyncCreation = _defaultTemplate.AllowSyncCreation,
+                OperationTimeout = _defaultTemplate.OperationTimeout,
+                EnableAutoShrink = _defaultTemplate.EnableAutoShrink,
+                CheckInterval = _defaultTemplate.CheckInterval,
+                IdleTimeout = _defaultTemplate.IdleTimeout,
+                KeepMinSize = _defaultTemplate.KeepMinSize,
+                ShrinkRatio = _defaultTemplate.ShrinkRatio,
+            };
 
         /// <summary>
         /// 创建适用于 GameObject 的配置

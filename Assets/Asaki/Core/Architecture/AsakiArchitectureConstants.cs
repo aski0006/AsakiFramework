@@ -1,4 +1,4 @@
-namespace Asaki.Core.Architecture
+﻿namespace Asaki.Core.Architecture
 {
     public static class AsakiArchitectureConstants
     {

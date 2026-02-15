@@ -19,13 +19,13 @@ namespace Asaki.Core.Reactive
     /// <code>
     /// // 通过接口访问属性
     /// IAsakiPropertyBase property = new AsakiProperty&lt;int&gt;(10);
-    /// 
+    ///
     /// // 获取值类型
     /// Type valueType = property.ValueType; // typeof(int)
-    /// 
+    ///
     /// // 通过回调设置值
     /// property.InvokeCallback(20);
-    /// 
+    ///
     /// // 释放资源
     /// property.Dispose();
     /// </code>

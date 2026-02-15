@@ -37,13 +37,13 @@ namespace Asaki.Core.Architecture.Entities
             }
 
             int newId = Interlocked.Increment(ref _nextTypeId) - 1;
-            
+
             if (_typeIds.TryAdd(type, newId))
             {
                 _idToTypes[newId] = type;
                 return newId;
             }
-            
+
             return _typeIds[type];
         }
 

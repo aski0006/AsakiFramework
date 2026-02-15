@@ -1,7 +1,7 @@
 using Asaki.Core;
 using Asaki.Core.Attributes;
-using Asaki.Core.DataTable;
 using Asaki.Core.Context;
+using Asaki.Core.DataTable;
 using Asaki.Core.Logging;
 using UnityEngine;
 
@@ -71,7 +71,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test
         [ContextMenu("Queries")]
         public void Query()
         {
-            var weapon = AsakiContext.Get<IAsakiConfigService>().Get<AsakiWeaponDataTableExample>(0);
+            var weapon = AsakiContext
+                .Get<IAsakiConfigService>()
+                .Get<AsakiWeaponDataTableExample>(0);
             if (weapon != null)
             {
                 ALog.Info(weapon.WeaponAssetPath);

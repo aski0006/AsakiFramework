@@ -26,7 +26,11 @@ namespace Asaki.Core.Pooling.Factories
         /// <summary>
         /// 触发 OnDespawn 回调、停用 GameObject 并重置父节点
         /// </summary>
-        public static void OnReturn(GameObject obj, Transform parent = null, bool worldPositionStays = false)
+        public static void OnReturn(
+            GameObject obj,
+            Transform parent = null,
+            bool worldPositionStays = false
+        )
         {
             if (!obj)
                 return;
@@ -81,7 +85,8 @@ namespace Asaki.Core.Pooling.Factories
         /// <summary>
         /// 触发组件的 OnSpawn 回调
         /// </summary>
-        public static void InvokeOnSpawnForComponent<T>(T component) where T : Component
+        public static void InvokeOnSpawnForComponent<T>(T component)
+            where T : Component
         {
             if (!component)
                 return;
@@ -102,7 +107,8 @@ namespace Asaki.Core.Pooling.Factories
         /// <summary>
         /// 触发组件的 OnDespawn 回调
         /// </summary>
-        public static void InvokeOnDespawnForComponent<T>(T component) where T : Component
+        public static void InvokeOnDespawnForComponent<T>(T component)
+            where T : Component
         {
             if (!component)
                 return;

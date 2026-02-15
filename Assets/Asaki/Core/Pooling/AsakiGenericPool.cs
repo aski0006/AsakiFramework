@@ -544,13 +544,15 @@ namespace Asaki.Core.Pooling
                 }
             }
 
-            sortedObjects.Sort((a, b) =>
-            {
-                int timeComparison = a.lastUsedTime.CompareTo(b.lastUsedTime);
-                return timeComparison != 0
-                    ? timeComparison
-                    : a.sequenceNumber.CompareTo(b.sequenceNumber);
-            });
+            sortedObjects.Sort(
+                (a, b) =>
+                {
+                    int timeComparison = a.lastUsedTime.CompareTo(b.lastUsedTime);
+                    return timeComparison != 0
+                        ? timeComparison
+                        : a.sequenceNumber.CompareTo(b.sequenceNumber);
+                }
+            );
 
             return sortedObjects;
         }

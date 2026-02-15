@@ -45,7 +45,8 @@ namespace Asaki.Core.Broker
         public static void Subscribe<T>(IAsakiHandler<T> handler)
             where T : struct, IAsakiEvent
         {
-            if (handler == null) throw new System.ArgumentNullException(nameof(handler));
+            if (handler == null)
+                throw new System.ArgumentNullException(nameof(handler));
             GetOrRegisterBus().Subscribe(handler);
         }
 
@@ -61,7 +62,8 @@ namespace Asaki.Core.Broker
         public static void Unsubscribe<T>(IAsakiHandler<T> handler)
             where T : struct, IAsakiEvent
         {
-            if (handler == null) throw new System.ArgumentNullException(nameof(handler));
+            if (handler == null)
+                throw new System.ArgumentNullException(nameof(handler));
             // Unsubscribe 时如果 Bus 不存在，那肯定没订阅过，直接忽略即可
             if (AsakiContext.TryGet<IAsakiEventService>(out IAsakiEventService bus))
             {
