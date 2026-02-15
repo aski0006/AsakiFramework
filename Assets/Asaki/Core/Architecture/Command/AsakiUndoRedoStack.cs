@@ -89,33 +89,22 @@ namespace Asaki.Core.Architecture.Command
             if (stack.Count <= maxSize)
                 return;
 
-            int count = stack.Count;
-            if (_trimBuffer == null || _trimBuffer.Length < count)
+            int totalCount = stack.Count;
+            var tempList = new List<IAsakiUndoCommand>(totalCount);
+
+            while (stack.Count > 0)
             {
-                _trimBuffer = new IAsakiUndoCommand[count];
+                tempList.Add(stack.Pop());
             }
 
-            // Stack.CopyTo() 是从栈底（最旧）开始复制到数组索引 0
-            // _trimBuffer[0] = 最旧, _trimBuffer[count-1] = 最新（栈顶）
-            stack.CopyTo(_trimBuffer, 0);
-            stack.Clear();
-
-            // 保留最新的 maxSize 个命令（从数组末尾开始）
-            int startIndex = count - maxSize;
-            for (int i = startIndex; i < count; i++)
+            for (int i = maxSize; i < tempList.Count; i++)
             {
-                stack.Push(_trimBuffer[i]);
+                AsakiCommandPoolManager.Return(tempList[i]);
             }
 
-            // 归还多余的命令到对象池（最旧的那些，数组前面的）
-            for (int i = 0; i < startIndex; i++)
+            for (int i = maxSize - 1; i >= 0; i--)
             {
-                AsakiCommandPoolManager.Return(_trimBuffer[i]);
-            }
-
-            for (int i = 0; i < count; i++)
-            {
-                _trimBuffer[i] = null;
+                stack.Push(tempList[i]);
             }
         }
     }
