@@ -15,10 +15,14 @@ namespace Asaki.Core.Architecture.Entities
         public IEntityWorld World => _worldImpl;
 
         // 优化 1: 使用数组替代 Dictionary，利用 TypeId 直接索引
-        private IEntityComponent[] _componentsArray = new IEntityComponent[8];
+        private IEntityComponent[] _componentsArray = new IEntityComponent[
+            AsakiArchitectureConstants.DefaultEntityComponentArraySize
+        ];
 
         // 优化 2: 保持 BitArray 用于极速 HasComponent 检查
-        private BitArray _componentMask = new BitArray(8);
+        private BitArray _componentMask = new BitArray(
+            AsakiArchitectureConstants.DefaultEntityComponentArraySize
+        );
 
         private int _componentCount;
         private bool _isActive = true;
@@ -198,25 +202,27 @@ namespace Asaki.Core.Architecture.Entities
                 return;
             _isDisposed = true;
 
-            // 倒序删除更安全? 这里直接遍历即可
-            for (int i = 0; i < _componentsArray.Length; i++)
+            for (int typeId = 0; typeId < _componentsArray.Length; typeId++)
             {
-                var c = _componentsArray[i];
+                var c = _componentsArray[typeId];
                 if (c != null)
                 {
                     try
                     {
-                        // 通知 World 清理 Group 索引 (虽然 World.DestroyEntity 也会清理 Entity，
-                        // 但如果单纯调用 entity.Dispose，也需要保持一致性)
-                        _worldImpl.OnComponentRemoved(this, i);
+                        _worldImpl.OnComponentRemoved(this, typeId);
 
                         if (_isActive)
                             c.OnDisable();
                         c.OnDetach();
                         c.Dispose();
                     }
-                    catch { }
-                    _componentsArray[i] = null;
+                    catch (System.Exception ex)
+                    {
+                        Asaki.Core.Logging.ALog.Error(
+                            $"[Entity] Error disposing component {c.GetType().Name} on {Id}: {ex}"
+                        );
+                    }
+                    _componentsArray[typeId] = null;
                 }
             }
 

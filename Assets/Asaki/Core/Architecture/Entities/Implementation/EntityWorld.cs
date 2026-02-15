@@ -23,7 +23,7 @@ namespace Asaki.Core.Architecture.Entities
         private readonly Dictionary<int, HashSet<Entity>> _componentGroups = new Dictionary<
             int,
             HashSet<Entity>
-        >(64);
+        >(AsakiArchitectureConstants.DefaultComponentGroupsCapacity);
 
         public int EntityCount => _entities.Count;
 
@@ -122,7 +122,10 @@ namespace Asaki.Core.Architecture.Entities
             if (_componentGroups.TryGetValue(typeId, out var group))
             {
                 group.Remove(entity);
-                // 此时不删除空 HashSet 以减少 GC 抖动
+                if (group.Count == 0)
+                {
+                    _componentGroups.Remove(typeId);
+                }
             }
         }
 
@@ -191,7 +194,10 @@ namespace Asaki.Core.Architecture.Entities
                 {
                     e.Dispose();
                 }
-                catch { }
+                catch (System.Exception ex)
+                {
+                    ALog.Error($"[EntityWorld] Error disposing entity {e.Id}: {ex}");
+                }
             });
             _entities.Clear();
             _generations.Clear();

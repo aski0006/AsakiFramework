@@ -5,12 +5,16 @@ namespace Asaki.Core.Architecture.Command
 {
     public class AsakiUndoRedoStack
     {
-        private readonly Stack<IAsakiUndoCommand> _undoStack = new Stack<IAsakiUndoCommand>(64);
-        private readonly Stack<IAsakiUndoCommand> _redoStack = new Stack<IAsakiUndoCommand>(64);
+        private readonly Stack<IAsakiUndoCommand> _undoStack = new Stack<IAsakiUndoCommand>(
+            AsakiArchitectureConstants.DefaultUndoRedoStackCapacity
+        );
+        private readonly Stack<IAsakiUndoCommand> _redoStack = new Stack<IAsakiUndoCommand>(
+            AsakiArchitectureConstants.DefaultUndoRedoStackCapacity
+        );
 
         // 预分配数组用于 TrimStack，避免每次分配 List
         private IAsakiUndoCommand[] _trimBuffer;
-        private const int MAX_HISTORY = 100;
+        private readonly int _maxHistory = AsakiArchitectureConstants.DefaultUndoRedoMaxHistory;
 
         public bool CanUndo => _undoStack.Count > 0;
         public bool CanRedo => _redoStack.Count > 0;
@@ -31,7 +35,7 @@ namespace Asaki.Core.Architecture.Command
             _redoStack.Clear(); // 执行新命令后清空 Redo 栈
 
             // 限制栈大小（移除最旧的记录）
-            TrimStack(_undoStack, MAX_HISTORY);
+            TrimStack(_undoStack, _maxHistory);
         }
 
         public void Undo()
@@ -85,32 +89,30 @@ namespace Asaki.Core.Architecture.Command
             if (stack.Count <= maxSize)
                 return;
 
-            // 使用预分配数组或 ArrayPool 避免 GC 分配
             int count = stack.Count;
             if (_trimBuffer == null || _trimBuffer.Length < count)
             {
                 _trimBuffer = new IAsakiUndoCommand[count];
             }
 
-            // 将栈内容复制到数组（从栈顶到栈底）
+            // Stack.CopyTo() 是从栈底（最旧）开始复制到数组索引 0
+            // _trimBuffer[0] = 最旧, _trimBuffer[count-1] = 最新（栈顶）
             stack.CopyTo(_trimBuffer, 0);
             stack.Clear();
 
-            // 保留最新的 maxSize 个命令
-            // _trimBuffer[0] 是栈顶（最新），_trimBuffer[count-1] 是栈底（最旧）
+            // 保留最新的 maxSize 个命令（从数组末尾开始）
             int startIndex = count - maxSize;
             for (int i = startIndex; i < count; i++)
             {
                 stack.Push(_trimBuffer[i]);
             }
 
-            // 归还多余的命令到对象池（最旧的那些）
+            // 归还多余的命令到对象池（最旧的那些，数组前面的）
             for (int i = 0; i < startIndex; i++)
             {
                 AsakiCommandPoolManager.Return(_trimBuffer[i]);
             }
 
-            // 清理引用，避免内存泄漏
             for (int i = 0; i < count; i++)
             {
                 _trimBuffer[i] = null;
