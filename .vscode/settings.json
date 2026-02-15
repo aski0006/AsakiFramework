@@ -1,0 +1,95 @@
+{
+    "editorjumper.selectedIDE": "Rider",
+    "[csharp]": {
+        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+    },
+    "[xml]": {
+        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+    },
+    "editor.formatOnSave": true,
+    "editor.formatOnPaste": true,
+    "editor.formatOnType": true,
+    "csharpier.enableDebugLogs": false,
+    // ==================== C# Dev Kit 回退到 C# Extension ====================
+    // 关键设置：让 C# Dev Kit 把项目加载委托给传统 C# 扩展（OmniSharp）
+    "dotnet.preferCSharpExtension": true,
+    // ==================== 解决方案配置 ====================
+    // 默认解决方案路径
+    "dotnet.defaultSolution": "Asaki.sln",
+    // 启用项目选择
+    "dotnet.enableProjectSelection": true,
+    // ==================== 代码补全与格式化 ====================
+    // 显示未导入命名空间的补全项
+    "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
+    // 格式化时整理 using
+    "dotnet.formatting.organizeImportsOnFormat": true,
+    // ==================== CodeLens ====================
+    "dotnet.codeLens.enableReferencesCodeLens": true,
+    "dotnet.codeLens.enableTestsCodeLens": true,
+    // ==================== Hover / Quick Info ====================
+    "editor.hover.enabled": "on",
+    "editor.hover.delay": 300,
+    "editor.hover.sticky": true,
+    // C# Dev Kit 的悬停提示配置
+    "dotnet.hover.showSummary": true,
+    "dotnet.hover.showReturns": true,
+    "dotnet.hover.showExceptions": true,
+    "dotnet.hover.showExample": true,
+    "dotnet.hover.showParameters": true,
+    "dotnet.hover.showType": true,
+    // ==================== 调试配置 ====================
+    "csharp.debug.console": "internalConsole",
+    // ==================== 文件排除 - 资源管理器显示配置 ====================
+    "files.exclude": {
+        "**/.git": true,
+        "**/.DS_Store": true,
+        "**/Library": true,
+        "**/Temp": true,
+        "**/obj": true,
+        "**/Logs": true,
+        "**/UserSettings": true,
+        "**/Build": true,
+        "**/Builds": true,
+        "**/MemoryCaptures": true,
+        "**/UIElementsSchema": true,
+        "**/CodeGenerator": true,
+        "**/TestServer": true,
+        "**/.vs": true,
+        "**/.idea": true,
+        "**/*.csproj": true,
+        "**/*.sln": true,
+        "**/*.unityproj": true,
+        "**/*.csproj.user": true,
+        "**/*.sln.DotSettings": true,
+        "**/*.sln.DotSettings.user": true,
+        "**/*.user": true,
+        "**/*.userprefs": true,
+        "**/*.suo": true,
+        "**/*.pidb": true,
+        "**/*.booproj": true,
+        "**/*.svd": true,
+        "**/*.mdb": true,
+        "**/*.opendb": true,
+        "**/*.VC.db": true
+    },
+    // ==================== 搜索排除 ====================
+    "search.exclude": {
+        "**/Library": true,
+        "**/Temp": true,
+        "**/obj": true,
+        "**/Logs": true,
+        "**/UserSettings": true,
+        "**/Build": true,
+        "**/Builds": true,
+        "**/MemoryCaptures": true,
+        "**/UIElementsSchema": true,
+        "**/CodeGenerator": true,
+        "**/TestServer": true
+    },
+    // ==================== 资源管理器配置 ====================
+    "explorer.compactFolders": false,
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false,
+    "window.autoDetectColorScheme": true,
+    "window.density.editorTabHeight": "compact"
+}

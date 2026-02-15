@@ -101,7 +101,12 @@ crashlytics-build.properties
 
 # Visual Studio
 .vs/
-.vscode/
+# .vscode/ - 保留重要的配置文件，只忽略临时文件
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 # JetBrains Rider
 .idea/

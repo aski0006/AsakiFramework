@@ -1,0 +1,37 @@
+{
+    "recommendations": [
+        // C# 开发核心扩展
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        
+        // Unity 支持
+        "visualstudiotoolsforunity.vstuc",
+        
+        // 代码格式化
+        "csharpier.csharpier-vscode",
+        
+        // 代码分析
+        "ms-dotnettools.csdevkit",
+        
+        // 辅助工具
+        "josefpihrt-vscode.roslynator",
+        "k--kato.docomment",
+        "adrianwilczynski.namespace",
+        
+        // 代码片段
+        "jorgeserrano.vscode-csharp-snippets",
+        
+        // 文档工具
+        "docsmsft.docs-preview",
+        
+        // Git 工具
+        "eamodio.gitlens",
+        
+        // 拼写检查
+        "streetsidesoftware.code-spell-checker"
+    ],
+    "unwantedRecommendations": [
+        // 避免与 OmniSharp 冲突的扩展
+        "ms-vscode.cpptools-extension-pack"
+    ]
+}
