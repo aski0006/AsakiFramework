@@ -35,4 +35,16 @@ namespace Asaki.Core.Scene
             ErrorMessage = error;
         }
     }
+
+    public readonly struct AsakiActiveSceneChangedEvent : IAsakiEvent
+    {
+        public readonly string PreviousSceneName;
+        public readonly string NewSceneName;
+
+        public AsakiActiveSceneChangedEvent(string previousSceneName, string newSceneName)
+        {
+            PreviousSceneName = previousSceneName;
+            NewSceneName = newSceneName;
+        }
+    }
 }

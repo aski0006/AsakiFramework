@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
@@ -25,9 +26,10 @@ namespace Asaki.Unity.Bootstrapper
         [SerializeField]
         private MonoBehaviour[] _manualTargets;
 
-        [Header("Global MonoBehaviour Services")]
+        [Header("Global Service Prefabs")]
+        [Tooltip("全局服务预制体列表，框架启动时自动实例化并注册所有 IAsakiGlobalService 组件")]
         [SerializeField]
-        private MonoBehaviour[] _globalBehaviourServices;
+        private GameObject[] _globalServicePrefabs;
 
         [Header("DataTable")]
         [SerializeField]
@@ -36,6 +38,8 @@ namespace Asaki.Unity.Bootstrapper
         private static AsakiBootstrapper _instance;
         private static bool _isReady;
         private IAsakiLoggingService _logService;
+        private readonly List<GameObject> _instantiatedServiceObjects = new();
+        private readonly List<IAsakiGlobalService> _allGlobalServices = new();
 
         public static bool IsReady => _isReady;
 
@@ -53,7 +57,7 @@ namespace Asaki.Unity.Bootstrapper
             if (frameworkSetting == null)
                 frameworkSetting = LoadConfigAsset();
 
-            AsakiContext.ClearAll(); // 或者是 Reset
+            AsakiContext.ClearAll();
             Application.targetFrameRate = frameworkSetting ? frameworkSetting.TickRate : 60;
 
             _logService = new AsakiLoggingService();
@@ -66,7 +70,9 @@ namespace Asaki.Unity.Bootstrapper
 
             if (frameworkSetting != null)
                 AsakiContext.Register(frameworkSetting);
-            RegisterGlobalBehaviourServices();
+
+            InstantiateGlobalServicePrefabs();
+            CollectAndRegisterGlobalServices();
         }
 
         private AsakiFrameworkSetting LoadConfigAsset()
@@ -97,7 +103,7 @@ namespace Asaki.Unity.Bootstrapper
 
                 AsakiContext.Freeze();
 
-                InitializeGlobalBehaviourServices();
+                InitializeGlobalServices();
                 RegisterSceneLoadEvents();
 
                 // 初始场景注入：只处理手动目标，AsakiMono 会自动注册
@@ -114,16 +120,42 @@ namespace Asaki.Unity.Bootstrapper
             }
         }
 
-        private void RegisterGlobalBehaviourServices()
+        private void InstantiateGlobalServicePrefabs()
         {
-            if (_globalBehaviourServices == null)
+            if (_globalServicePrefabs == null || _globalServicePrefabs.Length == 0)
                 return;
-            foreach (MonoBehaviour behaviour in _globalBehaviourServices)
+
+            foreach (GameObject prefab in _globalServicePrefabs)
             {
-                if (behaviour is not IAsakiGlobalService service)
+                if (prefab == null)
                     continue;
+
+                var instance = Instantiate(prefab, transform);
+                instance.name = prefab.name;
+                _instantiatedServiceObjects.Add(instance);
+                ALog.Info($"[AsakiBootstrapper] Instantiated global service prefab: {prefab.name}");
+            }
+        }
+
+        private void CollectAndRegisterGlobalServices()
+        {
+            _allGlobalServices.Clear();
+
+            foreach (var obj in _instantiatedServiceObjects)
+            {
+                if (!obj)
+                    continue;
+                CollectGlobalServicesRecursive(obj.transform, _allGlobalServices);
+            }
+
+            foreach (var service in _allGlobalServices)
+            {
+                if (service is not MonoBehaviour behaviour)
+                    continue;
+
                 Type type = behaviour.GetType();
                 AsakiContext.Register(type, service);
+
                 foreach (Type i in type.GetInterfaces())
                 {
                     if (
@@ -136,19 +168,34 @@ namespace Asaki.Unity.Bootstrapper
                     }
                 }
             }
+
+            ALog.Info($"[AsakiBootstrapper] Registered {_allGlobalServices.Count} global services");
         }
 
-        private void InitializeGlobalBehaviourServices()
+        private void CollectGlobalServicesRecursive(
+            Transform parent,
+            List<IAsakiGlobalService> results
+        )
         {
-            if (_globalBehaviourServices == null)
-                return;
-            foreach (MonoBehaviour behaviour in _globalBehaviourServices)
+            var services = parent.GetComponents<IAsakiGlobalService>();
+            foreach (var service in services)
             {
-                if (behaviour is IAsakiGlobalService service)
-                {
-                    AsakiGlobalInjector.Inject(service);
-                    service.OnBootstrapInit();
-                }
+                if (service != null)
+                    results.Add(service);
+            }
+
+            foreach (Transform child in parent)
+            {
+                CollectGlobalServicesRecursive(child, results);
+            }
+        }
+
+        private void InitializeGlobalServices()
+        {
+            foreach (var service in _allGlobalServices)
+            {
+                AsakiGlobalInjector.Inject(service);
+                service.OnBootstrapInit();
             }
         }
 
@@ -176,7 +223,7 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InjectSceneManual(Scene scene)
         {
-            // 查找场景 Context
+            // 查找场景 Context 并构建（始终执行，与是否有手动注入目标无关）
             IAsakiResolver resolver = AsakiGlobalResolver.Instance;
             var rootObjects = scene.GetRootGameObjects();
             foreach (var root in rootObjects)
@@ -190,6 +237,7 @@ namespace Asaki.Unity.Bootstrapper
                 }
             }
 
+            // 只在有手动注入目标时才执行注入
             if (_manualTargets == null || _manualTargets.Length == 0)
                 return;
 

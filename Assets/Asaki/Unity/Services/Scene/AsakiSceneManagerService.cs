@@ -197,6 +197,7 @@ namespace Asaki.Unity.Services.Scene
             CancellationToken token
         )
         {
+            string previousSceneName = SceneManager.GetActiveScene().name;
             _asakiEventService.Publish(
                 new AsakiSceneStateEvent(targetScene, AsakiSceneStateEvent.State.Started)
             );
@@ -287,6 +288,12 @@ namespace Asaki.Unity.Services.Scene
                 _asakiEventService.Publish(
                     new AsakiSceneStateEvent(targetScene, AsakiSceneStateEvent.State.Completed)
                 );
+                if (mode == AsakiLoadSceneMode.Single)
+                {
+                    _asakiEventService.Publish(
+                        new AsakiActiveSceneChangedEvent(previousSceneName, targetScene)
+                    );
+                }
                 return AsakiSceneResult.Ok(targetScene);
             }
             catch (Exception e)
