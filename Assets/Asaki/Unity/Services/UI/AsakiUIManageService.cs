@@ -504,7 +504,7 @@ namespace Asaki.Unity.Services.UI
             while (_navigationStack.Count > 0)
             {
                 var window = _navigationStack.Pop();
-                if (window is AsakiUIWindow uiWindow && uiWindow != null)
+                if (window is AsakiUIWindow uiWindow && uiWindow != null && !uiWindow.Equals(null))
                 {
                     uiWindow.DisposeImmediately();
                 }
@@ -513,7 +513,7 @@ namespace Asaki.Unity.Services.UI
 
             while (_pendingDestroyQueue.TryDequeue(out var window))
             {
-                if (window is AsakiUIWindow uiWindow && uiWindow != null)
+                if (window is AsakiUIWindow uiWindow && uiWindow != null && !uiWindow.Equals(null))
                 {
                     uiWindow.DisposeImmediately();
                 }
@@ -537,14 +537,17 @@ namespace Asaki.Unity.Services.UI
             _windowInstanceMap.Clear();
             _typeToIdCache.Clear();
 
-            _inputBlocker?.Reset();
+            if (_inputBlocker != null)
+            {
+                _inputBlocker.Reset();
+            }
 
             if (_simulationService != null)
             {
                 _simulationService.Unregister(this);
             }
 
-            if (_uiRoot != null)
+            if (_uiRoot != null && !_uiRoot.Equals(null))
             {
                 Object.Destroy(_uiRoot.gameObject);
                 _uiRoot = null;

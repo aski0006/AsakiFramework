@@ -176,9 +176,6 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InjectSceneManual(Scene scene)
         {
-            if (_manualTargets == null || _manualTargets.Length == 0)
-                return;
-
             // 查找场景 Context
             IAsakiResolver resolver = AsakiGlobalResolver.Instance;
             var rootObjects = scene.GetRootGameObjects();
@@ -192,6 +189,9 @@ namespace Asaki.Unity.Bootstrapper
                     break;
                 }
             }
+
+            if (_manualTargets == null || _manualTargets.Length == 0)
+                return;
 
             int count = 0;
             foreach (MonoBehaviour target in _manualTargets)

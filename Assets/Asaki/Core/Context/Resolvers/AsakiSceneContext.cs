@@ -44,6 +44,8 @@ namespace Asaki.Core.Context.Resolvers
         private readonly List<IAsakiInit> _pendingInitServices = new List<IAsakiInit>();
         private bool _isBuilt = false;
 
+        public bool IsBuilt => _isBuilt;
+
 #if UNITY_EDITOR
         public Dictionary<Type, IAsakiService> GetRuntimeServices()
         {

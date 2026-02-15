@@ -58,7 +58,10 @@ namespace Asaki.Unity.Services.UI
         public void Reset()
         {
             _activePopupCount = 0;
-            _uiRoot?.SetLayerRaycast(AsakiUILayer.Normal, true);
+            if (_uiRoot != null && !_uiRoot.Equals(null))
+            {
+                _uiRoot.SetLayerRaycast(AsakiUILayer.Normal, true);
+            }
         }
     }
 }

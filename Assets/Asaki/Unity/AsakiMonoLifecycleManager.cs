@@ -206,10 +206,27 @@ namespace Asaki.Unity
 
         private IAsakiResolver GetResolverForComponent(AsakiMono component)
         {
-            // 简单查找，可进一步优化缓存
             var context = component.GetComponentInParent<AsakiSceneContext>();
             if (context)
+            {
+                if (!context.IsBuilt)
+                    context.Build();
                 return context;
+            }
+
+            var scene = component.gameObject.scene;
+            var rootObjects = scene.GetRootGameObjects();
+            foreach (var root in rootObjects)
+            {
+                var ctx = root.GetComponentInChildren<AsakiSceneContext>(true);
+                if (ctx != null)
+                {
+                    if (!ctx.IsBuilt)
+                        ctx.Build();
+                    return ctx;
+                }
+            }
+
             return AsakiGlobalResolver.Instance;
         }
     }

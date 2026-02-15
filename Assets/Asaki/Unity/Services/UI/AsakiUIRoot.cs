@@ -106,8 +106,11 @@ namespace Asaki.Unity.Services.UI
         {
             if (_layerRaycasters.TryGetValue(layer, out GraphicRaycaster raycaster))
             {
-                if (raycaster.enabled != enable)
-                    raycaster.enabled = enable;
+                if (raycaster != null && !raycaster.Equals(null))
+                {
+                    if (raycaster.enabled != enable)
+                        raycaster.enabled = enable;
+                }
             }
         }
 
