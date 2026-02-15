@@ -1,5 +1,6 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Asaki.Core.Architecture.Entities
 {
@@ -8,10 +9,9 @@ namespace Asaki.Core.Architecture.Entities
     /// </summary>
     public static class ComponentTypeRegistry
     {
-        private static readonly Dictionary<Type, int> _typeIds = new();
-        private static readonly Dictionary<int, Type> _idToTypes = new();
+        private static readonly ConcurrentDictionary<Type, int> _typeIds = new();
+        private static readonly ConcurrentDictionary<int, Type> _idToTypes = new();
         private static int _nextTypeId = 0;
-        private static readonly object _lock = new();
 
         /// <summary>
         /// 获取组件类型的ID
@@ -31,19 +31,20 @@ namespace Asaki.Core.Architecture.Entities
         /// <returns>类型ID</returns>
         public static int GetTypeId(Type type)
         {
-            if (!_typeIds.TryGetValue(type, out int id))
+            if (_typeIds.TryGetValue(type, out int id))
             {
-                lock (_lock)
-                {
-                    if (!_typeIds.TryGetValue(type, out id))
-                    {
-                        id = _nextTypeId++;
-                        _typeIds[type] = id;
-                        _idToTypes[id] = type;
-                    }
-                }
+                return id;
             }
-            return id;
+
+            int newId = Interlocked.Increment(ref _nextTypeId) - 1;
+            
+            if (_typeIds.TryAdd(type, newId))
+            {
+                _idToTypes[newId] = type;
+                return newId;
+            }
+            
+            return _typeIds[type];
         }
 
         /// <summary>
@@ -67,12 +68,9 @@ namespace Asaki.Core.Architecture.Entities
         /// </summary>
         internal static void Clear()
         {
-            lock (_lock)
-            {
-                _typeIds.Clear();
-                _idToTypes.Clear();
-                _nextTypeId = 0;
-            }
+            _typeIds.Clear();
+            _idToTypes.Clear();
+            Volatile.Write(ref _nextTypeId, 0);
         }
     }
 }
