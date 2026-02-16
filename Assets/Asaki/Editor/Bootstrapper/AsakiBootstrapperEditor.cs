@@ -9,13 +9,10 @@ using UnityEngine.SceneManagement;
 
 namespace Asaki.Editor.Bootstrapper
 {
-    /// <summary>
-    /// AsakiBootstrapper 编辑器工具
-    /// 提供场景验证、自动修复、配置资源管理等功能
-    /// </summary>
     public static class AsakiBootstrapperEditor
     {
         private const string CONFIG_PATH = "Assets/Resources/AsakiFrameworkSetting.asset";
+        private const string REGISTRY_PATH = "Assets/Resources/GlobalServiceRegistry.asset";
         private const string BOOTSTRAPPER_GO_NAME = "[AsakiBootstrapper]";
 
         // ===================================================================
@@ -170,6 +167,7 @@ namespace Asaki.Editor.Bootstrapper
             public bool IsValid;
             public bool HasBootstrapper;
             public bool HasConfig;
+            public bool HasServiceRegistry;
             public bool HasSceneContext;
             public string ErrorMessage;
 
@@ -182,6 +180,9 @@ namespace Asaki.Editor.Bootstrapper
                 if (!HasConfig)
                     sb.AppendLine("- 缺少 AsakiFrameworkSetting 资源（必须）");
 
+                if (!HasServiceRegistry)
+                    sb.AppendLine("- 缺少 GlobalServiceRegistry 资源（建议）");
+
                 return sb.ToString();
             }
         }
@@ -192,10 +193,10 @@ namespace Asaki.Editor.Bootstrapper
             {
                 HasBootstrapper = Object.FindFirstObjectByType<AsakiBootstrapper>() != null,
                 HasConfig = GetConfigAsset() != null,
+                HasServiceRegistry = GetServiceRegistryAsset() != null,
                 HasSceneContext = Object.FindFirstObjectByType<AsakiSceneContext>() != null,
             };
 
-            // 运行时只需要 Config 存在，Bootstrapper 可以自动创建
             result.IsValid = result.HasConfig;
 
             return result;
@@ -210,6 +211,16 @@ namespace Asaki.Editor.Bootstrapper
             if (!result.HasConfig)
             {
                 GetOrCreateConfigAsset();
+            }
+
+            if (!result.HasServiceRegistry)
+            {
+                var registry = GetOrCreateServiceRegistryAsset();
+                var config = GetConfigAsset();
+                if (config != null && registry != null)
+                {
+                    LinkRegistryToConfig(config, registry);
+                }
             }
 
             EditorUtility.DisplayDialog(
@@ -285,6 +296,61 @@ namespace Asaki.Editor.Bootstrapper
                 );
                 GetOrCreateConfigAsset();
             }
+        }
+
+        public static GlobalServiceRegistry GetOrCreateServiceRegistryAsset()
+        {
+            var registry = GetServiceRegistryAsset();
+            if (registry != null)
+                return registry;
+
+            if (!Directory.Exists("Assets/Resources"))
+            {
+                Directory.CreateDirectory("Assets/Resources");
+            }
+
+            registry = ScriptableObject.CreateInstance<GlobalServiceRegistry>();
+            AssetDatabase.CreateAsset(registry, REGISTRY_PATH);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"[AsakiBootstrapperEditor] Created service registry at: {REGISTRY_PATH}");
+            return registry;
+        }
+
+        public static GlobalServiceRegistry GetServiceRegistryAsset()
+        {
+            var registry = Resources.Load<GlobalServiceRegistry>("GlobalServiceRegistry");
+            if (registry != null)
+                return registry;
+
+            string[] guids = AssetDatabase.FindAssets("t:GlobalServiceRegistry");
+            if (guids.Length > 0)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
+                return AssetDatabase.LoadAssetAtPath<GlobalServiceRegistry>(path);
+            }
+
+            return null;
+        }
+
+        public static void LinkRegistryToConfig(
+            AsakiFrameworkSetting config,
+            GlobalServiceRegistry registry
+        )
+        {
+            if (config == null || registry == null)
+                return;
+
+            var serializedConfig = new SerializedObject(config);
+            var registryProp = serializedConfig.FindProperty("_globalServiceRegistry");
+            registryProp.objectReferenceValue = registry;
+            serializedConfig.ApplyModifiedProperties();
+            EditorUtility.SetDirty(config);
+
+            Debug.Log(
+                $"[AsakiBootstrapperEditor] Linked GlobalServiceRegistry to AsakiFrameworkSetting"
+            );
         }
     }
 }

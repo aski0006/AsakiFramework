@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
 using Asaki.Core.Network;
@@ -23,7 +24,17 @@ namespace Asaki.Core.FrameworkSettings
         public int DefaultPoolSize => defaultPoolSize;
 
         // =========================================================
-        // 2. Module Configurations (Embedded POCOs)
+        // 2. Global Service Registry
+        // =========================================================
+
+        [Header("Global Services")]
+        [Tooltip("全局服务注册表，管理所有全局服务预制体的配置")]
+        [SerializeField]
+        private GlobalServiceRegistry _globalServiceRegistry;
+        public GlobalServiceRegistry GlobalServiceRegistry => _globalServiceRegistry;
+
+        // =========================================================
+        // 3. Module Configurations (Embedded POCOs)
         // =========================================================
 
         [Header("Modules: Logging")]
@@ -33,7 +44,7 @@ namespace Asaki.Core.FrameworkSettings
 
         [Header("Modules: Resources")]
         [SerializeField]
-        private AsakiResConfig resConfig = new AsakiResConfig(); // 可以在字段上直接初始化默认值
+        private AsakiResConfig resConfig = new AsakiResConfig();
         public AsakiResConfig ResConfig => resConfig;
 
         [Header("Modules: Audio")]
@@ -57,14 +68,22 @@ namespace Asaki.Core.FrameworkSettings
         public AsakiSaveConfig SaveConfig => saveConfig;
 
         // =========================================================
-        // 3. Runtime Initialization
+        // 4. Runtime Initialization
         // =========================================================
 
-        // 可选：在运行时初始化字典等缓存结构
         public void InitializeRuntimeData()
         {
             uiConfig.InitializeLookup();
             audioConfig.InitializeLookup();
+        }
+
+        public List<GameObject> GetGlobalServicePrefabs()
+        {
+            if (_globalServiceRegistry != null)
+            {
+                return _globalServiceRegistry.GetEnabledPrefabs();
+            }
+            return new List<GameObject>();
         }
     }
 }

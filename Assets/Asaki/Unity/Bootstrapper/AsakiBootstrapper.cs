@@ -26,12 +26,13 @@ namespace Asaki.Unity.Bootstrapper
         [SerializeField]
         private MonoBehaviour[] _manualTargets;
 
-        [Header("Global Service Prefabs")]
-        [Tooltip("全局服务预制体列表，框架启动时自动实例化并注册所有 IAsakiGlobalService 组件")]
+        [Header("Global Service Prefabs (Legacy)")]
+        [Tooltip("[已弃用] 请使用 AsakiFrameworkSetting 中的 GlobalServiceRegistry 配置全局服务")]
         [SerializeField]
+        [Obsolete("Use GlobalServiceRegistry in AsakiFrameworkSetting instead")]
         private GameObject[] _globalServicePrefabs;
 
-        [Header("DataTable")]
+        [Header("Framework Setting")]
         [SerializeField]
         private AsakiFrameworkSetting frameworkSetting;
 
@@ -122,10 +123,12 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InstantiateGlobalServicePrefabs()
         {
-            if (_globalServicePrefabs == null || _globalServicePrefabs.Length == 0)
+            List<GameObject> prefabsToInstantiate = GetGlobalServicePrefabs();
+
+            if (prefabsToInstantiate == null || prefabsToInstantiate.Count == 0)
                 return;
 
-            foreach (GameObject prefab in _globalServicePrefabs)
+            foreach (GameObject prefab in prefabsToInstantiate)
             {
                 if (prefab == null)
                     continue;
@@ -135,6 +138,26 @@ namespace Asaki.Unity.Bootstrapper
                 _instantiatedServiceObjects.Add(instance);
                 ALog.Info($"[AsakiBootstrapper] Instantiated global service prefab: {prefab.name}");
             }
+        }
+
+        private List<GameObject> GetGlobalServicePrefabs()
+        {
+            if (frameworkSetting != null && frameworkSetting.GlobalServiceRegistry != null)
+            {
+                return frameworkSetting.GetGlobalServicePrefabs();
+            }
+
+#pragma warning disable CS0618
+            if (_globalServicePrefabs is { Length: > 0 })
+            {
+                ALog.Warn(
+                    "[AsakiBootstrapper] Using legacy _globalServicePrefabs field. Consider migrating to GlobalServiceRegistry."
+                );
+                return new List<GameObject>(_globalServicePrefabs);
+            }
+#pragma warning restore CS0618
+
+            return new List<GameObject>();
         }
 
         private void CollectAndRegisterGlobalServices()

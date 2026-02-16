@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Core.FrameworkSettings;
+using Asaki.Editor.FrameworkSettings;
 using Asaki.Editor.Utilities.Tools;
 using Asaki.Unity.Bootstrapper;
 using UnityEditor;
@@ -10,19 +11,17 @@ using UnityEngine.SceneManagement;
 
 namespace Asaki.Editor.Bootstrapper
 {
-    /// <summary>
-    /// Asaki Bootstrapper 配置窗口
-    /// 提供可视化的框架配置管理界面
-    /// </summary>
     public class AsakiBootstrapperWindow : EditorWindow
     {
         private Vector2 _scrollPosition;
         private AsakiBootstrapper _bootstrapper;
         private AsakiFrameworkSetting _frameworkSetting;
+        private GlobalServiceRegistry _serviceRegistry;
         private AsakiSceneContext _sceneContext;
 
         private bool _showBootstrapperSection = true;
         private bool _showConfigSection = true;
+        private bool _showServiceRegistrySection = true;
         private bool _showSceneContextSection = true;
         private bool _showValidationSection = true;
 
@@ -71,6 +70,7 @@ namespace Asaki.Editor.Bootstrapper
         {
             _bootstrapper = FindFirstObjectByType<AsakiBootstrapper>();
             _frameworkSetting = AsakiBootstrapperEditor.GetConfigAsset();
+            _serviceRegistry = AsakiBootstrapperEditor.GetServiceRegistryAsset();
             _sceneContext = FindFirstObjectByType<AsakiSceneContext>();
         }
 
@@ -158,6 +158,19 @@ namespace Asaki.Editor.Bootstrapper
 
             GUILayout.Space(10);
 
+            // Service Registry 部分
+            _showServiceRegistrySection = EditorGUILayout.Foldout(
+                _showServiceRegistrySection,
+                "🌐 全局服务注册表 (GlobalServiceRegistry)",
+                true
+            );
+            if (_showServiceRegistrySection)
+            {
+                DrawServiceRegistrySection();
+            }
+
+            GUILayout.Space(10);
+
             // Scene Context 部分
             _showSceneContextSection = EditorGUILayout.Foldout(
                 _showSceneContextSection,
@@ -225,6 +238,11 @@ namespace Asaki.Editor.Bootstrapper
 
             // 详细状态
             DrawStatusItem("AsakiFrameworkSetting 资源", result.HasConfig);
+            DrawStatusItem(
+                "GlobalServiceRegistry 资源",
+                result.HasServiceRegistry,
+                !result.HasServiceRegistry
+            );
             DrawStatusItem("Bootstrapper", result.HasBootstrapper, !result.HasBootstrapper);
             DrawStatusItem("SceneContext", result.HasSceneContext, false);
 
@@ -340,6 +358,69 @@ namespace Asaki.Editor.Bootstrapper
                 if (GUILayout.Button("创建 Config Asset", GUILayout.Height(30)))
                 {
                     AsakiBootstrapperEditor.CreateConfigAsset();
+                    RefreshState();
+                }
+            }
+
+            EditorGUILayout.EndVertical();
+        }
+
+        private void DrawServiceRegistrySection()
+        {
+            EditorGUILayout.BeginVertical(_boxStyle);
+
+            if (_serviceRegistry != null)
+            {
+                GUILayout.Label("状态：已存在", _successStyle);
+                EditorGUILayout.ObjectField(
+                    "Service Registry",
+                    _serviceRegistry,
+                    typeof(GlobalServiceRegistry),
+                    false
+                );
+
+                GUILayout.Space(5);
+
+                EditorGUILayout.LabelField($"服务数量: {_serviceRegistry.Count}");
+
+                int enabledCount = 0;
+                foreach (var entry in _serviceRegistry.ServiceEntries)
+                {
+                    if (entry.Enabled)
+                        enabledCount++;
+                }
+                EditorGUILayout.LabelField($"已启用: {enabledCount}");
+
+                GUILayout.Space(10);
+
+                if (GUILayout.Button("选中 Registry"))
+                {
+                    Selection.activeObject = _serviceRegistry;
+                }
+
+                if (GUILayout.Button("打开服务编辑窗口", GUILayout.Height(28)))
+                {
+                    GlobalServiceRegistryWindow.ShowWindow();
+                }
+            }
+            else
+            {
+                GUILayout.Label("状态：未创建", _warningStyle);
+                GUILayout.Label(
+                    "GlobalServiceRegistry 用于管理全局服务预制体的配置。\n"
+                        + "通过它可以在不同场景中使用相同的全局服务配置。",
+                    EditorStyles.wordWrappedLabel
+                );
+
+                GUILayout.Space(10);
+
+                if (GUILayout.Button("创建 Service Registry", GUILayout.Height(30)))
+                {
+                    var registry = AsakiBootstrapperEditor.GetOrCreateServiceRegistryAsset();
+                    if (_frameworkSetting != null)
+                    {
+                        AsakiBootstrapperEditor.LinkRegistryToConfig(_frameworkSetting, registry);
+                    }
                     RefreshState();
                 }
             }
