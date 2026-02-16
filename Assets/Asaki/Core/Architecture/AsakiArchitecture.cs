@@ -147,18 +147,13 @@ namespace Asaki.Core.Architecture
         {
             if (_simulationService == null)
                 return;
-            switch (system)
-            {
-                case IAsakiTickable tickable:
-                    _simulationService.Register(tickable);
-                    break;
-                case IAsakiLateTickable lateTickable:
-                    _simulationService.Register(lateTickable);
-                    break;
-                case IAsakiFixedTickable fixedTickable:
-                    _simulationService.Register(fixedTickable);
-                    break;
-            }
+
+            if (system is IAsakiTickable tickable)
+                _simulationService.Register(tickable);
+            if (system is IAsakiLateTickable lateTickable)
+                _simulationService.Register(lateTickable);
+            if (system is IAsakiFixedTickable fixedTickable)
+                _simulationService.Register(fixedTickable);
         }
 
         private void UnbindSimulation(IAsakiSystem system)
@@ -166,18 +161,12 @@ namespace Asaki.Core.Architecture
             if (_simulationService == null)
                 return;
 
-            switch (system)
-            {
-                case IAsakiTickable tickable:
-                    _simulationService.Unregister(tickable);
-                    break;
-                case IAsakiFixedTickable fixedTickable:
-                    _simulationService.Unregister(fixedTickable);
-                    break;
-                case IAsakiLateTickable lateTickable:
-                    _simulationService.Unregister(lateTickable);
-                    break;
-            }
+            if (system is IAsakiTickable tickable)
+                _simulationService.Unregister(tickable);
+            if (system is IAsakiFixedTickable fixedTickable)
+                _simulationService.Unregister(fixedTickable);
+            if (system is IAsakiLateTickable lateTickable)
+                _simulationService.Unregister(lateTickable);
         }
     }
 }

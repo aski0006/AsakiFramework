@@ -2,6 +2,13 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.2] - 2025-02-17
+
+### Fixed
+- Fixed simulation registration bug where a System could only register to one simulation interface
+  - Changed `switch` to independent `if` statements in `BindSimulation()` and `UnbindSimulation()`
+  - Now supports Systems implementing multiple interfaces: `IAsakiTickable`, `IAsakiLateTickable`, `IAsakiFixedTickable`
+
 ## [1.3.1] - 2025-02-17
 
 ### Added
