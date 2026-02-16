@@ -509,7 +509,7 @@ MonoBehaviour:
   _handleManualInjection: 1
   _manualTargets: []
   _globalServicePrefabs: []
-  frameworkSetting: {fileID: 11400000, guid: 6018a50383e7b8540a5cbb5227dd211c, type: 2}
+  frameworkSetting: {fileID: 0}
 --- !u!4 &1453499290
 Transform:
   m_ObjectHideFlags: 0
