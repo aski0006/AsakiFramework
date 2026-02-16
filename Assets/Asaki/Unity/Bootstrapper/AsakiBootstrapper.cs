@@ -215,9 +215,15 @@ namespace Asaki.Unity.Bootstrapper
 
         private void InitializeGlobalServices()
         {
+            ALog.Info("== [GlobalServices] Phase 1: Dependency Injection ==");
             foreach (var service in _allGlobalServices)
             {
                 AsakiGlobalInjector.Inject(service);
+            }
+
+            ALog.Info("== [GlobalServices] Phase 2: Bootstrap Initialization ==");
+            foreach (var service in _allGlobalServices)
+            {
                 service.OnBootstrapInit();
             }
         }
