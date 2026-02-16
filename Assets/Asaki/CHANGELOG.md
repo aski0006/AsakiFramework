@@ -2,6 +2,26 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.1] - 2025-02-17
+
+### Added
+- **IAsakiInject Interface** - Extended generic parameter support from 5 to 10 arguments
+  - `IAsakiInject<T1..T10>` interfaces for flexible dependency injection
+  - `AsakiInjectFactory` with 20 `Instantiate` method overloads
+- **Auto Dependency Injection** - Systems and Models now auto-inject dependencies before `Setup()`/`Create()`
+  - `AsakiGlobalInjector.Inject()` called automatically in `AsakiArchitecture.Init()`
+
+### Changed
+- **Breaking Change**: Renamed `IAsakiInit` → `IAsakiInject` for semantic clarity
+- **Breaking Change**: Renamed method `Init()` → `Inject()` in dependency injection interfaces
+- **Breaking Change**: Renamed `AsakiInitFactory` → `AsakiInjectFactory`
+- Moved `AsakiGlobalInjector` from `Asaki.Unity.Bootstrapper` to `Asaki.Core.Context` namespace
+- Updated Roslyn generator to use new `Asaki.Core.Context.AsakiGlobalInjector` namespace
+
+### Fixed
+- Fixed assembly reference issue where Core could not reference Unity assembly
+- Fixed dependency injection timing - `[AsakiInject]` methods now execute before `Setup()`
+
 ## [1.3.0] - 2025-02-16
 
 ### Added
