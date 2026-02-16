@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Asaki.Core.Attributes;
 using Asaki.Core.Logging;
 using UnityEngine;
@@ -11,8 +10,8 @@ namespace Asaki.Core.Context.Resolvers
     /// Asaki场景上下文组件，用于管理场景级别的服务和依赖注入。
     /// </summary>
     /// <remarks>
-    /// [v2.0 修复] 采用两阶段初始化：
-    /// 1. Awake: 仅注册服务到字典，不调用 Init。
+    /// [v3.0 重构] 采用预制体服务注册模式：
+    /// 1. Awake: 实例化预制体 → 扫描服务 → 注册服务
     /// 2. Build: 由 Bootstrapper 在全局环境就绪后显式调用，执行 Init。
     /// </remarks>
     [DefaultExecutionOrder(-100)]
@@ -28,10 +27,14 @@ namespace Asaki.Core.Context.Resolvers
         [AsakiInterface(typeof(IAsakiSceneService))]
         private List<IAsakiSceneService> _pureCSharpServices = new List<IAsakiSceneService>();
 
-        [Header("MonoBehaviour Services")]
-        [Tooltip("MonoBehaviour 场景服务（通过 Unity 原生引用）")]
+        [Header("Scene Service Prefabs")]
+        [Tooltip("场景服务预制体。运行时将实例化预制体并扫描注册所有 IAsakiSceneService")]
         [SerializeField]
-        private List<MonoBehaviour> _behaviourServices = new List<MonoBehaviour>();
+        private GameObject[] _servicePrefabs;
+
+        [Tooltip("实例化后的父对象（可选），为空则挂载到 SceneContext 所在对象下")]
+        [SerializeField]
+        private Transform _instanceParent;
 
         // ========================================================================
         // 运行时数据
@@ -40,8 +43,13 @@ namespace Asaki.Core.Context.Resolvers
         private readonly Dictionary<Type, IAsakiService> _localServices =
             new Dictionary<Type, IAsakiService>();
 
-        // [新增] 缓存待初始化的服务列表
         private readonly List<IAsakiInit> _pendingInitServices = new List<IAsakiInit>();
+
+        private readonly List<GameObject> _instantiatedPrefabs = new List<GameObject>();
+
+        private readonly List<(Type Type, IAsakiSceneService Service)> _pendingPrefabServices =
+            new List<(Type, IAsakiSceneService)>();
+
         private bool _isBuilt = false;
 
         public bool IsBuilt => _isBuilt;
@@ -50,6 +58,11 @@ namespace Asaki.Core.Context.Resolvers
         public Dictionary<Type, IAsakiService> GetRuntimeServices()
         {
             return _localServices;
+        }
+
+        public List<GameObject> GetInstantiatedPrefabs()
+        {
+            return _instantiatedPrefabs;
         }
 #endif
 
@@ -60,22 +73,76 @@ namespace Asaki.Core.Context.Resolvers
         private void Awake()
         {
             ALog.Info(
-                $"[AsakiSceneContext] Registering services in scene: {gameObject.scene.name}"
+                $"[AsakiSceneContext] Initializing in scene: {gameObject.scene.name}"
             );
 
-            // 1. 注册纯 C# 服务 (仅注册，暂不 Init)
-            RegisterPureCSharpServices();
+            InstantiateServicePrefabs();
 
-            // 2. 注册 MonoBehaviour 服务 (仅注册，暂不 Init)
-            RegisterBehaviourServices();
+            ScanAndRegisterPrefabServices();
+
+            RegisterPureCSharpServices();
 
             ALog.Info(
                 $"[AsakiSceneContext] Registered {_localServices.Count} services. Waiting for Build()..."
             );
         }
 
+        private void InstantiateServicePrefabs()
+        {
+            if (_servicePrefabs == null || _servicePrefabs.Length == 0)
+                return;
+
+            Transform parent = _instanceParent != null ? _instanceParent : transform;
+
+            foreach (GameObject prefab in _servicePrefabs)
+            {
+                if (prefab == null)
+                    continue;
+
+                GameObject instance = Instantiate(prefab, parent);
+                instance.name = prefab.name;
+                _instantiatedPrefabs.Add(instance);
+                ALog.Info($"[AsakiSceneContext] Instantiated service prefab: {prefab.name}");
+            }
+        }
+
+        private void ScanAndRegisterPrefabServices()
+        {
+            foreach (GameObject instance in _instantiatedPrefabs)
+            {
+                if (instance != null)
+                {
+                    CollectServicesRecursive(instance.transform);
+                }
+            }
+
+            foreach ((Type type, IAsakiSceneService service) in _pendingPrefabServices)
+            {
+                RegisterServiceWithInterfaces(type, service);
+            }
+
+            _pendingPrefabServices.Clear();
+        }
+
+        private void CollectServicesRecursive(Transform parent)
+        {
+            IAsakiSceneService[] services = parent.GetComponents<IAsakiSceneService>();
+            foreach (IAsakiSceneService service in services)
+            {
+                if (service is MonoBehaviour behaviour)
+                {
+                    _pendingPrefabServices.Add((behaviour.GetType(), service));
+                }
+            }
+
+            foreach (Transform child in parent)
+            {
+                CollectServicesRecursive(child);
+            }
+        }
+
         /// <summary>
-        /// [新增] 构建上下文。
+        /// 构建上下文。
         /// 此方法必须由 Bootstrapper 在确认全局环境（如 SimulationService）就绪后调用。
         /// </summary>
         public void Build()
@@ -91,7 +158,6 @@ namespace Asaki.Core.Context.Resolvers
             {
                 try
                 {
-                    // 此时传入 this (AsakiSceneContext)，服务可以通过它获取全局服务
                     service.Init(this);
                 }
                 catch (Exception ex)
@@ -111,7 +177,7 @@ namespace Asaki.Core.Context.Resolvers
         {
             ALog.Info($"[AsakiSceneContext] Cleaning up scene services...");
 
-            foreach (var kvp in _localServices)
+            foreach (KeyValuePair<Type, IAsakiService> kvp in _localServices)
             {
                 if (kvp.Value is IDisposable disposable && !(kvp.Value is MonoBehaviour))
                 {
@@ -121,6 +187,15 @@ namespace Asaki.Core.Context.Resolvers
 
             _localServices.Clear();
             _pendingInitServices.Clear();
+            _pendingPrefabServices.Clear();
+
+            foreach (GameObject instance in _instantiatedPrefabs)
+            {
+                if (instance != null)
+                    Destroy(instance);
+            }
+            _instantiatedPrefabs.Clear();
+
             _isBuilt = false;
         }
 
@@ -133,36 +208,19 @@ namespace Asaki.Core.Context.Resolvers
             if (_pureCSharpServices == null || _pureCSharpServices.Count == 0)
                 return;
 
-            foreach (IAsakiSceneService service in _pureCSharpServices.Where(s => s != null))
+            foreach (IAsakiSceneService service in _pureCSharpServices)
             {
-                RegisterServiceWithInterfaces(service.GetType(), service);
-            }
-        }
-
-        private void RegisterBehaviourServices()
-        {
-            if (_behaviourServices == null || _behaviourServices.Count == 0)
-                return;
-
-            foreach (MonoBehaviour behaviour in _behaviourServices.Where(b => b != null))
-            {
-                if (behaviour is not IAsakiSceneService service)
+                if (service != null)
                 {
-                    ALog.Error(
-                        $"[SceneContext] {behaviour.GetType().Name} does not implement IAsakiSceneService! Skipped."
-                    );
-                    continue;
+                    RegisterServiceWithInterfaces(service.GetType(), service);
                 }
-                RegisterServiceWithInterfaces(behaviour.GetType(), service);
             }
         }
 
         private void RegisterServiceWithInterfaces(Type concreteType, IAsakiService service)
         {
-            // 1. 注册具体类型
             RegisterInternal(concreteType, service);
 
-            // 2. 注册接口
             foreach (Type interfaceType in concreteType.GetInterfaces())
             {
                 if (
@@ -176,7 +234,6 @@ namespace Asaki.Core.Context.Resolvers
                 }
             }
 
-            // 3. [关键修改] 不立即 Init，而是加入待处理列表
             if (service is IAsakiInit initable)
             {
                 _pendingInitServices.Add(initable);

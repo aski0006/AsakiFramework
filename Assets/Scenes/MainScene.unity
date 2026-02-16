@@ -270,7 +270,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _pureCSharpServices: []
-  _behaviourServices: []
+  _servicePrefabs:
+  - {fileID: 6613767083075023349, guid: 706e36ff4b68a0c41a66a12297ef0a9e, type: 3}
+  _instanceParent: {fileID: 0}
   references:
     version: 2
     RefIds: []
