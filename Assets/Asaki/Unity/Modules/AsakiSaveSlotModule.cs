@@ -18,7 +18,7 @@ namespace Asaki.Unity.Modules
         private IAsakiEventService _eventService;
 
         [AsakiInject]
-        public void Init(IAsakiSaveService saveService, IAsakiEventService eventService)
+        public void Inject(IAsakiSaveService saveService, IAsakiEventService eventService)
         {
             _saveService = saveService;
             _eventService = eventService;

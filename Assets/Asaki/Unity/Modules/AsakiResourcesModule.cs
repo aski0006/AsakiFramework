@@ -20,7 +20,7 @@ namespace Asaki.Unity.Modules
         private IAsakiEventService _eventService;
 
         [AsakiInject]
-        public void Init(IAsakiAsyncService asyncService, IAsakiEventService eventService)
+        public void Inject(IAsakiAsyncService asyncService, IAsakiEventService eventService)
         {
             _asyncService = asyncService;
             _eventService = eventService;

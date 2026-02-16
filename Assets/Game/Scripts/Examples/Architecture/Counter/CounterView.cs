@@ -25,7 +25,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
     public class CounterView
         : MonoBehaviour,
             IAsakiAutoInject,
-            IAsakiInit<CounterArchitecture>,
+            IAsakiInject<CounterArchitecture>,
             IAsakiHandler<AchievementUnlockedEvent>
     {
         [SerializeField]
@@ -58,7 +58,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
         // 注意：Undo/Redo 由 Architecture 统一管理
 
         [AsakiInject]
-        public void Init(CounterArchitecture architecture)
+        public void Inject(CounterArchitecture architecture)
         {
             _architecture = architecture;
             _model = architecture.GetModel<CounterModel>();

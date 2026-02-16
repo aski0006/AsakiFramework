@@ -21,14 +21,14 @@ namespace Asaki.Unity.Modules
     )]
     public class AsakiAudioModule
         : IAsakiModule,
-            IAsakiInit<IAsakiResourceService, IAsakiPoolService>
+            IAsakiInject<IAsakiResourceService, IAsakiPoolService>
     {
         private IAsakiAudioService _audioService;
         private IAsakiResourceService _resService;
         private IAsakiPoolService _poolService;
 
         [AsakiInject]
-        public void Init(IAsakiResourceService resource, IAsakiPoolService poolService)
+        public void Inject(IAsakiResourceService resource, IAsakiPoolService poolService)
         {
             _resService = resource;
             _poolService = poolService;

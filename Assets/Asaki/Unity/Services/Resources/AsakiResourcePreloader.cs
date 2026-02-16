@@ -31,7 +31,7 @@ namespace Asaki.Unity.Services.Resources
     public class AsakiResourcePreloader
         : AsakiMono,
             IAsakiAutoInject,
-            IAsakiInit<IAsakiResourceService>
+            IAsakiInject<IAsakiResourceService>
     {
         #region Enums
 
@@ -184,7 +184,7 @@ namespace Asaki.Unity.Services.Resources
         /// 依赖注入点 - 由框架自动调用
         /// </summary>
         [AsakiInject]
-        public void Init(IAsakiResourceService resourceService)
+        public void Inject(IAsakiResourceService resourceService)
         {
             _resourceService = resourceService;
             ALog.Info($"[{nameof(AsakiResourcePreloader)}] ResourceService injected successfully.");

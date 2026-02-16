@@ -43,7 +43,7 @@ namespace Asaki.Core.Context.Resolvers
         private readonly Dictionary<Type, IAsakiService> _localServices =
             new Dictionary<Type, IAsakiService>();
 
-        private readonly List<IAsakiInit> _pendingInitServices = new List<IAsakiInit>();
+        private readonly List<IAsakiInject> _pendingInitServices = new List<IAsakiInject>();
 
         private readonly List<GameObject> _instantiatedPrefabs = new List<GameObject>();
 
@@ -72,9 +72,7 @@ namespace Asaki.Core.Context.Resolvers
 
         private void Awake()
         {
-            ALog.Info(
-                $"[AsakiSceneContext] Initializing in scene: {gameObject.scene.name}"
-            );
+            ALog.Info($"[AsakiSceneContext] Initializing in scene: {gameObject.scene.name}");
 
             InstantiateServicePrefabs();
 
@@ -154,11 +152,11 @@ namespace Asaki.Core.Context.Resolvers
                 $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
             );
 
-            foreach (IAsakiInit service in _pendingInitServices)
+            foreach (IAsakiInject service in _pendingInitServices)
             {
                 try
                 {
-                    service.Init(this);
+                    service.Inject(this);
                 }
                 catch (Exception ex)
                 {
@@ -234,7 +232,7 @@ namespace Asaki.Core.Context.Resolvers
                 }
             }
 
-            if (service is IAsakiInit initable)
+            if (service is IAsakiInject initable)
             {
                 _pendingInitServices.Add(initable);
             }

@@ -23,7 +23,7 @@ namespace Asaki.Unity.Modules
     )]
     public class AsakiUIModule
         : IAsakiModule,
-            IAsakiInit<IAsakiEventService, IAsakiResourceService, IAsakiPoolService>
+            IAsakiInject<IAsakiEventService, IAsakiResourceService, IAsakiPoolService>
     {
         private AsakiUIManageService _uiManageService;
         private IAsakiEventService _eventService;
@@ -31,7 +31,7 @@ namespace Asaki.Unity.Modules
         private IAsakiPoolService _poolService;
 
         [AsakiInject]
-        public void Init(
+        public void Inject(
             IAsakiEventService eventService,
             IAsakiResourceService resourceService,
             IAsakiPoolService poolService

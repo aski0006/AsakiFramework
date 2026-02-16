@@ -22,7 +22,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
     public class LoadingSceneController
         : AsakiMono,
             IAsakiAutoInject,
-            IAsakiInit<IAsakiResourceService, IAsakiSceneManagerService>
+            IAsakiInject<IAsakiResourceService, IAsakiSceneManagerService>
     {
         [Header("DataTable")]
         [Tooltip("场景预加载配置数据库")]
@@ -61,7 +61,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         private bool _preservePreloadedResources = true;
 
         [AsakiInject]
-        public void Init(
+        public void Inject(
             IAsakiResourceService resourceService,
             IAsakiSceneManagerService sceneManager
         )
@@ -364,7 +364,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
             if (_sceneManager == null)
             {
                 ALog.Error(
-                    "[LoadingSceneController] _sceneManager is null! Make sure IAsakiInit is properly implemented and injection is complete."
+                    "[LoadingSceneController] _sceneManager is null! Make sure IAsakiInject is properly implemented and injection is complete."
                 );
                 // 通知失败
                 _sceneManager?.NotifyPreloadFinished(false, _payload?.TargetSceneName ?? "Unknown");

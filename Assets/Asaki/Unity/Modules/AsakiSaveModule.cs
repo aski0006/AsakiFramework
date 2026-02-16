@@ -20,7 +20,7 @@ namespace Asaki.Unity.Modules
         private AsakiSaveConfig _saveConfig;
 
         [AsakiInject]
-        public void Init(IAsakiEventService eventService)
+        public void Inject(IAsakiEventService eventService)
         {
             _eventService = eventService;
 

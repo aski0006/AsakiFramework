@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -116,7 +116,7 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("        private static void AutoRegister()");
             sb.AppendLine("        {");
             sb.AppendLine(
-                $"            global::Asaki.Unity.Bootstrapper.AsakiGlobalInjector.Register(new {className}());"
+                $"            global::Asaki.Core.Context.AsakiGlobalInjector.Register(new {className}());"
             );
             sb.AppendLine("        }");
             sb.AppendLine();

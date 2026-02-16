@@ -19,7 +19,7 @@ namespace Asaki.Tests.Entities
         public void Setup()
         {
             _architecture = new TestArchitecture();
-            _architecture.Init(null);
+            _architecture.Inject(null);
         }
 
         [TearDown]

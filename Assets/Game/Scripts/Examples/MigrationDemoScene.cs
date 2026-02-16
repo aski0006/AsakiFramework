@@ -23,13 +23,13 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Test.Migration
     public class MigrationDemoScene
         : MonoBehaviour,
             IAsakiAutoInject,
-            IAsakiInit<IAsakiMigrationRegistry, IAsakiSaveService>
+            IAsakiInject<IAsakiMigrationRegistry, IAsakiSaveService>
     {
         private IAsakiMigrationRegistry _migrationRegistry;
         private IAsakiSaveService _saveService;
 
         [AsakiInject]
-        public void Init(IAsakiMigrationRegistry migrationRegistry, IAsakiSaveService saveService)
+        public void Inject(IAsakiMigrationRegistry migrationRegistry, IAsakiSaveService saveService)
         {
             _migrationRegistry = migrationRegistry;
             _saveService = saveService;

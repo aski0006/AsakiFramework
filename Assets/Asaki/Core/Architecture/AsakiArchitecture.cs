@@ -7,7 +7,7 @@ using Asaki.Core.Simulation;
 
 namespace Asaki.Core.Architecture
 {
-    public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInit
+    public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInject
     {
         private readonly Dictionary<Type, IAsakiModel> _models =
             new Dictionary<Type, IAsakiModel>();
@@ -17,7 +17,7 @@ namespace Asaki.Core.Architecture
         protected IAsakiResolver Resolver { get; private set; }
         private bool _isInited;
 
-        public void Init(IAsakiResolver resolver)
+        public void Inject(IAsakiResolver resolver)
         {
             if (_isInited)
             {
@@ -29,11 +29,13 @@ namespace Asaki.Core.Architecture
             OnSetup();
             foreach (IAsakiModel model in _models.Values)
             {
+                AsakiGlobalInjector.Inject(model, Resolver);
                 model.Create();
             }
 
             foreach (IAsakiSystem system in _systems.Values)
             {
+                AsakiGlobalInjector.Inject(system, Resolver);
                 system.Setup();
                 BindSimulation(system);
             }
