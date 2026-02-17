@@ -163,6 +163,7 @@ namespace Asaki.Unity.Bootstrapper
         private void CollectAndRegisterGlobalServices()
         {
             _allGlobalServices.Clear();
+            var registeredTypes = new HashSet<Type>();
 
             foreach (var obj in _instantiatedServiceObjects)
             {
@@ -171,14 +172,36 @@ namespace Asaki.Unity.Bootstrapper
                 CollectGlobalServicesRecursive(obj.transform, _allGlobalServices);
             }
 
+            ALog.Info($"[AsakiBootstrapper] Collected {_allGlobalServices.Count} global service instances");
+
+            int registeredCount = 0;
+            int skippedCount = 0;
+
             foreach (var service in _allGlobalServices)
             {
                 if (service is not MonoBehaviour behaviour)
+                {
+                    ALog.Warn($"[AsakiBootstrapper] Service {service.GetType().Name} is not a MonoBehaviour, skipping.");
+                    skippedCount++;
                     continue;
+                }
 
                 Type type = behaviour.GetType();
-                AsakiContext.Register(type, service);
 
+                // 注册具体类型
+                if (!registeredTypes.Contains(type))
+                {
+                    AsakiContext.Register(type, service);
+                    registeredTypes.Add(type);
+                    registeredCount++;
+                }
+                else
+                {
+                    ALog.Warn($"[AsakiBootstrapper] Service type {type.Name} already registered, skipping duplicate.");
+                    skippedCount++;
+                }
+
+                // 注册接口
                 foreach (Type i in type.GetInterfaces())
                 {
                     if (
@@ -187,17 +210,46 @@ namespace Asaki.Unity.Bootstrapper
                         && i != typeof(IAsakiService)
                     )
                     {
-                        AsakiContext.Register(i, service);
+                        if (!registeredTypes.Contains(i))
+                        {
+                            AsakiContext.Register(i, service);
+                            registeredTypes.Add(i);
+                        }
+                        else
+                        {
+                            ALog.Warn(
+                                $"[AsakiBootstrapper] Interface {i.Name} already registered by another service, skipping."
+                            );
+                        }
                     }
                 }
             }
 
-            ALog.Info($"[AsakiBootstrapper] Registered {_allGlobalServices.Count} global services");
+            ALog.Info(
+                $"[AsakiBootstrapper] Registered {registeredCount} services ({skippedCount} skipped due to duplicates)"
+            );
         }
 
         private void CollectGlobalServicesRecursive(
             Transform parent,
             List<IAsakiGlobalService> results
+        )
+        {
+            CollectGlobalServicesRecursive(parent, results, 0, 10);
+        }
+
+        /// <summary>
+        /// 递归收集全局服务组件，带深度限制
+        /// </summary>
+        /// <param name="parent">当前遍历的 Transform</param>
+        /// <param name="results">结果列表</param>
+        /// <param name="currentDepth">当前深度</param>
+        /// <param name="maxDepth">最大深度限制</param>
+        private void CollectGlobalServicesRecursive(
+            Transform parent,
+            List<IAsakiGlobalService> results,
+            int currentDepth,
+            int maxDepth
         )
         {
             var services = parent.GetComponents<IAsakiGlobalService>();
@@ -207,24 +259,83 @@ namespace Asaki.Unity.Bootstrapper
                     results.Add(service);
             }
 
-            foreach (Transform child in parent)
+            // 检查深度限制
+            if (currentDepth >= maxDepth)
             {
-                CollectGlobalServicesRecursive(child, results);
+                if (currentDepth == maxDepth)
+                {
+                    ALog.Warn(
+                        $"[AsakiBootstrapper] Max recursion depth ({maxDepth}) reached at {parent.name}. Stopping scan."
+                    );
+                }
+                return;
+            }
+
+            // 遍历子对象
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                CollectGlobalServicesRecursive(parent.GetChild(i), results, currentDepth + 1, maxDepth);
             }
         }
 
         private void InitializeGlobalServices()
         {
             ALog.Info("== [GlobalServices] Phase 1: Dependency Injection ==");
+            int injectSuccessCount = 0;
+            int injectFailCount = 0;
+
             foreach (var service in _allGlobalServices)
             {
-                AsakiGlobalInjector.Inject(service);
+                try
+                {
+                    AsakiGlobalInjector.Inject(service);
+                    injectSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    injectFailCount++;
+                    ALog.Error(
+                        $"[AsakiBootstrapper] Failed to inject service {service.GetType().Name}: {ex}"
+                    );
+                }
+            }
+
+            if (injectFailCount > 0)
+            {
+                ALog.Warn(
+                    $"[AsakiBootstrapper] Injection completed with {injectFailCount} failures, {injectSuccessCount} successes."
+                );
             }
 
             ALog.Info("== [GlobalServices] Phase 2: Bootstrap Initialization ==");
+            int initSuccessCount = 0;
+            int initFailCount = 0;
+
             foreach (var service in _allGlobalServices)
             {
-                service.OnBootstrapInit();
+                try
+                {
+                    service.OnBootstrapInit();
+                    initSuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    initFailCount++;
+                    ALog.Error(
+                        $"[AsakiBootstrapper] Failed to initialize service {service.GetType().Name}: {ex}"
+                    );
+                }
+            }
+
+            if (initFailCount > 0)
+            {
+                ALog.Warn(
+                    $"[AsakiBootstrapper] Initialization completed with {initFailCount} failures, {initSuccessCount} successes."
+                );
+            }
+            else
+            {
+                ALog.Info($"[AsakiBootstrapper] All {initSuccessCount} global services initialized successfully.");
             }
         }
 

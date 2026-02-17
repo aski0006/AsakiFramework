@@ -50,7 +50,9 @@ namespace Asaki.Core.Context.Resolvers
         private readonly List<(Type Type, IAsakiSceneService Service)> _pendingPrefabServices =
             new List<(Type, IAsakiSceneService)>();
 
-        private bool _isBuilt = false;
+        private volatile bool _isBuilt = false;
+
+        private readonly object _buildLock = new object();
 
         public bool IsBuilt => _isBuilt;
 
@@ -110,7 +112,8 @@ namespace Asaki.Core.Context.Resolvers
             {
                 if (instance != null)
                 {
-                    CollectServicesRecursive(instance.transform);
+                    // 限制最大递归深度为 10 层，防止过深遍历
+                    CollectServicesRecursive(instance.transform, 0, 10);
                 }
             }
 
@@ -122,9 +125,16 @@ namespace Asaki.Core.Context.Resolvers
             _pendingPrefabServices.Clear();
         }
 
-        private void CollectServicesRecursive(Transform parent)
+        /// <summary>
+        /// 递归收集服务组件，带深度限制
+        /// </summary>
+        /// <param name="parent">当前遍历的 Transform</param>
+        /// <param name="currentDepth">当前深度</param>
+        /// <param name="maxDepth">最大深度限制</param>
+        private void CollectServicesRecursive(Transform parent, int currentDepth, int maxDepth)
         {
-            IAsakiSceneService[] services = parent.GetComponents<IAsakiSceneService>();
+            // 获取组件 (使用非分配方式)
+            var services = parent.GetComponents<IAsakiSceneService>();
             foreach (IAsakiSceneService service in services)
             {
                 if (service is MonoBehaviour behaviour)
@@ -133,9 +143,22 @@ namespace Asaki.Core.Context.Resolvers
                 }
             }
 
-            foreach (Transform child in parent)
+            // 检查深度限制
+            if (currentDepth >= maxDepth)
             {
-                CollectServicesRecursive(child);
+                if (currentDepth == maxDepth)
+                {
+                    ALog.Warn(
+                        $"[AsakiSceneContext] Max recursion depth ({maxDepth}) reached at {parent.name}. Stopping scan."
+                    );
+                }
+                return;
+            }
+
+            // 遍历子对象 (使用反向迭代器避免 enumerator 分配)
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                CollectServicesRecursive(parent.GetChild(i), currentDepth + 1, maxDepth);
             }
         }
 
@@ -145,30 +168,53 @@ namespace Asaki.Core.Context.Resolvers
         /// </summary>
         public void Build()
         {
+            // 快速路径检查 (无锁)
             if (_isBuilt)
                 return;
 
-            ALog.Info(
-                $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
-            );
-
-            foreach (IAsakiInject service in _pendingInitServices)
+            lock (_buildLock)
             {
-                try
+                // 双重检查锁定 (Double-Check Lock)
+                if (_isBuilt)
+                    return;
+
+                ALog.Info(
+                    $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
+                );
+
+                int successCount = 0;
+                int failCount = 0;
+
+                foreach (IAsakiInject service in _pendingInitServices)
                 {
-                    service.Inject(this);
+                    try
+                    {
+                        service.Inject(this);
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        failCount++;
+                        ALog.Error(
+                            $"[AsakiSceneContext] Failed to init service {service.GetType().Name}: {ex}"
+                        );
+                    }
                 }
-                catch (Exception ex)
+
+                _pendingInitServices.Clear();
+                _isBuilt = true;
+
+                if (failCount > 0)
                 {
-                    ALog.Error(
-                        $"[AsakiSceneContext] Failed to init service {service.GetType().Name}: {ex}"
+                    ALog.Warn(
+                        $"[AsakiSceneContext] Build completed with {failCount} failures, {successCount} successes."
                     );
                 }
+                else
+                {
+                    ALog.Info("[AsakiSceneContext] Build Complete.");
+                }
             }
-
-            _pendingInitServices.Clear();
-            _isBuilt = true;
-            ALog.Info("[AsakiSceneContext] Build Complete.");
         }
 
         private void OnDestroy()

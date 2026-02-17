@@ -9,8 +9,13 @@ using UnityEngine;
 namespace Asaki.Unity
 {
     /// <summary>
-    /// Asaki框架MonoBehaviour基类，提供统一的生命周期管理、组件缓存和实用工具方法。
+    /// Asaki 框架 MonoBehaviour 基类，提供统一的生命周期管理、组件缓存和实用工具方法。
     /// </summary>
+    /// <remarks>
+    /// <para>【全局服务设计规范】</para>
+    /// <para>全局服务应该继承 AsakiMono 并同时实现 IAsakiGlobalService 接口。</para>
+    /// <para>AsakiMonoLifecycleManager 会自动检测 IAsakiGlobalService 并跳过重复注入。</para>
+    /// </remarks>
     public abstract class AsakiMono : MonoBehaviour, IAsakiHandler<OnAsakiFrameworkReadyEvent>
     {
         protected bool IsActivated { get; private set; }

@@ -1378,11 +1378,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "e:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\CodeGenerator.csproj",
+      "projectUniqueName": "E:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\CodeGenerator.csproj",
       "projectName": "Asaki.CodeGen",
-      "projectPath": "e:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\CodeGenerator.csproj",
+      "projectPath": "E:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\CodeGenerator.csproj",
       "packagesPath": "C:\\Users\\bronya\\.nuget\\packages\\",
-      "outputPath": "e:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\obj\\",
+      "outputPath": "E:\\Projects\\UnityGame\\Asaki\\CodeGenerator\\CodeGenerator\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

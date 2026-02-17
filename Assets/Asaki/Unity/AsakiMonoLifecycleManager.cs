@@ -32,12 +32,14 @@ namespace Asaki.Unity
             public AsakiMono Component;
             public InitState State;
             public bool IsPersistent;
+            public bool IsGlobalService; // 标记是否为 IAsakiGlobalService
 
             public void Reset()
             {
                 Component = null;
                 State = InitState.Destroyed;
                 IsPersistent = false;
+                IsGlobalService = false;
             }
         }
 
@@ -67,6 +69,8 @@ namespace Asaki.Unity
             state.Component = component;
             state.State = InitState.Pending;
             state.IsPersistent = IsDontDestroyOnLoadScene(component.gameObject.scene);
+            // 标记是否为 IAsakiGlobalService（由 Bootstrapper 统一管理注入）
+            state.IsGlobalService = component is IAsakiGlobalService;
             return state;
         }
 
@@ -136,7 +140,14 @@ namespace Asaki.Unity
 
             try
             {
-                if (component is IAsakiAutoInject)
+                // 检查是否为 IAsakiGlobalService - 这些服务由 Bootstrapper 统一注入
+                if (component is IAsakiGlobalService globalService)
+                {
+                    ALog.Info(
+                        $"[Lifecycle] Skipping injection for {component.GetType().Name} - already injected by Bootstrapper as IAsakiGlobalService"
+                    );
+                }
+                else if (component is IAsakiAutoInject)
                 {
                     // 获取 Resolver (优化：缓存 SceneContext 查找)
                     var resolver = GetResolverForComponent(component);
@@ -209,10 +220,12 @@ namespace Asaki.Unity
                 foreach (var kvp in _trackedComponents)
                 {
                     var state = kvp.Value;
+                    // 跳过 IAsakiGlobalService - 这些服务由 Bootstrapper 统一管理，不需要场景切换时重新注入
                     if (
                         state.IsPersistent
                         && state.Component != null
                         && state.Component is IAsakiAutoInject
+                        && !state.IsGlobalService
                     )
                     {
                         try

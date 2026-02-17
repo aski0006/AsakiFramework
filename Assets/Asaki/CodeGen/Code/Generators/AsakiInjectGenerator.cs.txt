@@ -52,6 +52,9 @@ namespace Asaki.CodeGen.Generators
             // 1. 静态字典存储注入逻辑
             sb.AppendLine("        private static readonly Dictionary<Type, Action<object, IAsakiResolver>> _injectMap = new Dictionary<Type, Action<object, IAsakiResolver>>();");
             sb.AppendLine();
+            sb.AppendLine("        /// <summary> 注入优先级 (基于程序集名称哈希，确保稳定顺序) </summary>");
+            sb.AppendLine($"        public int Priority => {GetAssemblyPriority(context.Compilation.AssemblyName)};");
+            sb.AppendLine();
 
             // 2. 静态构造/初始化
             sb.AppendLine("        static " + className + "()");
@@ -102,6 +105,22 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("}");
 
             context.AddSource($"{className}.g.cs", sb.ToString());
+        }
+
+        /// <summary>
+        /// 根据程序集名称计算优先级
+        /// 核心程序集优先级更高（数值更小），确保先注入
+        /// </summary>
+        private static int GetAssemblyPriority(string assemblyName)
+        {
+            // 核心程序集优先级最高
+            if (assemblyName.Contains("Asaki.Core")) return 100;
+            if (assemblyName.Contains("Asaki.Unity")) return 200;
+            if (assemblyName.Contains("Asaki.Plugin")) return 500;
+            if (assemblyName.Contains("Game")) return 1000;
+
+            // 默认优先级
+            return 1000 + assemblyName.GetHashCode() % 1000;
         }
     }
 }
