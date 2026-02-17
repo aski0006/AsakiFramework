@@ -2,6 +2,26 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.4] - 2025-02-17
+
+### Fixed
+- **ECS Editor EntityWorld Access** - Fixed EntityWorld retrieval in editor windows
+  - EntityWorld is a POJO class, cannot be retrieved via `FindObjectsByType<MonoBehaviour>`
+  - Added `EntityWorldHelper` utility class to get IAsakiArchitecture from AsakiSceneContext via reflection
+  - Implemented reflection field cache and Architecture list cache to avoid frequent reflection overhead
+
+### Added
+- **Extended Query Support** - Extended Query generic support from 3 to 6 components
+  - `Query<T1,T2,T3,T4>()` - 4 component query
+  - `Query<T1,T2,T3,T4,T5>()` - 5 component query
+  - `Query<T1,T2,T3,T4,T5,T6>()` - 6 component query
+  - Maintains smallest-group-first traversal optimization strategy
+- **ECS Example** - Added complete ECS example code
+  - `ECSComponents.cs` - 6 example components (Position, Velocity, Health, Tag, Render, PlayerInput)
+  - `ECSSystems.cs` - 5 example systems (Movement, Health, PlayerInput, Render, EntityStats)
+  - `ECSArchitecture.cs` - ECS architecture example with entity factory methods
+  - `ECSExample.cs` - MonoBehaviour driver with runtime GUI
+
 ## [1.3.3] - 2025-02-17
 
 ### Added
