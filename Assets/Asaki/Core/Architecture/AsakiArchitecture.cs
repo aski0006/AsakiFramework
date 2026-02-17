@@ -21,24 +21,37 @@ namespace Asaki.Core.Architecture
         {
             if (_isInited)
             {
+                ALog.Warn(
+                    $"[AsakiArchitecture] {GetType().Name}.Inject() was called multiple times. Ignoring subsequent calls."
+                );
                 return;
             }
 
             Resolver = resolver ?? AsakiGlobalResolver.Instance;
             Resolver.TryGet(out _simulationService);
             OnSetup();
+
+            // Phase 1: 创建所有 Model
             foreach (IAsakiModel model in _models.Values)
             {
                 AsakiGlobalInjector.Inject(model, Resolver);
                 model.Create();
             }
 
+            // Phase 2: 创建所有 System（但不绑定 Simulation）
             foreach (IAsakiSystem system in _systems.Values)
             {
                 AsakiGlobalInjector.Inject(system, Resolver);
-                system.Setup();
-                BindSimulation(system);
+                system.Create();
             }
+
+            // Phase 3: 调用所有 System 的 Start（此时所有 System 已就绪）
+            foreach (IAsakiSystem system in _systems.Values)
+            {
+                system.Start();
+                BindSimulation(system); // Start 之后再绑定 Simulation
+            }
+
             _isInited = true;
             ALog.Info(
                 $"[AsakiArchitecture] {GetType().Name} initialized. (M:{_models.Count}, S:{_systems.Count})"
@@ -98,6 +111,73 @@ namespace Asaki.Core.Architecture
                 $"[AsakiArchitecture] Model not registered: {typeof(T).Name}. Register it in OnSetup()."
             );
         }
+
+        /// <summary>
+        /// 获取实体世界（便捷方法）
+        /// </summary>
+        Entities.IEntityWorld IAsakiArchitecture.GetEntityWorld()
+        {
+            return GetModel<EntityModel>().World;
+        }
+
+        /// <summary>
+        /// 获取实体世界（内部访问）
+        /// </summary>
+        protected Entities.IEntityWorld GetEntityWorld()
+        {
+            return GetModel<EntityModel>().World;
+        }
+
+        #region IAsakiServiceProvider Implementation
+
+        public T GetService<T>() where T : class, IAsakiService
+        {
+            // 处理 Model 类型
+            if (typeof(T) == typeof(IAsakiModel) || typeof(T).IsSubclassOf(typeof(IAsakiModel)))
+            {
+                throw new InvalidOperationException(
+                    "Use GetModel<T>() to retrieve models, not GetService<T>()"
+                );
+            }
+
+            // 处理 System 类型
+            if (typeof(T) == typeof(IAsakiSystem) || typeof(T).IsSubclassOf(typeof(IAsakiSystem)))
+            {
+                throw new InvalidOperationException(
+                    "Use GetSystem<T>() to retrieve systems, not GetService<T>()"
+                );
+            }
+
+            // 处理 IAsakiArchitecture 自身
+            if (typeof(T) == typeof(IAsakiArchitecture))
+            {
+                return (T)(object)this;
+            }
+
+            // 尝试从 Resolver 获取服务
+            if (Resolver != null && Resolver.TryGet<T>(out T service))
+            {
+                return service;
+            }
+
+            throw new KeyNotFoundException($"Service not found: {typeof(T).Name}");
+        }
+
+        public bool TryGetService<T>(out T service) where T : class, IAsakiService
+        {
+            try
+            {
+                service = GetService<T>();
+                return true;
+            }
+            catch
+            {
+                service = null;
+                return false;
+            }
+        }
+
+        #endregion
 
         public void Dispose()
         {

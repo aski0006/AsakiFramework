@@ -141,6 +141,10 @@ namespace Asaki.Core.Pooling
 
             return sb.ToString();
         }
+        public IEnumerable<string> GetAllPoolKeys()
+        {
+            return _pools.Keys;
+        }
 
         /// <summary>
         /// 注册低内存事件监听（应在服务初始化时调用）

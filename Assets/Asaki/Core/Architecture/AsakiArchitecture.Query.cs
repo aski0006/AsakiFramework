@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using Asaki.Core.Architecture.Queries;
 using Asaki.Core.Logging;
@@ -55,7 +55,7 @@ namespace Asaki.Core.Architecture
         public TResult SendQuery<TQuery, TResult>()
             where TQuery : class, IAsakiQuery<TResult>, new()
         {
-            // 尝试从对象池获取，池不存在则使用new
+            // 尝试从对象池获取，池不存在则使用 new
             bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
             query ??= new TQuery();
 
@@ -140,7 +140,7 @@ namespace Asaki.Core.Architecture
         public async UniTask<TResult> SendQueryAsync<TQuery, TResult>()
             where TQuery : class, IAsakiQueryAsync<TResult>, new()
         {
-            // 尝试从对象池获取，池不存在则使用new
+            // 尝试从对象池获取，池不存在则使用 new
             bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
             query ??= new TQuery();
 
@@ -211,19 +211,16 @@ namespace Asaki.Core.Architecture
         }
 
         // ========================================================================
-        // 5. 带参数配置的 Query
+        // 5. 带参数配置的 Query（支持缓存键）
         // ========================================================================
 
         /// <summary>
-        /// 执行带参数配置的同步 Query
+        /// 执行带参数配置的同步 Query（支持缓存）
         /// </summary>
         public TResult SendQuery<TQuery, TResult>(Action<TQuery> configure, float cacheSeconds = 0f)
             where TQuery : class, IAsakiQuery<TResult>, new()
         {
-            // 注意：带参数的 Query 不使用类型名作为缓存键
-            // 需要子类自己实现 GetCacheKey() 方法
-
-            // 尝试从对象池获取，池不存在则使用new
+            // 尝试从对象池获取，池不存在则使用 new
             bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
             query ??= new TQuery();
 
@@ -232,10 +229,34 @@ namespace Asaki.Core.Architecture
                 configure?.Invoke(query);
                 query.Create(this);
 
+                // 支持带参数的缓存键
+                string cacheKey = null;
+                if (_enableQueryCache && cacheSeconds > 0f)
+                {
+                    // 优先使用自定义缓存键
+                    cacheKey = (query as IAsakiCacheKeyProvider)?.GetCacheKey()
+                               ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
+
+                    if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
+                    {
+                        if (_enableQueryLogging)
+                            ALog.Info($"[Query] Cache hit: {typeof(TQuery).Name}");
+                        return cachedResult;
+                    }
+                }
+
                 if (_enableQueryLogging)
                     ALog.Info($"[Query] Executing {typeof(TQuery).Name} (with params)");
 
-                return query.Query();
+                TResult result = query.Query();
+
+                // 存入缓存
+                if (cacheKey != null)
+                {
+                    _queryCache.SetCache(cacheKey, result, cacheSeconds);
+                }
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -251,7 +272,7 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
-        /// 执行带参数配置的异步 Query
+        /// 执行带参数配置的异步 Query（支持缓存）
         /// </summary>
         public async UniTask<TResult> SendQueryAsync<TQuery, TResult>(
             Action<TQuery> configure,
@@ -259,7 +280,7 @@ namespace Asaki.Core.Architecture
         )
             where TQuery : class, IAsakiQueryAsync<TResult>, new()
         {
-            // 尝试从对象池获取，池不存在则使用new
+            // 尝试从对象池获取，池不存在则使用 new
             bool fromPool = QueryPoolManager.TryRent<TQuery>(out TQuery query);
             query ??= new TQuery();
 
@@ -268,10 +289,34 @@ namespace Asaki.Core.Architecture
                 configure?.Invoke(query);
                 query.Create(this);
 
+                // 支持带参数的缓存键
+                string cacheKey = null;
+                if (_enableQueryCache && cacheSeconds > 0f)
+                {
+                    // 优先使用自定义缓存键
+                    cacheKey = (query as IAsakiCacheKeyProvider)?.GetCacheKey()
+                               ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
+
+                    if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
+                    {
+                        if (_enableQueryLogging)
+                            ALog.Info($"[QueryAsync] Cache hit: {typeof(TQuery).Name}");
+                        return cachedResult;
+                    }
+                }
+
                 if (_enableQueryLogging)
                     ALog.Info($"[QueryAsync] Executing {typeof(TQuery).Name} (with params)");
 
-                return await query.QueryAsync();
+                TResult result = await query.QueryAsync();
+
+                // 存入缓存
+                if (cacheKey != null)
+                {
+                    _queryCache.SetCache(cacheKey, result, cacheSeconds);
+                }
+
+                return result;
             }
             catch (Exception ex)
             {

@@ -1,4 +1,6 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
+using Asaki.Core.Architecture;
 using Asaki.Core.Logging;
 using Cysharp.Threading.Tasks;
 
@@ -6,11 +8,11 @@ namespace Asaki.Core.Architecture.Queries
 {
     public abstract class AsakiQuery<TResult> : IAsakiQuery<TResult>
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
+            ServiceProvider = serviceProvider;
             OnCreate();
         }
 
@@ -18,16 +20,18 @@ namespace Asaki.Core.Architecture.Queries
 
         public abstract TResult Query();
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)
@@ -48,11 +52,11 @@ namespace Asaki.Core.Architecture.Queries
 
     public abstract class AsakiQueryAsync<TResult> : IAsakiQueryAsync<TResult>
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
+            ServiceProvider = serviceProvider;
             OnCreate();
         }
 
@@ -62,16 +66,18 @@ namespace Asaki.Core.Architecture.Queries
 
         protected virtual void OnCreate() { }
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)

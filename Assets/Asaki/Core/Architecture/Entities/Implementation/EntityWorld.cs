@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Asaki.Core.Broker;
 using Asaki.Core.Collections;
+using Asaki.Core.Context;
+using Asaki.Core.Context.Resolvers;
 using Asaki.Core.Logging;
 
 namespace Asaki.Core.Architecture.Entities
@@ -9,16 +12,19 @@ namespace Asaki.Core.Architecture.Entities
     /// <summary>
     /// 实体世界实现 - 高性能缓存查询优化版
     /// </summary>
-    public class EntityWorld : IEntityWorld
+    public class EntityWorld : IEntityWorld, IAsakiResolverProvider
     {
         // 实体存储：使用 MagicContainer 保证内存连续和 O(1) 访问
         private readonly MagicContainer<Entity> _entities = new();
 
         // 代际管理：防止实体销毁后句柄被重用导致的 ABA 问题
-        private readonly List<int> _generations = new();
+        // 使用数组替代 List 以获得更好的性能和线程安全性
+        private int[] _generations = new int[64]; // 初始容量 64
+        private int _generationCount; // 实际使用的代际数量
+        private readonly object _generationLock = new object(); // 代际数组扩容锁
 
         // 核心优化：组件组缓存 (Component System Groups)
-        // 映射：组件类型ID -> 拥有该组件的所有实体集合
+        // 映射：组件类型 ID -> 拥有该组件的所有实体集合
         // 这将 Query 的复杂度从 O(TotalEntities) 降低为 O(EntitiesWithComponent)
         private readonly Dictionary<int, HashSet<Entity>> _componentGroups = new Dictionary<
             int,
@@ -28,6 +34,11 @@ namespace Asaki.Core.Architecture.Entities
         public int EntityCount => _entities.Count;
 
         /// <summary>
+        /// 解析器（用于组件依赖注入）
+        /// </summary>
+        public IAsakiResolver Resolver { get; private set; } = AsakiGlobalResolver.Instance;
+
+        /// <summary>
         /// 创建实体
         /// </summary>
         public IEntity CreateEntity()
@@ -35,17 +46,25 @@ namespace Asaki.Core.Architecture.Entities
             var entity = new Entity(this);
             int handle = _entities.Add(entity);
 
-            // 代际更新
+            // 代际更新 - 使用线程安全的方式
             int generation;
-            if (handle < _generations.Count)
+
+            lock (_generationLock)
             {
-                generation = ++_generations[handle];
-            }
-            else
-            {
-                generation = 0;
-                while (_generations.Count <= handle)
-                    _generations.Add(0);
+                if (handle < _generationCount)
+                {
+                    // 使用 Volatile.Write 确保写入的可见性
+                    int newGeneration = Interlocked.Increment(ref _generations[handle]);
+                    generation = newGeneration;
+                }
+                else
+                {
+                    // 需要扩容代际数组
+                    EnsureGenerationCapacity(handle + 1);
+                    _generationCount = Math.Max(_generationCount, handle + 1);
+                    generation = 0;
+                    _generations[handle] = 0;
+                }
             }
 
             entity.Initialize(new EntityId(handle, generation));
@@ -54,6 +73,18 @@ namespace Asaki.Core.Architecture.Entities
             AsakiBroker.Publish(new EntityCreatedEvent { EntityId = entity.Id, World = this });
 
             return entity;
+        }
+
+        /// <summary>
+        /// 确保代际数组容量
+        /// </summary>
+        private void EnsureGenerationCapacity(int requiredCapacity)
+        {
+            if (requiredCapacity <= _generations.Length)
+                return;
+
+            int newCapacity = Math.Max(requiredCapacity, _generations.Length * 2);
+            Array.Resize(ref _generations, newCapacity);
         }
 
         /// <summary>
@@ -176,10 +207,39 @@ namespace Asaki.Core.Architecture.Entities
             if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
                 yield break;
 
-            // 简单策略：遍历 g1，检查 t2 和 t3
-            foreach (var entity in g1)
+            // 优化：选择最小的组进行遍历
+            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t3, out var g3) || g3.Count == 0)
+                yield break;
+
+            // 找到最小的组
+            int minCount = Math.Min(g1.Count, Math.Min(g2.Count, g3.Count));
+            HashSet<Entity> smallestGroup;
+            int checkTypeId1, checkTypeId2;
+
+            if (g1.Count == minCount)
             {
-                if (entity.HasComponent(t2) && entity.HasComponent(t3))
+                smallestGroup = g1;
+                checkTypeId1 = t2;
+                checkTypeId2 = t3;
+            }
+            else if (g2.Count == minCount)
+            {
+                smallestGroup = g2;
+                checkTypeId1 = t1;
+                checkTypeId2 = t3;
+            }
+            else
+            {
+                smallestGroup = g3;
+                checkTypeId1 = t1;
+                checkTypeId2 = t2;
+            }
+
+            foreach (var entity in smallestGroup)
+            {
+                if (entity.HasComponent(checkTypeId1) && entity.HasComponent(checkTypeId2))
                     yield return entity;
             }
         }
@@ -200,7 +260,13 @@ namespace Asaki.Core.Architecture.Entities
                 }
             });
             _entities.Clear();
-            _generations.Clear();
+
+            lock (_generationLock)
+            {
+                _generations = new int[64];
+                _generationCount = 0;
+            }
+
             _componentGroups.Clear();
         }
 
@@ -210,9 +276,14 @@ namespace Asaki.Core.Architecture.Entities
         {
             if (!id.IsValid)
                 return false;
-            if (id.Handle >= _generations.Count)
-                return false;
-            return _generations[id.Handle] == id.Generation;
+
+            lock (_generationLock)
+            {
+                if (id.Handle >= _generationCount)
+                    return false;
+                // 使用 Volatile.Read 确保读取的可见性
+                return Volatile.Read(ref _generations[id.Handle]) == id.Generation;
+            }
         }
     }
 }

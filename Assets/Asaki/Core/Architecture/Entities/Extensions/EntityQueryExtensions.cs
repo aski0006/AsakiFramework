@@ -253,5 +253,85 @@ namespace Asaki.Core.Architecture.Entities.Extensions
             }
             return count;
         }
+
+        #region Safe Enumeration (Snapshot Support)
+
+        /// <summary>
+        /// 创建查询结果的快照列表，避免在遍历过程中修改集合导致的枚举器失效问题
+        /// 使用场景：需要在遍历内添加/移除组件时
+        /// </summary>
+        /// <example>
+        /// // 安全地在遍历内移除组件
+        /// foreach (var entity in world.Query<HealthComponent>().ToList())
+        /// {
+        ///     if (entity.GetComponent<HealthComponent>().IsDead)
+        ///     {
+        ///         entity.RemoveComponent<HealthComponent>(); // 不会抛出异常
+        ///     }
+        /// }
+        /// </example>
+        public static List<IEntity> ToList<T1>(this IEnumerable<IEntity> queryResult)
+            where T1 : class, IEntityComponent
+        {
+            var list = new List<IEntity>();
+            foreach (var entity in queryResult)
+            {
+                list.Add(entity);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 创建查询结果的快照列表
+        /// </summary>
+        public static List<EntityQueryResult<T1>> ToList<T1>(
+            this IEnumerable<EntityQueryResult<T1>> queryResult
+        )
+            where T1 : class, IEntityComponent
+        {
+            var list = new List<EntityQueryResult<T1>>();
+            foreach (var result in queryResult)
+            {
+                list.Add(result);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 创建查询结果的快照列表
+        /// </summary>
+        public static List<EntityQueryResult<T1, T2>> ToList<T1, T2>(
+            this IEnumerable<EntityQueryResult<T1, T2>> queryResult
+        )
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+        {
+            var list = new List<EntityQueryResult<T1, T2>>();
+            foreach (var result in queryResult)
+            {
+                list.Add(result);
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// 创建查询结果的快照列表
+        /// </summary>
+        public static List<EntityQueryResult<T1, T2, T3>> ToList<T1, T2, T3>(
+            this IEnumerable<EntityQueryResult<T1, T2, T3>> queryResult
+        )
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+        {
+            var list = new List<EntityQueryResult<T1, T2, T3>>();
+            foreach (var result in queryResult)
+            {
+                list.Add(result);
+            }
+            return list;
+        }
+
+        #endregion
     }
 }

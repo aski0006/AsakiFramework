@@ -21,9 +21,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
             _audioService = audioService;
         }
 
-        public void Setup()
+        public void Create()
         {
-            _subscription = _model.count.Subscribe(OnCountChanged);
+
         }
 
         private void OnCountChanged(int count)
@@ -49,6 +49,11 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
         public void Dispose()
         {
             _subscription?.Dispose();
+        }
+
+        public void Start()
+        {
+            _subscription = _model.count.Subscribe(OnCountChanged);
         }
     }
 }

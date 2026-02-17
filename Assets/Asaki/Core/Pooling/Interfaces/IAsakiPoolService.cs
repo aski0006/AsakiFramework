@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Context;
 using Cysharp.Threading.Tasks;
@@ -42,5 +43,6 @@ namespace Asaki.Core.Pooling.Interfaces
         /// 获取统计信息摘要
         /// </summary>
         string GetStatisticsSummary();
+        IEnumerable<string> GetAllPoolKeys();
     }
 }

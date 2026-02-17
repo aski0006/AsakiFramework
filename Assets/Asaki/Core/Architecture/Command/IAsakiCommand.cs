@@ -1,29 +1,30 @@
 ﻿using System.Threading;
+using Asaki.Core.Architecture;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Architecture.Command
 {
     public interface IAsakiCommand
     {
-        void Create(IAsakiArchitecture architecture);
+        void Create(IAsakiServiceProvider serviceProvider);
         void Execute();
     }
 
     public interface IAsakiCommand<out TResult>
     {
-        void Create(IAsakiArchitecture architecture);
+        void Create(IAsakiServiceProvider serviceProvider);
         TResult Execute();
     }
 
     public interface IAsakiCommandAsync
     {
-        void Create(IAsakiArchitecture architecture);
+        void Create(IAsakiServiceProvider serviceProvider);
         UniTask ExecuteAsync();
     }
 
     public interface IAsakiCommandAsync<TResult>
     {
-        void Create(IAsakiArchitecture architecture);
+        void Create(IAsakiServiceProvider serviceProvider);
         UniTask<TResult> ExecuteAsync(CancellationToken token = default(CancellationToken));
     }
 

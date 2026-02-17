@@ -1,4 +1,5 @@
-﻿using System.Threading;
+﻿using System;
+using System.Threading;
 using Asaki.Core.Logging;
 using Cysharp.Threading.Tasks;
 
@@ -6,28 +7,30 @@ namespace Asaki.Core.Architecture.Command
 {
     public abstract class AsakiCommand : IAsakiCommand
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
-            OnCreate(); // 子类可重写此方法进行初始化
+            ServiceProvider = serviceProvider;
+            OnCreate();
         }
 
         protected virtual void OnCreate() { }
 
         public abstract void Execute();
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)
@@ -48,11 +51,11 @@ namespace Asaki.Core.Architecture.Command
 
     public abstract class AsakiCommand<TResult> : IAsakiCommand<TResult>
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
+            ServiceProvider = serviceProvider;
             OnCreate();
         }
 
@@ -60,16 +63,18 @@ namespace Asaki.Core.Architecture.Command
 
         public abstract TResult Execute();
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)
@@ -90,11 +95,11 @@ namespace Asaki.Core.Architecture.Command
 
     public abstract class AsakiCommandAsync : IAsakiCommandAsync
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
+            ServiceProvider = serviceProvider;
             OnCreate();
         }
 
@@ -102,16 +107,18 @@ namespace Asaki.Core.Architecture.Command
 
         public abstract UniTask ExecuteAsync();
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)
@@ -132,11 +139,11 @@ namespace Asaki.Core.Architecture.Command
 
     public abstract class AsakiCommandAsync<TResult> : IAsakiCommandAsync<TResult>
     {
-        protected IAsakiArchitecture Architecture { get; private set; }
+        protected IAsakiServiceProvider ServiceProvider { get; private set; }
 
-        public void Create(IAsakiArchitecture architecture)
+        public void Create(IAsakiServiceProvider serviceProvider)
         {
-            Architecture = architecture;
+            ServiceProvider = serviceProvider;
             OnCreate();
         }
 
@@ -146,16 +153,18 @@ namespace Asaki.Core.Architecture.Command
             CancellationToken token = default(CancellationToken)
         );
 
-        protected T GetModel<T>()
-            where T : class, IAsakiModel
+        protected T GetSystem<T>() where T : class, IAsakiSystem
         {
-            return Architecture.GetModel<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetSystem<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetSystem<T>()
-            where T : class, IAsakiSystem
+        protected T GetModel<T>() where T : class, IAsakiModel
         {
-            return Architecture.GetSystem<T>();
+            if (ServiceProvider is IAsakiArchitecture arch)
+                return arch.GetModel<T>();
+            throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
         protected void Log(string message)

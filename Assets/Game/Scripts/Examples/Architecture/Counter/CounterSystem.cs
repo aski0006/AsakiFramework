@@ -12,12 +12,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
         {
             _model = model;
         }
-
-        public void Setup()
+        public void Create()
         {
-            ALog.Info("CounterSystem Started.");
         }
-
         public void Increment()
         {
             _model.count.Value++;
@@ -27,6 +24,11 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
         public void Dispose()
         {
             ALog.Info("CounterSystem Disposed.");
+        }
+
+        public void Start()
+        {
+            ALog.Info("CounterSystem Started.");
         }
     }
 }

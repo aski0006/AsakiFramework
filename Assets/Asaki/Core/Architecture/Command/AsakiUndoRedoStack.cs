@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Asaki.Core.Logging;
 
@@ -13,7 +14,9 @@ namespace Asaki.Core.Architecture.Command
         );
 
         // 预分配数组用于 TrimStack，避免每次分配 List
+        // 延迟初始化，避免不必要的内存占用
         private IAsakiUndoCommand[] _trimBuffer;
+        private readonly object _trimLock = new object();
         private readonly int _maxHistory = AsakiArchitectureConstants.DefaultUndoRedoMaxHistory;
 
         public bool CanUndo => _undoStack.Count > 0;
@@ -84,28 +87,56 @@ namespace Asaki.Core.Architecture.Command
             ALog.Info("[UndoRedo] History cleared");
         }
 
+        /// <summary>
+        /// 修剪栈到指定大小，使用预分配 buffer 避免 GC
+        /// </summary>
         private void TrimStack(Stack<IAsakiUndoCommand> stack, int maxSize)
         {
             if (stack.Count <= maxSize)
                 return;
 
             int totalCount = stack.Count;
-            var tempList = new List<IAsakiUndoCommand>(totalCount);
+            int removeCount = totalCount - maxSize;
 
-            while (stack.Count > 0)
+            // 确保 trim buffer 足够大
+            EnsureTrimBufferCapacity(totalCount);
+
+            // 使用预分配的 buffer 替代分配新 List
+            // 将栈元素弹出到 buffer 中（逆序）
+            for (int i = 0; i < totalCount; i++)
             {
-                tempList.Add(stack.Pop());
+                _trimBuffer[i] = stack.Pop();
             }
 
-            for (int i = maxSize; i < tempList.Count; i++)
+            // 归还需要移除的旧命令（buffer 中的后 removeCount 个元素）
+            for (int i = maxSize; i < totalCount; i++)
             {
-                AsakiCommandPoolManager.Return(tempList[i]);
+                AsakiCommandPoolManager.Return(_trimBuffer[i]);
+                _trimBuffer[i] = null; // 帮助 GC
             }
 
+            // 将保留的命令重新压入栈（从 maxSize-1 到 0，这样栈顶是最新的）
             for (int i = maxSize - 1; i >= 0; i--)
             {
-                stack.Push(tempList[i]);
+                stack.Push(_trimBuffer[i]);
+                _trimBuffer[i] = null; // 帮助 GC
             }
+        }
+
+        /// <summary>
+        /// 确保 trim buffer 容量足够
+        /// </summary>
+        private void EnsureTrimBufferCapacity(int requiredCapacity)
+        {
+            if (_trimBuffer != null && _trimBuffer.Length >= requiredCapacity)
+                return;
+
+            // 扩容：至少是要求的容量，最多扩容到 _maxHistory * 2
+            int newCapacity = Math.Max(requiredCapacity, _trimBuffer?.Length ?? 0);
+            newCapacity = Math.Min(newCapacity * 2, _maxHistory * 2);
+            newCapacity = Math.Max(newCapacity, _maxHistory);
+
+            Array.Resize(ref _trimBuffer, newCapacity);
         }
     }
 }

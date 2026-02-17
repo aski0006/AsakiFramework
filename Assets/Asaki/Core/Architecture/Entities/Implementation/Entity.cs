@@ -6,7 +6,9 @@ using Asaki.Core.Broker;
 namespace Asaki.Core.Architecture.Entities
 {
     /// <summary>
-    /// 实体实现 - 数组化存储优化版
+    /// 实体实现 - 混合存储优化版
+    /// 小 TypeId 使用数组直接索引 (O(1) 性能)
+    /// 大 TypeId 使用 Dictionary 存储 (避免内存浪费)
     /// </summary>
     public class Entity : IEntity
     {
@@ -14,15 +16,24 @@ namespace Asaki.Core.Architecture.Entities
         private readonly EntityWorld _worldImpl;
         public IEntityWorld World => _worldImpl;
 
-        // 优化 1: 使用数组替代 Dictionary，利用 TypeId 直接索引
-        private IEntityComponent[] _componentsArray = new IEntityComponent[
-            AsakiArchitectureConstants.DefaultEntityComponentArraySize
+        // 常量：数组直接索引的最大 TypeId 阈值
+        // TypeId <= 127 使用数组 (128 个元素 = 约 1KB 内存)
+        // TypeId > 127 使用 Dictionary
+        private const int ArrayIndexThreshold = AsakiArchitectureConstants.EntityComponentArrayIndexThreshold;
+
+        // 优化 1: 小 TypeId 使用数组直接索引 (O(1) 性能)
+        private IEntityComponent[] _fastComponentsArray = new IEntityComponent[
+            ArrayIndexThreshold + 1
         ];
 
-        // 优化 2: 保持 BitArray 用于极速 HasComponent 检查
-        private BitArray _componentMask = new BitArray(
-            AsakiArchitectureConstants.DefaultEntityComponentArraySize
-        );
+        // 优化 2: 大 TypeId 使用 Dictionary 存储 (避免稀疏数组内存浪费)
+        private Dictionary<int, IEntityComponent> _sparseComponents;
+
+        // 优化 3: BitArray 用于极速 HasComponent 检查 (仅用于数组部分)
+        private BitArray _componentMask = new BitArray(ArrayIndexThreshold + 1);
+
+        // 稀疏组件的 HashSet 用于快速存在性检查
+        private HashSet<int> _sparseComponentTypeIds;
 
         private int _componentCount;
         private bool _isActive = true;
@@ -50,16 +61,30 @@ namespace Asaki.Core.Architecture.Entities
                 if (_isActive == value)
                     return;
                 _isActive = value;
-                // 数组遍历比 Dictionary Values 遍历更快
-                for (int i = 0; i < _componentsArray.Length; i++)
+
+                // 遍历数组部分
+                for (int i = 0; i < _fastComponentsArray.Length; i++)
                 {
-                    var c = _componentsArray[i];
-                    if (c == null)
-                        continue;
-                    if (_isActive)
-                        c.OnEnable();
-                    else
-                        c.OnDisable();
+                    var c = _fastComponentsArray[i];
+                    if (c != null)
+                    {
+                        if (_isActive)
+                            c.OnEnable();
+                        else
+                            c.OnDisable();
+                    }
+                }
+
+                // 遍历 Dictionary 部分
+                if (_sparseComponents != null)
+                {
+                    foreach (var c in _sparseComponents.Values)
+                    {
+                        if (_isActive)
+                            c.OnEnable();
+                        else
+                            c.OnDisable();
+                    }
                 }
             }
         }
@@ -83,22 +108,35 @@ namespace Asaki.Core.Architecture.Entities
             if (_isDisposed)
                 throw new ObjectDisposedException(nameof(Entity));
 
-            // 数组扩容检查
-            if (typeId >= _componentsArray.Length)
+            // 检查是否已存在该组件
+            if (HasComponent(typeId))
             {
-                int newSize = Math.Max(typeId + 1, _componentsArray.Length * 2);
-                Array.Resize(ref _componentsArray, newSize);
-                _componentMask.Length = newSize;
-            }
-
-            if (_componentsArray[typeId] != null)
                 throw new InvalidOperationException(
                     $"Entity {Id} already has component {type.Name}"
                 );
+            }
 
             component.Entity = this;
-            _componentsArray[typeId] = component;
-            _componentMask[typeId] = true;
+
+            // 根据 TypeId 选择存储方式
+            if (typeId <= ArrayIndexThreshold)
+            {
+                // 数组直接索引 (O(1))
+                _fastComponentsArray[typeId] = component;
+                _componentMask[typeId] = true;
+            }
+            else
+            {
+                // Dictionary 存储 (避免内存浪费)
+                if (_sparseComponents == null)
+                {
+                    _sparseComponents = new Dictionary<int, IEntityComponent>(4);
+                    _sparseComponentTypeIds = new HashSet<int>();
+                }
+                _sparseComponents[typeId] = component;
+                _sparseComponentTypeIds.Add(typeId);
+            }
+
             _componentCount++;
 
             // 通知 World 更新缓存
@@ -118,10 +156,21 @@ namespace Asaki.Core.Architecture.Entities
             where T : class, IEntityComponent
         {
             int typeId = ComponentTypeRegistry.GetTypeId<T>();
-            if (typeId >= _componentsArray.Length)
-                return null;
-            // 数组直接访问，极快
-            return _componentsArray[typeId] as T;
+
+            if (typeId <= ArrayIndexThreshold)
+            {
+                // 数组直接访问，极快
+                if (typeId >= _fastComponentsArray.Length)
+                    return null;
+                return _fastComponentsArray[typeId] as T;
+            }
+            else
+            {
+                // Dictionary 查找
+                if (_sparseComponents == null)
+                    return null;
+                return _sparseComponents.TryGetValue(typeId, out var comp) ? comp as T : null;
+            }
         }
 
         public bool TryGetComponent<T>(out T component)
@@ -140,10 +189,8 @@ namespace Asaki.Core.Architecture.Entities
         public bool RemoveComponent(Type componentType)
         {
             int typeId = ComponentTypeRegistry.GetTypeId(componentType);
-            if (typeId >= _componentsArray.Length)
-                return false;
 
-            var component = _componentsArray[typeId];
+            IEntityComponent component = GetComponentInternal(typeId);
             if (component == null)
                 return false;
 
@@ -154,8 +201,27 @@ namespace Asaki.Core.Architecture.Entities
             component.Dispose();
 
             // 2. 数据清理
-            _componentsArray[typeId] = null;
-            _componentMask[typeId] = false;
+            if (typeId <= ArrayIndexThreshold)
+            {
+                _fastComponentsArray[typeId] = null;
+                _componentMask[typeId] = false;
+            }
+            else
+            {
+                if (_sparseComponents != null)
+                {
+                    _sparseComponents.Remove(typeId);
+                    _sparseComponentTypeIds?.Remove(typeId);
+
+                    // 如果稀疏字典为空，清理它以节省内存
+                    if (_sparseComponents.Count == 0)
+                    {
+                        _sparseComponents = null;
+                        _sparseComponentTypeIds = null;
+                    }
+                }
+            }
+
             _componentCount--;
 
             // 3. 通知 World
@@ -170,15 +236,21 @@ namespace Asaki.Core.Architecture.Entities
         public bool HasComponent<T>()
             where T : class, IEntityComponent
         {
-            int typeId = ComponentTypeRegistry.GetTypeId<T>();
-            return HasComponent(typeId);
+            return HasComponent(ComponentTypeRegistry.GetTypeId<T>());
         }
 
         internal bool HasComponent(int typeId)
         {
-            if (typeId >= _componentMask.Length)
-                return false;
-            return _componentMask[typeId];
+            if (typeId <= ArrayIndexThreshold)
+            {
+                if (typeId >= _componentMask.Length)
+                    return false;
+                return _componentMask[typeId];
+            }
+            else
+            {
+                return _sparseComponentTypeIds?.Contains(typeId) == true;
+            }
         }
 
         public bool HasComponent(Type componentType)
@@ -186,13 +258,40 @@ namespace Asaki.Core.Architecture.Entities
             return HasComponent(ComponentTypeRegistry.GetTypeId(componentType));
         }
 
+        // 内部方法：获取组件（不关心类型）
+        private IEntityComponent GetComponentInternal(int typeId)
+        {
+            if (typeId <= ArrayIndexThreshold)
+            {
+                if (typeId >= _fastComponentsArray.Length)
+                    return null;
+                return _fastComponentsArray[typeId];
+            }
+            else
+            {
+                if (_sparseComponents == null)
+                    return null;
+                return _sparseComponents.TryGetValue(typeId, out var comp) ? comp : null;
+            }
+        }
+
         public IEnumerable<IEntityComponent> GetAllComponents()
         {
-            for (int i = 0; i < _componentsArray.Length; i++)
+            // 遍历数组部分
+            for (int i = 0; i < _fastComponentsArray.Length; i++)
             {
-                var c = _componentsArray[i];
+                var c = _fastComponentsArray[i];
                 if (c != null)
                     yield return c;
+            }
+
+            // 遍历 Dictionary 部分
+            if (_sparseComponents != null)
+            {
+                foreach (var c in _sparseComponents.Values)
+                {
+                    yield return c;
+                }
             }
         }
 
@@ -202,31 +301,65 @@ namespace Asaki.Core.Architecture.Entities
                 return;
             _isDisposed = true;
 
-            for (int typeId = 0; typeId < _componentsArray.Length; typeId++)
+            // 创建快照，避免遍历时修改
+            var componentsToDispose = new List<(int typeId, IEntityComponent component)>();
+
+            // 收集数组部分
+            for (int i = 0; i < _fastComponentsArray.Length; i++)
             {
-                var c = _componentsArray[typeId];
+                var c = _fastComponentsArray[i];
                 if (c != null)
                 {
-                    try
-                    {
-                        _worldImpl.OnComponentRemoved(this, typeId);
-
-                        if (_isActive)
-                            c.OnDisable();
-                        c.OnDetach();
-                        c.Dispose();
-                    }
-                    catch (System.Exception ex)
-                    {
-                        Asaki.Core.Logging.ALog.Error(
-                            $"[Entity] Error disposing component {c.GetType().Name} on {Id}: {ex}"
-                        );
-                    }
-                    _componentsArray[typeId] = null;
+                    componentsToDispose.Add((i, c));
                 }
             }
 
+            // 收集 Dictionary 部分
+            if (_sparseComponents != null)
+            {
+                foreach (var kvp in _sparseComponents)
+                {
+                    componentsToDispose.Add((kvp.Key, kvp.Value));
+                }
+            }
+
+            // 逐个安全处置
+            foreach (var (typeId, component) in componentsToDispose)
+            {
+                try
+                {
+                    _worldImpl.OnComponentRemoved(this, typeId);
+                    if (_isActive)
+                        component.OnDisable();
+                    component.OnDetach();
+                    component.Dispose();
+                }
+                catch (System.Exception ex)
+                {
+                    Asaki.Core.Logging.ALog.Error(
+                        $"[Entity] Error disposing component {component.GetType().Name} on {Id}: {ex}"
+                    );
+                }
+                finally
+                {
+                    // finally 确保清理
+                    if (typeId <= ArrayIndexThreshold && typeId < _fastComponentsArray.Length)
+                    {
+                        _fastComponentsArray[typeId] = null;
+                        _componentMask[typeId] = false;
+                    }
+                    else
+                    {
+                        _sparseComponents?.Remove(typeId);
+                        _sparseComponentTypeIds?.Remove(typeId);
+                    }
+                }
+            }
+
+            // 清理集合
             _componentMask.SetAll(false);
+            _sparseComponents?.Clear();
+            _sparseComponentTypeIds?.Clear();
             _componentCount = 0;
             Id = EntityId.Invalid;
         }

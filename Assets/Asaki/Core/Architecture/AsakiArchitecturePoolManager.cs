@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Context;
 using Asaki.Core.Logging;
@@ -11,7 +12,7 @@ namespace Asaki.Core.Architecture
 {
     /// <summary>
     /// 架构对象池管理器 - 统一管理 Command 和 Query 对象池
-    /// 基于 IAsakiPoolService 实现,提供统计、验证等高级功能
+    /// 基于 IAsakiPoolService 实现，提供统计、验证等高级功能
     /// </summary>
     public static class AsakiArchitecturePoolManager
     {
@@ -20,7 +21,7 @@ namespace Asaki.Core.Architecture
         private static bool _isInitialized;
 
         /// <summary>
-        /// 初始化池服务(延迟初始化)
+        /// 初始化池服务 (延迟初始化)
         /// </summary>
         private static void EnsureInitialized()
         {
@@ -51,7 +52,7 @@ namespace Asaki.Core.Architecture
             string poolKey = GetPoolKey<T>();
             IAsakiPool<T> pool = _poolService.GetPool<T>(poolKey);
 
-            // 懒加载:首次使用时创建池
+            // 懒加载：首次使用时创建池
             if (pool == null)
             {
                 pool = await CreatePoolAsync<T>(poolKey, token);
@@ -61,7 +62,7 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
-        /// 同步租借(优先使用异步版本)
+        /// 同步租借 (优先使用异步版本)
         /// </summary>
         public static T Rent<T>()
             where T : class, new()
@@ -71,7 +72,7 @@ namespace Asaki.Core.Architecture
             string poolKey = GetPoolKey<T>();
             IAsakiPool<T> pool = _poolService.GetPool<T>(poolKey);
 
-            // 如果池不存在,创建新实例(不推荐,应使用 RentAsync)
+            // 如果池不存在，创建新实例 (不推荐，应使用 RentAsync)
             if (pool == null)
             {
                 ALog.Warn(
@@ -84,8 +85,8 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
-        /// 尝试从池租借对象，如果池不存在或池为空则返回false
-        /// 用于非预热类型的Command/Query，此时应使用new创建
+        /// 尝试从池租借对象，如果池不存在或池为空则返回 false
+        /// 用于非预热类型的 Command/Query，此时应使用 new 创建
         /// 关键：即使池存在，如果池为空也不从工厂创建对象，确保行为可预测
         /// </summary>
         public static bool TryRent<T>(out T obj)
@@ -112,8 +113,8 @@ namespace Asaki.Core.Architecture
                 return false;
 
             // 关键：检查池中是否有可用对象
-            // 使用Statistics.InactiveCount（池内可用对象数量）
-            // 如果池为空，则返回false，让调用方使用new
+            // 使用 Statistics.InactiveCount（池内可用对象数量）
+            // 如果池为空，则返回 false，让调用方使用 new
             if (pool.Statistics.InactiveCount <= 0)
                 return false;
 
@@ -188,8 +189,8 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
-        /// 尝试归还对象到池，如果池不存在则直接丢弃（由GC回收）
-        /// 用于非预热类型的Command/Query
+        /// 尝试归还对象到池，如果池不存在则直接丢弃（由 GC 回收）
+        /// 用于非预热类型的 Command/Query
         /// </summary>
         public static void TryReturn<T>(T obj)
             where T : class
@@ -210,7 +211,7 @@ namespace Asaki.Core.Architecture
                 return;
             }
 
-            // 池不存在时不记录警告，直接让GC回收
+            // 池不存在时不记录警告，直接让 GC 回收
             if (pool == null)
                 return;
 
@@ -231,7 +232,7 @@ namespace Asaki.Core.Architecture
                 createSync: () => new T(),
                 onReturn: obj =>
                 {
-                    // 自动重置(如果实现了 IAsakiResettable)
+                    // 自动重置 (如果实现了 IAsakiResettable)
                     if (obj is IAsakiResettable resettable)
                     {
                         resettable.Reset();
@@ -240,14 +241,14 @@ namespace Asaki.Core.Architecture
                 validate: obj => obj != null
             );
 
-            // 配置:轻量级对象,大容量,无预热
+            // 配置：轻量级对象，大容量，无预热
             var config = new AsakiPoolConfig
             {
-                InitialSize = 0, // 懒加载,无预热
+                InitialSize = 0, // 懒加载，无预热
                 MaxSize = 128, // 限制最大 128 个缓存
                 EnableValidation = true, // 启用验证
                 EnableCollectionCheck = false, // 架构对象无需检测重复归还
-                AllowSyncCreation = true, // 允许同步创建(轻量级对象)
+                AllowSyncCreation = true, // 允许同步创建 (轻量级对象)
                 OperationTimeout = 0f, // 无超时
             };
 
@@ -266,18 +267,41 @@ namespace Asaki.Core.Architecture
         }
 
         /// <summary>
-        /// 清空所有池(场景切换时调用)
+        /// 清空所有池 (场景切换时调用)
+        /// 只清空 Architecture 管理的池，不影响其他系统使用的池服务
         /// </summary>
         public static void ClearAll()
         {
-            if (!_isInitialized)
+            if (!_isInitialized || _poolService == null)
                 return;
 
-            _poolService?.Dispose();
+            // 获取所有 Architecture 相关的池键
+            var architecturePoolKeys = new List<string>();
+            foreach (var key in _poolService.GetAllPoolKeys())
+            {
+                if (key.StartsWith("Architecture_", StringComparison.Ordinal))
+                {
+                    architecturePoolKeys.Add(key);
+                }
+            }
+
+            // 只处置 Architecture 相关的池
+            foreach (var key in architecturePoolKeys)
+            {
+                try
+                {
+                    _poolService.DestroyPool(key);
+                }
+                catch (Exception ex)
+                {
+                    ALog.Error($"[AsakiArchitecturePool] Failed to destroy pool '{key}': {ex.Message}");
+                }
+            }
+
             _poolService = null;
             _isInitialized = false;
 
-            ALog.Info("[AsakiArchitecturePool] All architecture pools cleared");
+            ALog.Info($"[AsakiArchitecturePool] Cleared {architecturePoolKeys.Count} architecture pools");
         }
 
         /// <summary>
