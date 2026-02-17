@@ -9,6 +9,10 @@ All notable changes to the Asaki Framework will be documented in this file.
   - EntityWorld is a POJO class, cannot be retrieved via `FindObjectsByType<MonoBehaviour>`
   - Added `EntityWorldHelper` utility class to get IAsakiArchitecture from AsakiSceneContext via reflection
   - Implemented reflection field cache and Architecture list cache to avoid frequent reflection overhead
+- **EntityWorldHelper KeyNotFoundException** - Fixed crash when Architecture has no EntityModel
+  - `TryGetEntityWorld()` now iterates all architectures and skips those without EntityModel
+  - `GetAllEntityWorlds()` now gracefully handles architectures without EntityModel
+  - Prevents `KeyNotFoundException` when first architecture doesn't have EntityModel registered
 
 ### Added
 - **Extended Query Support** - Extended Query generic support from 3 to 6 components

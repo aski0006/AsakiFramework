@@ -45,11 +45,22 @@ namespace Asaki.Editor.Entities
             world = null;
 
             var architectures = GetArchitectures();
-            if (architectures.Count == 0)
-                return false;
+            foreach (var arch in architectures)
+            {
+                try
+                {
+                    world = arch.GetEntityWorld();
+                    if (world != null)
+                        return true;
+                }
+                catch (KeyNotFoundException)
+                {
+                    // This Architecture doesn't have EntityModel registered, skip it
+                    continue;
+                }
+            }
 
-            world = architectures[0].GetEntityWorld();
-            return world != null;
+            return false;
         }
 
         /// <summary>
@@ -63,9 +74,17 @@ namespace Asaki.Editor.Entities
 
             foreach (var arch in architectures)
             {
-                var world = arch.GetEntityWorld();
-                if (world != null && !worlds.Contains(world))
-                    worlds.Add(world);
+                try
+                {
+                    var world = arch.GetEntityWorld();
+                    if (world != null && !worlds.Contains(world))
+                        worlds.Add(world);
+                }
+                catch (KeyNotFoundException)
+                {
+                    // This Architecture doesn't have EntityModel registered, skip it
+                    continue;
+                }
             }
 
             return worlds;
