@@ -2,6 +2,20 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.3] - 2025-02-17
+
+### Added
+- **Injector Priority Support** - Added priority-based injection ordering
+  - `IAsakiInjector.Priority` property for controlling injection order
+  - Higher priority injectors execute first
+- **ECS Support** - Added Entity Component System integration
+  - `EcsExample` demonstrating ECS architecture usage
+  - System lifecycle refactoring for better ECS integration
+
+### Changed
+- Refactored system lifecycle management
+- Optimized global service management with injection phases
+
 ## [1.3.2] - 2025-02-17
 
 ### Fixed
