@@ -2,6 +2,14 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.5] - 2025-02-17
+
+### Fixed
+- **EntityWorldHelper KeyNotFoundException** - Fixed crash when Architecture has no EntityModel
+  - `TryGetEntityWorld()` now iterates all architectures and skips those without EntityModel
+  - `GetAllEntityWorlds()` now gracefully handles architectures without EntityModel
+  - Prevents `KeyNotFoundException` when first architecture doesn't have EntityModel registered
+
 ## [1.3.4] - 2025-02-17
 
 ### Fixed
