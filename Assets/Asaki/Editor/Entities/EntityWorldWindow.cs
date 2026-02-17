@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Asaki.Core.Architecture;
 using Asaki.Core.Architecture.Entities;
+using Asaki.Core.Context;
+using Asaki.Core.Context.Resolvers;
 using UnityEditor;
 using UnityEngine;
 
@@ -119,14 +122,10 @@ namespace Asaki.Editor.Entities
             _activeEntities = 0;
             _totalComponents = 0;
 
-            var worlds = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-                .OfType<IEntityWorld>()
-                .ToList();
-
-            if (worlds.Count == 0)
+            if (!EntityWorldHelper.TryGetEntityWorld(out var world))
                 return;
 
-            _cachedWorld = worlds[0];
+            _cachedWorld = world;
             var allEntities = _cachedWorld.GetAllEntities().ToList();
 
             foreach (var entity in allEntities)

@@ -216,7 +216,8 @@ namespace Asaki.Core.Architecture.Entities
             // 找到最小的组
             int minCount = Math.Min(g1.Count, Math.Min(g2.Count, g3.Count));
             HashSet<Entity> smallestGroup;
-            int checkTypeId1, checkTypeId2;
+            int checkTypeId1,
+                checkTypeId2;
 
             if (g1.Count == minCount)
             {
@@ -240,6 +241,225 @@ namespace Asaki.Core.Architecture.Entities
             foreach (var entity in smallestGroup)
             {
                 if (entity.HasComponent(checkTypeId1) && entity.HasComponent(checkTypeId2))
+                    yield return entity;
+            }
+        }
+
+        public IEnumerable<IEntity> Query<T1, T2, T3, T4>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent
+        {
+            int t1 = ComponentTypeRegistry.GetTypeId<T1>();
+            int t2 = ComponentTypeRegistry.GetTypeId<T2>();
+            int t3 = ComponentTypeRegistry.GetTypeId<T3>();
+            int t4 = ComponentTypeRegistry.GetTypeId<T4>();
+
+            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t3, out var g3) || g3.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t4, out var g4) || g4.Count == 0)
+                yield break;
+
+            int minCount = Math.Min(g1.Count, Math.Min(g2.Count, Math.Min(g3.Count, g4.Count)));
+            HashSet<Entity> smallestGroup;
+            int[] checkTypeIds;
+
+            if (g1.Count == minCount)
+            {
+                smallestGroup = g1;
+                checkTypeIds = new[] { t2, t3, t4 };
+            }
+            else if (g2.Count == minCount)
+            {
+                smallestGroup = g2;
+                checkTypeIds = new[] { t1, t3, t4 };
+            }
+            else if (g3.Count == minCount)
+            {
+                smallestGroup = g3;
+                checkTypeIds = new[] { t1, t2, t4 };
+            }
+            else
+            {
+                smallestGroup = g4;
+                checkTypeIds = new[] { t1, t2, t3 };
+            }
+
+            foreach (var entity in smallestGroup)
+            {
+                bool hasAll = true;
+                for (int i = 0; i < checkTypeIds.Length; i++)
+                {
+                    if (!entity.HasComponent(checkTypeIds[i]))
+                    {
+                        hasAll = false;
+                        break;
+                    }
+                }
+                if (hasAll)
+                    yield return entity;
+            }
+        }
+
+        public IEnumerable<IEntity> Query<T1, T2, T3, T4, T5>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent
+            where T5 : class, IEntityComponent
+        {
+            int t1 = ComponentTypeRegistry.GetTypeId<T1>();
+            int t2 = ComponentTypeRegistry.GetTypeId<T2>();
+            int t3 = ComponentTypeRegistry.GetTypeId<T3>();
+            int t4 = ComponentTypeRegistry.GetTypeId<T4>();
+            int t5 = ComponentTypeRegistry.GetTypeId<T5>();
+
+            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t3, out var g3) || g3.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t4, out var g4) || g4.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t5, out var g5) || g5.Count == 0)
+                yield break;
+
+            int minCount = Math.Min(
+                g1.Count,
+                Math.Min(g2.Count, Math.Min(g3.Count, Math.Min(g4.Count, g5.Count)))
+            );
+            HashSet<Entity> smallestGroup;
+            int[] checkTypeIds;
+
+            if (g1.Count == minCount)
+            {
+                smallestGroup = g1;
+                checkTypeIds = new[] { t2, t3, t4, t5 };
+            }
+            else if (g2.Count == minCount)
+            {
+                smallestGroup = g2;
+                checkTypeIds = new[] { t1, t3, t4, t5 };
+            }
+            else if (g3.Count == minCount)
+            {
+                smallestGroup = g3;
+                checkTypeIds = new[] { t1, t2, t4, t5 };
+            }
+            else if (g4.Count == minCount)
+            {
+                smallestGroup = g4;
+                checkTypeIds = new[] { t1, t2, t3, t5 };
+            }
+            else
+            {
+                smallestGroup = g5;
+                checkTypeIds = new[] { t1, t2, t3, t4 };
+            }
+
+            foreach (var entity in smallestGroup)
+            {
+                bool hasAll = true;
+                for (int i = 0; i < checkTypeIds.Length; i++)
+                {
+                    if (!entity.HasComponent(checkTypeIds[i]))
+                    {
+                        hasAll = false;
+                        break;
+                    }
+                }
+                if (hasAll)
+                    yield return entity;
+            }
+        }
+
+        public IEnumerable<IEntity> Query<T1, T2, T3, T4, T5, T6>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent
+            where T5 : class, IEntityComponent
+            where T6 : class, IEntityComponent
+        {
+            int t1 = ComponentTypeRegistry.GetTypeId<T1>();
+            int t2 = ComponentTypeRegistry.GetTypeId<T2>();
+            int t3 = ComponentTypeRegistry.GetTypeId<T3>();
+            int t4 = ComponentTypeRegistry.GetTypeId<T4>();
+            int t5 = ComponentTypeRegistry.GetTypeId<T5>();
+            int t6 = ComponentTypeRegistry.GetTypeId<T6>();
+
+            if (!_componentGroups.TryGetValue(t1, out var g1) || g1.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t2, out var g2) || g2.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t3, out var g3) || g3.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t4, out var g4) || g4.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t5, out var g5) || g5.Count == 0)
+                yield break;
+            if (!_componentGroups.TryGetValue(t6, out var g6) || g6.Count == 0)
+                yield break;
+
+            int minCount = Math.Min(
+                g1.Count,
+                Math.Min(
+                    g2.Count,
+                    Math.Min(g3.Count, Math.Min(g4.Count, Math.Min(g5.Count, g6.Count)))
+                )
+            );
+            HashSet<Entity> smallestGroup;
+            int[] checkTypeIds;
+
+            if (g1.Count == minCount)
+            {
+                smallestGroup = g1;
+                checkTypeIds = new[] { t2, t3, t4, t5, t6 };
+            }
+            else if (g2.Count == minCount)
+            {
+                smallestGroup = g2;
+                checkTypeIds = new[] { t1, t3, t4, t5, t6 };
+            }
+            else if (g3.Count == minCount)
+            {
+                smallestGroup = g3;
+                checkTypeIds = new[] { t1, t2, t4, t5, t6 };
+            }
+            else if (g4.Count == minCount)
+            {
+                smallestGroup = g4;
+                checkTypeIds = new[] { t1, t2, t3, t5, t6 };
+            }
+            else if (g5.Count == minCount)
+            {
+                smallestGroup = g5;
+                checkTypeIds = new[] { t1, t2, t3, t4, t6 };
+            }
+            else
+            {
+                smallestGroup = g6;
+                checkTypeIds = new[] { t1, t2, t3, t4, t5 };
+            }
+
+            foreach (var entity in smallestGroup)
+            {
+                bool hasAll = true;
+                for (int i = 0; i < checkTypeIds.Length; i++)
+                {
+                    if (!entity.HasComponent(checkTypeIds[i]))
+                    {
+                        hasAll = false;
+                        break;
+                    }
+                }
+                if (hasAll)
                     yield return entity;
             }
         }

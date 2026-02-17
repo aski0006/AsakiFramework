@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Asaki.Core.Architecture;
 using Asaki.Core.Architecture.Entities;
+using Asaki.Core.Context;
+using Asaki.Core.Context.Resolvers;
 using UnityEditor;
 using UnityEngine;
 
@@ -103,13 +106,8 @@ namespace Asaki.Editor.Entities
 
         private void RefreshWorld()
         {
-            var worlds = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-                .OfType<IEntityWorld>()
-                .ToList();
-
-            if (worlds.Count > 0)
+            if (EntityWorldHelper.TryGetEntityWorld(out _world))
             {
-                _world = worlds[0];
                 ExecuteQuery();
             }
         }

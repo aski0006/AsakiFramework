@@ -72,6 +72,54 @@ namespace Asaki.Core.Architecture.Entities
             where T3 : class, IEntityComponent;
 
         /// <summary>
+        /// 查询具有指定组件组合的实体
+        /// </summary>
+        /// <typeparam name="T1">组件类型1</typeparam>
+        /// <typeparam name="T2">组件类型2</typeparam>
+        /// <typeparam name="T3">组件类型3</typeparam>
+        /// <typeparam name="T4">组件类型4</typeparam>
+        /// <returns>符合条件的实体</returns>
+        IEnumerable<IEntity> Query<T1, T2, T3, T4>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent;
+
+        /// <summary>
+        /// 查询具有指定组件组合的实体
+        /// </summary>
+        /// <typeparam name="T1">组件类型1</typeparam>
+        /// <typeparam name="T2">组件类型2</typeparam>
+        /// <typeparam name="T3">组件类型3</typeparam>
+        /// <typeparam name="T4">组件类型4</typeparam>
+        /// <typeparam name="T5">组件类型5</typeparam>
+        /// <returns>符合条件的实体</returns>
+        IEnumerable<IEntity> Query<T1, T2, T3, T4, T5>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent
+            where T5 : class, IEntityComponent;
+
+        /// <summary>
+        /// 查询具有指定组件组合的实体
+        /// </summary>
+        /// <typeparam name="T1">组件类型1</typeparam>
+        /// <typeparam name="T2">组件类型2</typeparam>
+        /// <typeparam name="T3">组件类型3</typeparam>
+        /// <typeparam name="T4">组件类型4</typeparam>
+        /// <typeparam name="T5">组件类型5</typeparam>
+        /// <typeparam name="T6">组件类型6</typeparam>
+        /// <returns>符合条件的实体</returns>
+        IEnumerable<IEntity> Query<T1, T2, T3, T4, T5, T6>()
+            where T1 : class, IEntityComponent
+            where T2 : class, IEntityComponent
+            where T3 : class, IEntityComponent
+            where T4 : class, IEntityComponent
+            where T5 : class, IEntityComponent
+            where T6 : class, IEntityComponent;
+
+        /// <summary>
         /// 实体数量
         /// </summary>
         int EntityCount { get; }

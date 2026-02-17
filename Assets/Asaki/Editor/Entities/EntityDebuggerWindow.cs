@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Asaki.Core.Architecture;
 using Asaki.Core.Architecture.Entities;
+using Asaki.Core.Context;
+using Asaki.Core.Context.Resolvers;
 using UnityEditor;
 using UnityEngine;
 
@@ -83,11 +86,7 @@ namespace Asaki.Editor.Entities
         {
             if (_world == null)
             {
-                var worlds = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-                    .OfType<IEntityWorld>()
-                    .ToList();
-                if (worlds.Count > 0)
-                    _world = worlds[0];
+                EntityWorldHelper.TryGetEntityWorld(out _world);
             }
 
             if (_world != null)

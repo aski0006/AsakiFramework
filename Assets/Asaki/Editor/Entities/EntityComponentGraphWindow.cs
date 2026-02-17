@@ -2,7 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Asaki.Core.Architecture;
 using Asaki.Core.Architecture.Entities;
+using Asaki.Core.Context;
+using Asaki.Core.Context.Resolvers;
 using UnityEditor;
 using UnityEngine;
 
@@ -99,14 +102,8 @@ namespace Asaki.Editor.Entities
             _nodes.Clear();
             _edges.Clear();
 
-            // 查找世界
-            var worlds = FindObjectsByType<MonoBehaviour>(FindObjectsSortMode.None)
-                .OfType<IEntityWorld>()
-                .ToList();
-
-            if (worlds.Count == 0)
+            if (!EntityWorldHelper.TryGetEntityWorld(out _world))
                 return;
-            _world = worlds[0];
 
             var entities = _world.GetAllEntities().ToList();
             int nodeId = 0;
