@@ -2,6 +2,13 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.8] - 2025-02-18
+
+### Fixed
+- **Cross-Assembly Internal Access** - Fixed CS1061 compilation error
+  - Added `internalsVisibleTo: ["Asaki.Unity"]` to `Asaki.Core.asmdef`
+  - `AsakiSceneContext.IsInitializingServices` (internal) is now accessible from `AsakiMonoLifecycleManager`
+
 ## [1.3.7] - 2025-02-18
 
 ### Fixed
