@@ -288,7 +288,10 @@ namespace Asaki.Unity
 
             if (context != null)
             {
-                context.Build();
+                if (!context.IsInitializingServices)
+                {
+                    context.Build();
+                }
                 return context;
             }
             return AsakiGlobalResolver.Instance;

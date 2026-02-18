@@ -2,6 +2,15 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.7] - 2025-02-18
+
+### Fixed
+- **AsakiSceneContext Service Registration Timing (v3.2)** - Fixed prefab services not being injected
+  - Added `_isInitializing` state flag to prevent premature `Build()` calls
+  - `AsakiMonoLifecycleManager.GetResolverForComponent()` now checks `IsInitializingServices` before calling `Build()`
+  - `Build()` is now called after all services (pure C# and prefab) are registered
+  - Fixes injection failures when services depend on prefab services (e.g., `PlayerCameraManager`)
+
 ## [1.3.6] - 2025-02-18
 
 ### Fixed

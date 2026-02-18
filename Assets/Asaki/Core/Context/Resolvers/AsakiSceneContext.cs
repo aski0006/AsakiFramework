@@ -16,6 +16,9 @@ namespace Asaki.Core.Context.Resolvers
     ///
     /// [v3.1 修复] 调整执行顺序，确保纯C#服务在预制体实例化前注册，
     ///             避免预制体Awake触发Build()时pending services为空的问题。
+    ///
+    /// [v3.2 修复] 添加初始化状态标志，防止 AsakiMonoLifecycleManager 提前触发 Build()，
+    ///             确保所有服务（包括预制体服务）注册完成后才执行注入。
     /// </remarks>
     [DefaultExecutionOrder(-100)]
     public class AsakiSceneContext : MonoBehaviour, IAsakiResolver
@@ -57,7 +60,11 @@ namespace Asaki.Core.Context.Resolvers
 
         private readonly object _buildLock = new object();
 
+        private bool _isInitializing = false;
+
         public bool IsBuilt => _isBuilt;
+
+        internal bool IsInitializingServices => _isInitializing;
 
 #if UNITY_EDITOR
         public Dictionary<Type, IAsakiService> GetRuntimeServices()
@@ -79,6 +86,8 @@ namespace Asaki.Core.Context.Resolvers
         {
             ALog.Info($"[AsakiSceneContext] Initializing in scene: {gameObject.scene.name}");
 
+            _isInitializing = true;
+
             RegisterPureCSharpServices();
 
             ALog.Info($"[AsakiSceneContext] Registered {_localServices.Count} pure C# services.");
@@ -87,9 +96,13 @@ namespace Asaki.Core.Context.Resolvers
 
             ScanAndRegisterPrefabServices();
 
-            ALog.Info(
-                $"[AsakiSceneContext] Total {_localServices.Count} services registered. Waiting for Build()..."
-            );
+            _isInitializing = false;
+
+            ALog.Info($"[AsakiSceneContext] Total {_localServices.Count} services registered.");
+
+            Build();
+
+            ALog.Info($"[AsakiSceneContext] Initialization complete. Waiting for framework ready...");
         }
 
         private void InstantiateServicePrefabs()
