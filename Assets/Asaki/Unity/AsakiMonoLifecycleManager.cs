@@ -5,7 +5,6 @@ using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Core.Logging;
 using Asaki.Generated;
-using Asaki.Unity.Bootstrapper;
 using UnityEngine.SceneManagement;
 
 namespace Asaki.Unity

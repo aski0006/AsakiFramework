@@ -34,6 +34,22 @@ namespace Asaki.Core.Context
         // 架构状态机
         private static volatile bool _isFrozen;
 
+        // 框架就绪标志
+        private static volatile bool _isReady;
+
+        /// <summary>
+        /// 框架是否已就绪
+        /// </summary>
+        public static bool IsReady => _isReady;
+
+        /// <summary>
+        /// 标记框架为就绪状态
+        /// </summary>
+        public static void SetReady()
+        {
+            _isReady = true;
+        }
+
         // ========================================================================
         // 极速读取 API (Hot Path)
         // ========================================================================
@@ -230,6 +246,7 @@ namespace Asaki.Core.Context
                 // 2. 立即置空 (后续读取将失败或返回空)
                 _services = new Dictionary<Type, IAsakiService>();
                 _isFrozen = false;
+                _isReady = false;
             }
 
             // 3. 在锁外执行 Dispose，防止 Dispose 逻辑死锁
@@ -265,6 +282,7 @@ namespace Asaki.Core.Context
             {
                 _services = new Dictionary<Type, IAsakiService>();
                 _isFrozen = false;
+                _isReady = false;
             }
         }
     }

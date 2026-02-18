@@ -2,6 +2,17 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.10] - 2025-02-18
+
+### Fixed
+- **Framework Initialization Timing (v3.3)** - Fixed service injection failure due to timing issues
+  - `AsakiSceneContext.Awake()` no longer calls `Build()` directly
+  - `Build()` is now triggered by `OnAsakiFrameworkReadyEvent` after global services are ready
+  - Added `AsakiContext.IsReady` property and `SetReady()` method
+  - `OnAsakiFrameworkReadyEvent` moved to `Asaki.Core.Context` namespace for proper assembly isolation
+  - `AsakiSceneContext` now implements `IAsakiHandler<OnAsakiFrameworkReadyEvent>` interface
+  - Fixes injection failures when scene services depend on global services (e.g., `IAsakiSceneManagerService`)
+
 ## [1.3.9] - 2025-02-18
 
 ### Fixed

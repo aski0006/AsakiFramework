@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Asaki.Core.Attributes;
+using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using UnityEngine;
 
@@ -19,9 +20,14 @@ namespace Asaki.Core.Context.Resolvers
     ///
     /// [v3.2 修复] 添加初始化状态标志，防止 AsakiMonoLifecycleManager 提前触发 Build()，
     ///             确保所有服务（包括预制体服务）注册完成后才执行注入。
+    ///
+    /// [v3.3 修复] 延迟 Build() 到框架就绪事件后执行，避免时序问题。
     /// </remarks>
     [DefaultExecutionOrder(-100)]
-    public class AsakiSceneContext : MonoBehaviour, IAsakiResolver
+    public class AsakiSceneContext
+        : MonoBehaviour,
+            IAsakiResolver,
+            IAsakiHandler<OnAsakiFrameworkReadyEvent>
     {
         // ========================================================================
         // 配置字段
@@ -100,11 +106,36 @@ namespace Asaki.Core.Context.Resolvers
 
             ALog.Info($"[AsakiSceneContext] Total {_localServices.Count} services registered.");
 
-            Build();
-
             ALog.Info(
                 $"[AsakiSceneContext] Initialization complete. Waiting for framework ready..."
             );
+        }
+
+        /// <summary>
+        /// 启用时订阅框架就绪事件
+        /// </summary>
+        private void OnEnable()
+        {
+            AsakiBroker.Subscribe<OnAsakiFrameworkReadyEvent>(this);
+        }
+
+        /// <summary>
+        /// 禁用时取消订阅框架就绪事件
+        /// </summary>
+        private void OnDisable()
+        {
+            AsakiBroker.Unsubscribe<OnAsakiFrameworkReadyEvent>(this);
+        }
+
+        /// <summary>
+        /// 框架就绪事件处理：当收到此事件时才执行 Build()
+        /// </summary>
+        public void OnEvent(in OnAsakiFrameworkReadyEvent e)
+        {
+            if (!_isBuilt)
+            {
+                Build();
+            }
         }
 
         private void InstantiateServicePrefabs()
