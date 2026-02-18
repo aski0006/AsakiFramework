@@ -2,6 +2,14 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.6] - 2025-02-18
+
+### Fixed
+- **AsakiSceneContext Service Registration Timing** - Fixed pure C# services not being initialized
+  - `Awake()` execution order changed: `RegisterPureCSharpServices()` now runs before `InstantiateServicePrefabs()`
+  - Prevents `Build()` from being called with empty `_pendingInitServices` when prefab `Awake()` triggers early
+  - Pure C# services (like `AsakiArchitecture`) are now correctly registered before prefab instantiation
+
 ## [1.3.5] - 2025-02-17
 
 ### Fixed

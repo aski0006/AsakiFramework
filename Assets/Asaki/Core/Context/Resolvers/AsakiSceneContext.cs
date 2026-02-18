@@ -11,8 +11,11 @@ namespace Asaki.Core.Context.Resolvers
     /// </summary>
     /// <remarks>
     /// [v3.0 重构] 采用预制体服务注册模式：
-    /// 1. Awake: 实例化预制体 → 扫描服务 → 注册服务
+    /// 1. Awake: 注册纯C#服务 → 实例化预制体 → 扫描服务
     /// 2. Build: 由 Bootstrapper 在全局环境就绪后显式调用，执行 Init。
+    ///
+    /// [v3.1 修复] 调整执行顺序，确保纯C#服务在预制体实例化前注册，
+    ///             避免预制体Awake触发Build()时pending services为空的问题。
     /// </remarks>
     [DefaultExecutionOrder(-100)]
     public class AsakiSceneContext : MonoBehaviour, IAsakiResolver
@@ -76,14 +79,16 @@ namespace Asaki.Core.Context.Resolvers
         {
             ALog.Info($"[AsakiSceneContext] Initializing in scene: {gameObject.scene.name}");
 
+            RegisterPureCSharpServices();
+
+            ALog.Info($"[AsakiSceneContext] Registered {_localServices.Count} pure C# services.");
+
             InstantiateServicePrefabs();
 
             ScanAndRegisterPrefabServices();
 
-            RegisterPureCSharpServices();
-
             ALog.Info(
-                $"[AsakiSceneContext] Registered {_localServices.Count} services. Waiting for Build()..."
+                $"[AsakiSceneContext] Total {_localServices.Count} services registered. Waiting for Build()..."
             );
         }
 
