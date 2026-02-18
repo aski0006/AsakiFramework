@@ -64,7 +64,7 @@ namespace Asaki.Core.Context.Resolvers
 
         public bool IsBuilt => _isBuilt;
 
-        internal bool IsInitializingServices => _isInitializing;
+        public bool IsInitializingServices => _isInitializing;
 
 #if UNITY_EDITOR
         public Dictionary<Type, IAsakiService> GetRuntimeServices()
@@ -102,7 +102,9 @@ namespace Asaki.Core.Context.Resolvers
 
             Build();
 
-            ALog.Info($"[AsakiSceneContext] Initialization complete. Waiting for framework ready...");
+            ALog.Info(
+                $"[AsakiSceneContext] Initialization complete. Waiting for framework ready..."
+            );
         }
 
         private void InstantiateServicePrefabs()

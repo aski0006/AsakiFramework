@@ -2,6 +2,13 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.9] - 2025-02-18
+
+### Fixed
+- **Cross-Assembly Access** - Fixed CS1061 compilation error
+  - Changed `IsInitializingServices` from `internal` to `public`
+  - Previous `internalsVisibleTo` approach didn't work reliably across Unity versions
+
 ## [1.3.8] - 2025-02-18
 
 ### Fixed
