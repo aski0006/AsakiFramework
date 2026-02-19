@@ -141,6 +141,7 @@ namespace Asaki.Core.Pooling
 
             return sb.ToString();
         }
+
         public IEnumerable<string> GetAllPoolKeys()
         {
             return _pools.Keys;

@@ -273,6 +273,7 @@ namespace Asaki.Tests.UI
         {
             return "Mock Pool Service";
         }
+
         public IEnumerable<string> GetAllPoolKeys()
         {
             yield return "MockPoolKey";

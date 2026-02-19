@@ -20,14 +20,16 @@ namespace Asaki.Core.Architecture.Queries
 
         public abstract TResult Query();
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();
@@ -66,14 +68,16 @@ namespace Asaki.Core.Architecture.Queries
 
         protected virtual void OnCreate() { }
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();

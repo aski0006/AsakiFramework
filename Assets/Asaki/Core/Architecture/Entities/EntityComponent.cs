@@ -59,8 +59,5 @@ namespace Asaki.Core.Architecture.Entities
     /// <summary>
     /// 标签组件基类 - 无数据，仅作标记
     /// </summary>
-    public abstract class TagComponent : EntityComponent
-    {
-        // 标签组件不需要任何实现
-    }
+    public abstract class TagComponent : EntityComponent { }
 }

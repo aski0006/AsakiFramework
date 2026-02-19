@@ -294,14 +294,18 @@ namespace Asaki.Core.Architecture
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[AsakiArchitecturePool] Failed to destroy pool '{key}': {ex.Message}");
+                    ALog.Error(
+                        $"[AsakiArchitecturePool] Failed to destroy pool '{key}': {ex.Message}"
+                    );
                 }
             }
 
             _poolService = null;
             _isInitialized = false;
 
-            ALog.Info($"[AsakiArchitecturePool] Cleared {architecturePoolKeys.Count} architecture pools");
+            ALog.Info(
+                $"[AsakiArchitecturePool] Cleared {architecturePoolKeys.Count} architecture pools"
+            );
         }
 
         /// <summary>

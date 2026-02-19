@@ -12,7 +12,6 @@ using AsakiBroker = Asaki.Core.Broker.AsakiBroker;
 
 namespace Asaki.Unity.Bootstrapper
 {
-
     [DefaultExecutionOrder(-9999)]
     public class AsakiBootstrapper : MonoBehaviour
     {
@@ -172,7 +171,9 @@ namespace Asaki.Unity.Bootstrapper
                 CollectGlobalServicesRecursive(obj.transform, _allGlobalServices);
             }
 
-            ALog.Info($"[AsakiBootstrapper] Collected {_allGlobalServices.Count} global service instances");
+            ALog.Info(
+                $"[AsakiBootstrapper] Collected {_allGlobalServices.Count} global service instances"
+            );
 
             int registeredCount = 0;
             int skippedCount = 0;
@@ -181,7 +182,9 @@ namespace Asaki.Unity.Bootstrapper
             {
                 if (service is not MonoBehaviour behaviour)
                 {
-                    ALog.Warn($"[AsakiBootstrapper] Service {service.GetType().Name} is not a MonoBehaviour, skipping.");
+                    ALog.Warn(
+                        $"[AsakiBootstrapper] Service {service.GetType().Name} is not a MonoBehaviour, skipping."
+                    );
                     skippedCount++;
                     continue;
                 }
@@ -197,7 +200,9 @@ namespace Asaki.Unity.Bootstrapper
                 }
                 else
                 {
-                    ALog.Warn($"[AsakiBootstrapper] Service type {type.Name} already registered, skipping duplicate.");
+                    ALog.Warn(
+                        $"[AsakiBootstrapper] Service type {type.Name} already registered, skipping duplicate."
+                    );
                     skippedCount++;
                 }
 
@@ -274,7 +279,12 @@ namespace Asaki.Unity.Bootstrapper
             // 遍历子对象
             for (int i = parent.childCount - 1; i >= 0; i--)
             {
-                CollectGlobalServicesRecursive(parent.GetChild(i), results, currentDepth + 1, maxDepth);
+                CollectGlobalServicesRecursive(
+                    parent.GetChild(i),
+                    results,
+                    currentDepth + 1,
+                    maxDepth
+                );
             }
         }
 
@@ -335,7 +345,9 @@ namespace Asaki.Unity.Bootstrapper
             }
             else
             {
-                ALog.Info($"[AsakiBootstrapper] All {initSuccessCount} global services initialized successfully.");
+                ALog.Info(
+                    $"[AsakiBootstrapper] All {initSuccessCount} global services initialized successfully."
+                );
             }
         }
 

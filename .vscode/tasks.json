@@ -1,0 +1,43 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Unity: Attach to Unity Editor",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Attach to Unity Editor..."
+            ],
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "Unity: Generate C# Debug Logs",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Generating C# Debug Logs..."
+            ],
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "silent"
+            }
+        },
+        {
+            "label": "Unity: Build",
+            "type": "shell",
+            "command": "echo",
+            "args": [
+                "Building Unity Project..."
+            ],
+            "problemMatcher": [],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}

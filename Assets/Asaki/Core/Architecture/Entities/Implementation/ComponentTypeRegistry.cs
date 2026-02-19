@@ -44,8 +44,8 @@ namespace Asaki.Core.Architecture.Entities
             if (currentId >= AsakiArchitectureConstants.MaxComponentTypeId)
             {
                 throw new InvalidOperationException(
-                    $"Component TypeId has reached maximum limit ({AsakiArchitectureConstants.MaxComponentTypeId}). " +
-                    $"Cannot register more than {AsakiArchitectureConstants.MaxComponentTypeId} component types."
+                    $"Component TypeId has reached maximum limit ({AsakiArchitectureConstants.MaxComponentTypeId}). "
+                        + $"Cannot register more than {AsakiArchitectureConstants.MaxComponentTypeId} component types."
                 );
             }
 
@@ -55,8 +55,8 @@ namespace Asaki.Core.Architecture.Entities
             if (newId >= AsakiArchitectureConstants.MaxComponentTypeId)
             {
                 throw new InvalidOperationException(
-                    $"Component TypeId {newId} exceeds maximum limit ({AsakiArchitectureConstants.MaxComponentTypeId}). " +
-                    "Consider reducing the number of component types."
+                    $"Component TypeId {newId} exceeds maximum limit ({AsakiArchitectureConstants.MaxComponentTypeId}). "
+                        + "Consider reducing the number of component types."
                 );
             }
 

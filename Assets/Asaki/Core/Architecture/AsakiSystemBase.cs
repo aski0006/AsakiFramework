@@ -22,6 +22,7 @@ namespace Asaki.Core.Architecture
         protected virtual void OnCreate() { }
 
         public void Create() { }
+
         public virtual void Start()
         {
             OnStart();
@@ -37,7 +38,8 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 获取 System
         /// </summary>
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
@@ -47,7 +49,8 @@ namespace Asaki.Core.Architecture
         /// <summary>
         /// 获取 Model
         /// </summary>
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();
@@ -70,7 +73,8 @@ namespace Asaki.Core.Architecture
 
         public virtual void Tick(float deltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnTick(deltaTime);
         }
 
@@ -95,7 +99,8 @@ namespace Asaki.Core.Architecture
 
         public virtual void FixedTick(float fixedDeltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnFixedTick(fixedDeltaTime);
         }
 
@@ -120,7 +125,8 @@ namespace Asaki.Core.Architecture
 
         public virtual void LateTick(float lateDeltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnLateTick(lateDeltaTime);
         }
 

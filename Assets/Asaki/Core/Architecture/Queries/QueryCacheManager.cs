@@ -97,7 +97,7 @@ namespace Asaki.Core.Architecture.Queries
                 {
                     Result = result,
                     ExpireTime = expireTime,
-                    AccessCount = 0
+                    AccessCount = 0,
                 };
 
                 _accessOrder.Enqueue(key);

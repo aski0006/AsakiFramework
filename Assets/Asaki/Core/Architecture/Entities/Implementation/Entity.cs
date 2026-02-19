@@ -19,7 +19,8 @@ namespace Asaki.Core.Architecture.Entities
         // 常量：数组直接索引的最大 TypeId 阈值
         // TypeId <= 127 使用数组 (128 个元素 = 约 1KB 内存)
         // TypeId > 127 使用 Dictionary
-        private const int ArrayIndexThreshold = AsakiArchitectureConstants.EntityComponentArrayIndexThreshold;
+        private const int ArrayIndexThreshold =
+            AsakiArchitectureConstants.EntityComponentArrayIndexThreshold;
 
         // 优化 1: 小 TypeId 使用数组直接索引 (O(1) 性能)
         private IEntityComponent[] _fastComponentsArray = new IEntityComponent[

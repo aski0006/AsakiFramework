@@ -52,18 +52,21 @@ namespace Asaki.Core.Context
             {
                 if (ReferenceEquals(entry.Injector, injector))
                 {
-                    ALog.Warn($"[AsakiGlobalInjector] Injector {injector.GetType().Name} already registered, ignoring duplicate.");
+                    ALog.Warn(
+                        $"[AsakiGlobalInjector] Injector {injector.GetType().Name} already registered, ignoring duplicate."
+                    );
                     return;
                 }
             }
 
-            _injectors.Add(new InjectorEntry
-            {
-                Injector = injector, Priority = priority ?? injector.Priority
-            });
+            _injectors.Add(
+                new InjectorEntry { Injector = injector, Priority = priority ?? injector.Priority }
+            );
             _isSorted = false;
 
-            ALog.Info($"[AsakiGlobalInjector] Registered injector: {injector.GetType().Name} (Priority: {priority ?? injector.Priority})");
+            ALog.Info(
+                $"[AsakiGlobalInjector] Registered injector: {injector.GetType().Name} (Priority: {priority ?? injector.Priority})"
+            );
         }
 
         /// <summary>
@@ -71,8 +74,6 @@ namespace Asaki.Core.Context
         /// </summary>
         public static void Inject(object target, IAsakiResolver resolver = null)
         {
-
-
             if (target == null)
                 return;
 
@@ -98,9 +99,11 @@ namespace Asaki.Core.Context
                 }
             }
 
-            #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            ALog.Info($"[AsakiGlobalInjector] Injected {injectedCount} injectors into {target.GetType().Name}");
-            #endif
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            ALog.Info(
+                $"[AsakiGlobalInjector] Injected {injectedCount} injectors into {target.GetType().Name}"
+            );
+#endif
         }
 
         private static void SortInjectors()

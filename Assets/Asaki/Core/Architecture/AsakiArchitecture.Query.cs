@@ -234,8 +234,9 @@ namespace Asaki.Core.Architecture
                 if (_enableQueryCache && cacheSeconds > 0f)
                 {
                     // 优先使用自定义缓存键
-                    cacheKey = (query as IAsakiCacheKeyProvider)?.GetCacheKey()
-                               ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
+                    cacheKey =
+                        (query as IAsakiCacheKeyProvider)?.GetCacheKey()
+                        ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
 
                     if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
                     {
@@ -294,8 +295,9 @@ namespace Asaki.Core.Architecture
                 if (_enableQueryCache && cacheSeconds > 0f)
                 {
                     // 优先使用自定义缓存键
-                    cacheKey = (query as IAsakiCacheKeyProvider)?.GetCacheKey()
-                               ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
+                    cacheKey =
+                        (query as IAsakiCacheKeyProvider)?.GetCacheKey()
+                        ?? typeof(TQuery).FullName + ":" + configure?.GetHashCode();
 
                     if (_queryCache.TryGetCache<TResult>(cacheKey, out TResult cachedResult))
                     {

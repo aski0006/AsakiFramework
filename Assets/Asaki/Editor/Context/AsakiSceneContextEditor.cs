@@ -81,7 +81,7 @@ namespace Asaki.Editor.Context
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 padding = new RectOffset(10, 10, 0, 0),
-                normal = { textColor = BrandColor }
+                normal = { textColor = BrandColor },
             };
 
             _sectionHeaderStyle = new GUIStyle(EditorStyles.boldLabel)
@@ -89,32 +89,32 @@ namespace Asaki.Editor.Context
                 fontSize = 12,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(6, 6, 2, 2)
+                padding = new RectOffset(6, 6, 2, 2),
             };
 
             _boxStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 padding = new RectOffset(8, 8, 6, 6),
-                margin = new RectOffset(4, 4, 2, 2)
+                margin = new RectOffset(4, 4, 2, 2),
             };
 
             _foldoutStyle = new GUIStyle(EditorStyles.foldout)
             {
                 fontStyle = FontStyle.Bold,
-                fontSize = 11
+                fontSize = 11,
             };
 
             _miniLabelStyle = new GUIStyle(EditorStyles.miniLabel)
             {
                 fontSize = 10,
-                alignment = TextAnchor.MiddleLeft
+                alignment = TextAnchor.MiddleLeft,
             };
 
             _statusLabelStyle = new GUIStyle(EditorStyles.label)
             {
                 fontSize = 10,
                 alignment = TextAnchor.MiddleLeft,
-                padding = new RectOffset(4, 4, 2, 2)
+                padding = new RectOffset(4, 4, 2, 2),
             };
 
             _stylesCreated = true;
@@ -157,7 +157,11 @@ namespace Asaki.Editor.Context
 
         private void DrawBrandHeader()
         {
-            Rect headerRect = GUILayoutUtility.GetRect(0, HeaderHeight, GUILayout.ExpandWidth(true));
+            Rect headerRect = GUILayoutUtility.GetRect(
+                0,
+                HeaderHeight,
+                GUILayout.ExpandWidth(true)
+            );
 
             GUI.DrawTexture(headerRect, _headerBgTexture, ScaleMode.StretchToFill);
 
@@ -205,7 +209,10 @@ namespace Asaki.Editor.Context
 
                 EditorGUILayout.Space(4);
 
-                EditorGUILayout.PropertyField(_instanceParentProp, new GUIContent("Parent Transform"));
+                EditorGUILayout.PropertyField(
+                    _instanceParentProp,
+                    new GUIContent("Parent Transform")
+                );
 
                 EditorGUI.indentLevel--;
 
@@ -240,9 +247,10 @@ namespace Asaki.Editor.Context
                 SerializedProperty element = _servicePrefabsProp.GetArrayElementAtIndex(i);
                 GameObject prefab = element.objectReferenceValue as GameObject;
 
-                int services = prefab != null
-                    ? prefab.GetComponentsInChildren<IAsakiSceneService>(true).Length
-                    : 0;
+                int services =
+                    prefab != null
+                        ? prefab.GetComponentsInChildren<IAsakiSceneService>(true).Length
+                        : 0;
 
                 _prefabServiceCounts.Add(services);
                 count += services;
@@ -296,7 +304,12 @@ namespace Asaki.Editor.Context
             GUI.color = Color.white;
 
             GUI.enabled = false;
-            EditorGUILayout.ObjectField(prefab, typeof(GameObject), false, GUILayout.ExpandWidth(true));
+            EditorGUILayout.ObjectField(
+                prefab,
+                typeof(GameObject),
+                false,
+                GUILayout.ExpandWidth(true)
+            );
             GUI.enabled = true;
 
             string countText = serviceCount == 1 ? "1 svc" : $"{serviceCount} svcs";
@@ -306,7 +319,9 @@ namespace Asaki.Editor.Context
 
             if (serviceCount > 0)
             {
-                IAsakiSceneService[] services = prefab.GetComponentsInChildren<IAsakiSceneService>(true);
+                IAsakiSceneService[] services = prefab.GetComponentsInChildren<IAsakiSceneService>(
+                    true
+                );
                 EditorGUI.indentLevel++;
                 foreach (IAsakiSceneService service in services)
                 {
@@ -470,7 +485,11 @@ namespace Asaki.Editor.Context
 
             DrawStatBox("Services", serviceCount.ToString(), SuccessColor);
             DrawStatBox("Prefabs", prefabCount.ToString(), PrefabHeaderColor);
-            DrawStatBox("Status", isBuilt ? "Built" : "Pending", isBuilt ? SuccessColor : WarningColor);
+            DrawStatBox(
+                "Status",
+                isBuilt ? "Built" : "Pending",
+                isBuilt ? SuccessColor : WarningColor
+            );
 
             EditorGUILayout.EndHorizontal();
         }
@@ -490,7 +509,11 @@ namespace Asaki.Editor.Context
 
         private void DrawRuntimeServiceList(Dictionary<Type, IAsakiService> services)
         {
-            _foldoutServiceList = EditorGUILayout.Foldout(_foldoutServiceList, "Service List", true);
+            _foldoutServiceList = EditorGUILayout.Foldout(
+                _foldoutServiceList,
+                "Service List",
+                true
+            );
 
             if (!_foldoutServiceList)
                 return;
@@ -511,13 +534,22 @@ namespace Asaki.Editor.Context
                 if (kvp.Value is MonoBehaviour behaviour)
                 {
                     GUI.enabled = false;
-                    EditorGUILayout.ObjectField(behaviour, typeof(MonoBehaviour), true, GUILayout.Width(120));
+                    EditorGUILayout.ObjectField(
+                        behaviour,
+                        typeof(MonoBehaviour),
+                        true,
+                        GUILayout.Width(120)
+                    );
                     GUI.enabled = true;
                 }
                 else
                 {
                     GUI.color = new Color(0.5f, 0.5f, 0.6f);
-                    EditorGUILayout.LabelField($"({kvp.Value.GetType().Name})", _miniLabelStyle, GUILayout.Width(120));
+                    EditorGUILayout.LabelField(
+                        $"({kvp.Value.GetType().Name})",
+                        _miniLabelStyle,
+                        GUILayout.Width(120)
+                    );
                     GUI.color = Color.white;
                 }
 
@@ -529,7 +561,12 @@ namespace Asaki.Editor.Context
 
         #region Utility Methods
 
-        private void DrawSectionHeader(string title, Color color, ref bool foldout, string statusText)
+        private void DrawSectionHeader(
+            string title,
+            Color color,
+            ref bool foldout,
+            string statusText
+        )
         {
             EditorGUILayout.BeginHorizontal();
 
@@ -562,8 +599,7 @@ namespace Asaki.Editor.Context
 
         private string GetServiceInterfaceInfo(Type type)
         {
-            Type[] interfaces = type
-                .GetInterfaces()
+            Type[] interfaces = type.GetInterfaces()
                 .Where(t =>
                     typeof(IAsakiService).IsAssignableFrom(t)
                     && t != typeof(IAsakiService)

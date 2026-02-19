@@ -4,8 +4,7 @@
         {
             "name": "Unity Editor Debug",
             "type": "unity",
-            "request": "launch",
-            "preLaunchTask": "dotnet: build"
+            "request": "launch"
         },
         {
             "name": "Attach to Unity",

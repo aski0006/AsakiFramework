@@ -49,12 +49,44 @@ namespace Asaki.Core.Context
 
     public interface IAsakiInject<in T1, in T2, in T3, in T4, in T5, in T6, in T7, in T8, in T9>
     {
-        void Inject(T1 args1, T2 args2, T3 args3, T4 args4, T5 args5, T6 args6, T7 args7, T8 args8, T9 args9);
+        void Inject(
+            T1 args1,
+            T2 args2,
+            T3 args3,
+            T4 args4,
+            T5 args5,
+            T6 args6,
+            T7 args7,
+            T8 args8,
+            T9 args9
+        );
     }
 
-    public interface IAsakiInject<in T1, in T2, in T3, in T4, in T5, in T6, in T7, in T8, in T9, in T10>
+    public interface IAsakiInject<
+        in T1,
+        in T2,
+        in T3,
+        in T4,
+        in T5,
+        in T6,
+        in T7,
+        in T8,
+        in T9,
+        in T10
+    >
     {
-        void Inject(T1 args1, T2 args2, T3 args3, T4 args4, T5 args5, T6 args6, T7 args7, T8 args8, T9 args9, T10 args10);
+        void Inject(
+            T1 args1,
+            T2 args2,
+            T3 args3,
+            T4 args4,
+            T5 args5,
+            T6 args6,
+            T7 args7,
+            T8 args8,
+            T9 args9,
+            T10 args10
+        );
     }
 
     public static class AsakiInjectFactory
@@ -299,7 +331,8 @@ namespace Asaki.Core.Context
             TArg8 arg8,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
         {
             T instance = Object.Instantiate(prefab, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
@@ -320,14 +353,26 @@ namespace Asaki.Core.Context
             TArg8 arg8,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8>
         {
             T instance = Object.Instantiate(prefab, position, rotation, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
             return instance;
         }
 
-        public static T Instantiate<T, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>(
+        public static T Instantiate<
+            T,
+            TArg1,
+            TArg2,
+            TArg3,
+            TArg4,
+            TArg5,
+            TArg6,
+            TArg7,
+            TArg8,
+            TArg9
+        >(
             T prefab,
             TArg1 arg1,
             TArg2 arg2,
@@ -340,14 +385,26 @@ namespace Asaki.Core.Context
             TArg9 arg9,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
         {
             T instance = Object.Instantiate(prefab, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
             return instance;
         }
 
-        public static T Instantiate<T, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>(
+        public static T Instantiate<
+            T,
+            TArg1,
+            TArg2,
+            TArg3,
+            TArg4,
+            TArg5,
+            TArg6,
+            TArg7,
+            TArg8,
+            TArg9
+        >(
             T prefab,
             Vector3 position,
             Quaternion rotation,
@@ -362,14 +419,27 @@ namespace Asaki.Core.Context
             TArg9 arg9,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9>
         {
             T instance = Object.Instantiate(prefab, position, rotation, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
             return instance;
         }
 
-        public static T Instantiate<T, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>(
+        public static T Instantiate<
+            T,
+            TArg1,
+            TArg2,
+            TArg3,
+            TArg4,
+            TArg5,
+            TArg6,
+            TArg7,
+            TArg8,
+            TArg9,
+            TArg10
+        >(
             T prefab,
             TArg1 arg1,
             TArg2 arg2,
@@ -383,14 +453,27 @@ namespace Asaki.Core.Context
             TArg10 arg10,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
         {
             T instance = Object.Instantiate(prefab, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
             return instance;
         }
 
-        public static T Instantiate<T, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>(
+        public static T Instantiate<
+            T,
+            TArg1,
+            TArg2,
+            TArg3,
+            TArg4,
+            TArg5,
+            TArg6,
+            TArg7,
+            TArg8,
+            TArg9,
+            TArg10
+        >(
             T prefab,
             Vector3 position,
             Quaternion rotation,
@@ -406,7 +489,8 @@ namespace Asaki.Core.Context
             TArg10 arg10,
             Transform parent = null
         )
-            where T : MonoBehaviour, IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
+            where T : MonoBehaviour,
+                IAsakiInject<TArg1, TArg2, TArg3, TArg4, TArg5, TArg6, TArg7, TArg8, TArg9, TArg10>
         {
             T instance = Object.Instantiate(prefab, position, rotation, parent);
             instance.Inject(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);

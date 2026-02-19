@@ -19,14 +19,16 @@ namespace Asaki.Core.Architecture.Command
 
         public abstract void Execute();
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();
@@ -63,14 +65,16 @@ namespace Asaki.Core.Architecture.Command
 
         public abstract TResult Execute();
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();
@@ -107,14 +111,16 @@ namespace Asaki.Core.Architecture.Command
 
         public abstract UniTask ExecuteAsync();
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();
@@ -153,14 +159,16 @@ namespace Asaki.Core.Architecture.Command
             CancellationToken token = default(CancellationToken)
         );
 
-        protected T GetSystem<T>() where T : class, IAsakiSystem
+        protected T GetSystem<T>()
+            where T : class, IAsakiSystem
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetSystem<T>();
             throw new InvalidOperationException("ServiceProvider is not IAsakiArchitecture");
         }
 
-        protected T GetModel<T>() where T : class, IAsakiModel
+        protected T GetModel<T>()
+            where T : class, IAsakiModel
         {
             if (ServiceProvider is IAsakiArchitecture arch)
                 return arch.GetModel<T>();

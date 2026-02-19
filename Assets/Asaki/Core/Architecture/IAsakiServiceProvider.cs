@@ -12,7 +12,8 @@ namespace Asaki.Core.Architecture
         /// </summary>
         /// <typeparam name="T">服务类型</typeparam>
         /// <returns>服务实例</returns>
-        T GetService<T>() where T : class, IAsakiService;
+        T GetService<T>()
+            where T : class, IAsakiService;
 
         /// <summary>
         /// 尝试获取服务
@@ -20,6 +21,7 @@ namespace Asaki.Core.Architecture
         /// <typeparam name="T">服务类型</typeparam>
         /// <param name="service">输出服务实例</param>
         /// <returns>是否成功获取</returns>
-        bool TryGetService<T>(out T service) where T : class, IAsakiService;
+        bool TryGetService<T>(out T service)
+            where T : class, IAsakiService;
     }
 }

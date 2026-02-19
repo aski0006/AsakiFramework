@@ -130,7 +130,8 @@ namespace Asaki.Core.Architecture
 
         #region IAsakiServiceProvider Implementation
 
-        public T GetService<T>() where T : class, IAsakiService
+        public T GetService<T>()
+            where T : class, IAsakiService
         {
             // 处理 Model 类型
             if (typeof(T) == typeof(IAsakiModel) || typeof(T).IsSubclassOf(typeof(IAsakiModel)))
@@ -163,7 +164,8 @@ namespace Asaki.Core.Architecture
             throw new KeyNotFoundException($"Service not found: {typeof(T).Name}");
         }
 
-        public bool TryGetService<T>(out T service) where T : class, IAsakiService
+        public bool TryGetService<T>(out T service)
+            where T : class, IAsakiService
         {
             try
             {

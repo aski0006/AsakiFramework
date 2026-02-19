@@ -26,6 +26,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
         private IEntityWorld _world;
         private HealthSystem _healthSystem;
         private readonly List<IEntity> _entities = new();
+
         [AsakiInject]
         public void Inject(ECSArchitecture args)
         {
@@ -239,6 +240,5 @@ namespace Asaki.Game.Scripts.Examples.ECS
             _architecture?.Dispose();
             ALog.Info("[ECSExample] ECS Example destroyed");
         }
-
     }
 }

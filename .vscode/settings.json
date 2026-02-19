@@ -1,7 +1,19 @@
 {
     "editorjumper.selectedIDE": "Rider",
     "[csharp]": {
-        "editor.defaultFormatter": "csharpier.csharpier-vscode"
+        "editor.defaultFormatter": "csharpier.csharpier-vscode",
+        "editor.codeActionsOnSave": {
+            "source.addMissingImports": "explicit",
+            "source.organizeImports": "explicit",
+            "source.fixAll": "explicit"
+        },
+        "editor.suggestSelection": "first",
+        "editor.guid.bracketPairColorization.enabled": true,
+        "editor.quickSuggestions": {
+            "other": true,
+            "comments": false,
+            "strings": true
+        }
     },
     "[xml]": {
         "editor.defaultFormatter": "csharpier.csharpier-vscode"
@@ -9,41 +21,96 @@
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
     "editor.formatOnType": true,
-    "csharpier.enableDebugLogs": false,
-    // ==================== C# Dev Kit 回退到 C# Extension ====================
-    // 关键设置：让 C# Dev Kit 把项目加载委托给传统 C# 扩展（OmniSharp）
-    "dotnet.preferCSharpExtension": true,
-    // ==================== 解决方案配置 ====================
-    // 默认解决方案路径
-    "dotnet.defaultSolution": "Asaki.sln",
-    // 启用项目选择
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.detectIndentation": true,
+    "editor.trimAutoWhitespace": true,
+    "editor.wordWrap": "bounded",
+    "editor.wordWrapColumn": 120,
+    "dotnet.preferCSharpExtension": false,
+    "dotnet.defaultSolution": "ARPGDemo.sln",
     "dotnet.enableProjectSelection": true,
-    // ==================== 代码补全与格式化 ====================
-    // 显示未导入命名空间的补全项
     "dotnet.completion.showCompletionItemsFromUnimportedNamespaces": true,
-    // 格式化时整理 using
+    "dotnet.completion.showNameCompletionSuggestions": true,
     "dotnet.formatting.organizeImportsOnFormat": true,
-    // ==================== CodeLens ====================
-    "dotnet.codeLens.enableReferencesCodeLens": true,
-    "dotnet.codeLens.enableTestsCodeLens": true,
-    // ==================== Hover / Quick Info ====================
+    "editor.quickSuggestionsDelay": 10,
+    "editor.wordBasedSuggestions": "off",
+    "editor.parameterHints.enabled": true,
+    "editor.suggest.preview": true,
+    "editor.suggest.localityBonus": true,
+    "editor.suggest.shareSuggestSelections": true,
+    "editor.suggestSelection": "first",
+    "editor.tabCompletion": "on",
+    "editor.acceptSuggestionOnEnter": "on",
+    "editor.snippetSuggestions": "top",
+    "editor.inlineSuggest.enabled": true,
+    "editor.quickSuggestions": {
+        "other": true,
+        "comments": false,
+        "strings": true
+    },
     "editor.hover.enabled": "on",
-    "editor.hover.delay": 300,
+    "editor.hover.delay": 150,
     "editor.hover.sticky": true,
-    // C# Dev Kit 的悬停提示配置
     "dotnet.hover.showSummary": true,
     "dotnet.hover.showReturns": true,
-    "dotnet.hover.showExceptions": true,
-    "dotnet.hover.showExample": true,
     "dotnet.hover.showParameters": true,
-    "dotnet.hover.showType": true,
-    // ==================== 调试配置 ====================
-    "csharp.debug.console": "internalConsole",
-    // ==================== 文件排除 - 资源管理器显示配置 ====================
+    "editor.codeLens": true,
+    "dotnet.codeLens.enableReferencesCodeLens": true,
+    "dotnet.codeLens.enableTestsCodeLens": false,
+    "unity.codeLens.enable": true,
+    "unity.codeLens.enableDebugger": true,
+    "unity.codeLens.enableTestRunner": true,
+    "files.watcherExclude": {
+        "**/Library/**": true,
+        "**/Temp/**": true,
+        "**/obj/**": true,
+        "**/Logs/**": true,
+        "**/Build/**": true,
+        "**/Builds/**": true,
+        "**/.git/**": true,
+        "**/node_modules/**": true
+    },
+    "search.maxResults": 5000,
+    "search.followSymlinks": false,
+    "editor.largeFileOptimizations": true,
+    "editor.semanticHighlighting.enabled": true,
+    "editor.linkedEditing": true,
+    "editor.bracketPairColorization.enabled": true,
+    "editor.guides.bracketPairs": true,
+    "editor.guides.indentation": true,
+    "editor.guides.highlightActiveIndentation": true,
+    "editor.stickyScroll.enabled": true,
+    "editor.stickyScroll.maxLineCount": 10,
+    "editor.minimap.enabled": true,
+    "editor.minimap.maxColumn": 120,
+    "editor.minimap.renderCharacters": false,
+    "editor.minimap.showSlider": "mouseover",
+    "editor.folding": true,
+    "editor.foldingStrategy": "auto",
+    "editor.showFoldingControls": "mouseover",
+    "editor.matchBrackets": "always",
+    "editor.renderWhitespace": "selection",
+    "editor.cursorBlinking": "smooth",
+    "editor.cursorSmoothCaretAnimation": "on",
+    "editor.smoothScrolling": true,
+    "editor.fontLigatures": true,
+    "editor.lightbulb.enabled": "on",
+    "editor.autoClosingBrackets": "languageDefined",
+    "editor.autoClosingQuotes": "languageDefined",
+    "editor.autoIndent": "full",
+    "editor.formatOnSaveMode": "file",
+    "editor.multiCursorModifier": "alt",
+    "editor.renderLineHighlight": "all",
+    "editor.scrollBeyondLastColumn": 5,
+    "editor.scrollBeyondLastLine": true,
+    "editor.selectionHighlight": true,
+    "editor.showUnused": true,
+    "editor.links": true,
     "files.exclude": {
         "**/.git": true,
         "**/.DS_Store": true,
-        "**/Library": true,
+        "**/Library": false,
         "**/Temp": true,
         "**/obj": true,
         "**/Logs": true,
@@ -55,8 +122,8 @@
         "**/TestServer": true,
         "**/.vs": true,
         "**/.idea": true,
-        "**/*.csproj": false,
-        "**/*.sln": false,
+        "**/*.csproj": true,
+        "**/*.sln": true,
         "**/*.unityproj": true,
         "**/*.csproj.user": true,
         "**/*.sln.DotSettings": true,
@@ -71,7 +138,6 @@
         "**/*.opendb": true,
         "**/*.VC.db": true
     },
-    // ==================== 搜索排除 ====================
     "search.exclude": {
         "**/Library": true,
         "**/Temp": true,
@@ -85,10 +151,65 @@
         "**/CodeGenerator": true,
         "**/TestServer": true
     },
-    // ==================== 资源管理器配置 ====================
     "explorer.compactFolders": false,
     "explorer.confirmDelete": false,
     "explorer.confirmDragAndDrop": false,
+    "explorer.autoReveal": true,
+    "explorer.enableDragAndDrop": true,
+    "explorer.sortOrder": "type",
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "icon": "terminal-cmd"
+        },
+        "Git Bash": {
+            "source": "Git Bash"
+        }
+    },
+    "terminal.integrated.scrollback": 10000,
+    "terminal.integrated.cursorBlinking": true,
+    "terminal.integrated.cursorStyle": "line",
+    "terminal.integrated.fontFamily": "Cascadia Code, Consolas, 'Courier New', monospace",
+    "terminal.integrated.fontSize": 14,
     "window.autoDetectColorScheme": true,
-    "window.density.editorTabHeight": "compact"
+    "window.density.editorTabHeight": "compact",
+    "window.title": "${activeEditorShort}${separator}${rootName}${separator}${appName}",
+    "window.titleBarStyle": "custom",
+    "window.menuBarVisibility": "classic",
+    "workbench.colorTheme": "Default Dark+",
+    "workbench.iconTheme": "vs-seti",
+    "workbench.startupEditor": "welcomePageInEmptyWorkbench",
+    "workbench.sideBar.location": "left",
+    "workbench.statusBar.visible": true,
+    "workbench.editor.showTabs": "multiple",
+    "workbench.editor.tabSizing": "fit",
+    "workbench.editor.enablePreview": true,
+    "workbench.list.openMode": "singleClick",
+    "workbench.tree.indent": 8,
+    "git.enabled": true,
+    "git.autorefresh": true,
+    "git.autofetch": true,
+    "git.confirmSync": true,
+    "git.enableSmartCommit": false,
+    "git.openRepositoryInParentFolders": "always",
+    "cSpell.enabled": true,
+    "cSpell.language": "en,en-US",
+    "cSpell.allowCompoundWords": true,
+    "unity.codeSnippets.enable": true,
+    "csharpier.enableDebugLogs": false,
+    "csharpier.formatOnSave": true,
+    "csharpier.printWidth": 120,
+    "csharpier.tabWidth": 4,
+    "csharpier.useTabs": false,
+    "csharpier.indentSize": 4,
+    "csharpier.indentStyle": "space",
+    "csharpier.endOfLine": "crlf"
 }

@@ -58,8 +58,11 @@ namespace Asaki.Game.Scripts.Examples.ECS
     }
 
     public class PlayerTag : TagComponent { }
+
     public class EnemyTag : TagComponent { }
+
     public class StaticTag : TagComponent { }
+
     /// <summary>
     /// 渲染组件 - 存储实体的渲染信息
     /// </summary>

@@ -55,7 +55,8 @@ namespace Asaki.Core.Architecture.Entities
 
         public virtual void Tick(float deltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnEntityTick(deltaTime);
         }
 
@@ -68,7 +69,9 @@ namespace Asaki.Core.Architecture.Entities
     /// <summary>
     /// 带 FixedTick 能力的 ECS 系统基类
     /// </summary>
-    public abstract class AsakiEntityFixedTickableSystemBase : AsakiEntitySystemBase, IAsakiFixedTickable
+    public abstract class AsakiEntityFixedTickableSystemBase
+        : AsakiEntitySystemBase,
+            IAsakiFixedTickable
     {
         private bool _isStarted;
 
@@ -80,7 +83,8 @@ namespace Asaki.Core.Architecture.Entities
 
         public virtual void FixedTick(float fixedDeltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnEntityFixedTick(fixedDeltaTime);
         }
 
@@ -93,7 +97,9 @@ namespace Asaki.Core.Architecture.Entities
     /// <summary>
     /// 带 LateTick 能力的 ECS 系统基类
     /// </summary>
-    public abstract class AsakiEntityLateTickableSystemBase : AsakiEntitySystemBase, IAsakiLateTickable
+    public abstract class AsakiEntityLateTickableSystemBase
+        : AsakiEntitySystemBase,
+            IAsakiLateTickable
     {
         private bool _isStarted;
 
@@ -105,7 +111,8 @@ namespace Asaki.Core.Architecture.Entities
 
         public virtual void LateTick(float lateDeltaTime)
         {
-            if (!_isStarted) return;
+            if (!_isStarted)
+                return;
             OnEntityLateTick(lateDeltaTime);
         }
 

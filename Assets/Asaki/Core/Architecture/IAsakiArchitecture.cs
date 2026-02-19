@@ -1,9 +1,9 @@
-﻿using Asaki.Core.Context;
-using System;
+﻿using System;
+using Asaki.Core.Context;
 
 namespace Asaki.Core.Architecture
 {
-    public interface IAsakiArchitecture : IAsakiSceneService, IAsakiServiceProvider,IDisposable
+    public interface IAsakiArchitecture : IAsakiSceneService, IAsakiServiceProvider, IDisposable
     {
         T GetSystem<T>()
             where T : class, IAsakiSystem;

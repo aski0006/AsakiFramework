@@ -21,10 +21,7 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
             _audioService = audioService;
         }
 
-        public void Create()
-        {
-
-        }
+        public void Create() { }
 
         private void OnCountChanged(int count)
         {

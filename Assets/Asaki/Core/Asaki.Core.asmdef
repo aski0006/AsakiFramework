@@ -3,8 +3,8 @@
     "rootNamespace": "",
     "references": [
         "Unity.Rider.Editor",
-        "UniTask",
-        "UniTask.Addressables"
+        "UniTask.Addressables",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -14,8 +14,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false,
-    "internalsVisibleTo": [
-        "Asaki.Unity"
-    ]
+    "noEngineReferences": false
 }

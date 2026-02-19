@@ -10,5 +10,4 @@ namespace Asaki.Core.Context
     /// 通常与[Inject]属性或类似机制结合使用。
     /// </remarks>
     public interface IAsakiAutoInject { }
-
 }

@@ -12,9 +12,9 @@ namespace Asaki.Unity.Services.Scene.SceneManagement.Scripts.Examples.Architectu
         {
             _model = model;
         }
-        public void Create()
-        {
-        }
+
+        public void Create() { }
+
         public void Increment()
         {
             _model.count.Value++;

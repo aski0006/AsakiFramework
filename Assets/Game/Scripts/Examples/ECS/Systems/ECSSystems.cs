@@ -29,6 +29,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
                 }
             }
         }
+
         public override void Dispose() { }
     }
 
@@ -71,7 +72,9 @@ namespace Asaki.Game.Scripts.Examples.ECS
             if (health != null && !health.IsDead)
             {
                 health.TakeDamage(damage);
-                ALog.Info($"[HealthSystem] Entity {entity.Id} took {damage} damage, health: {health.CurrentHealth}/{health.MaxHealth}");
+                ALog.Info(
+                    $"[HealthSystem] Entity {entity.Id} took {damage} damage, health: {health.CurrentHealth}/{health.MaxHealth}"
+                );
             }
         }
 
@@ -84,9 +87,12 @@ namespace Asaki.Game.Scripts.Examples.ECS
             if (health != null)
             {
                 health.Heal(amount);
-                ALog.Info($"[HealthSystem] Entity {entity.Id} healed {amount}, health: {health.CurrentHealth}/{health.MaxHealth}");
+                ALog.Info(
+                    $"[HealthSystem] Entity {entity.Id} healed {amount}, health: {health.CurrentHealth}/{health.MaxHealth}"
+                );
             }
         }
+
         public override void Dispose() { }
     }
 
@@ -115,6 +121,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
                 velocity.Velocity = new Vector3(horizontal, 0f, vertical).normalized;
             }
         }
+
         public override void Dispose() { }
     }
 
@@ -138,6 +145,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
                 }
             }
         }
+
         public override void Dispose() { }
     }
 
@@ -196,6 +204,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
                 $"[EntityStatsSystem] Stats: Total={totalEntities}, Moving={movingEntities}, Alive={aliveEntities}, Visible={visibleEntities}"
             );
         }
+
         public override void Dispose() { }
     }
 }
