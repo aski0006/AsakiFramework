@@ -2,6 +2,20 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.11] - 2025-02-20
+
+### Added
+- **FSM Type Erasure Support** - Added type-erased state management methods
+  - `GetState(Type stateType)` - Get state instance by Type at runtime
+  - `ChangeState(Type stateType)` - Switch state by Type at runtime
+  - `ValidateStateType()` - Type safety validation for state types
+  - Supports configuration-driven and reflection-based state transitions
+  - Enables dynamic state loading from config files or data-driven systems
+
+### Changed
+- **FSM Documentation** - Updated class remarks to document type erasure feature
+- Removed deprecated FSM example and README files (consolidated documentation)
+
 ## [1.3.10] - 2025-02-18
 
 ### Fixed
