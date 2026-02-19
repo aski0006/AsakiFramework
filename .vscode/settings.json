@@ -122,8 +122,6 @@
         "**/TestServer": true,
         "**/TestResults": true,
         "**/.vs": true,
-        "**/*.csproj": true,
-        "**/*.sln": true,
         "**/.idea": true,
         "**/*.unityproj": true,
         "**/*.csproj.user": true,

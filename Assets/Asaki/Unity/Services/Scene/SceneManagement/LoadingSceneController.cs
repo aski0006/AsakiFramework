@@ -29,10 +29,6 @@ namespace Asaki.Unity.Services.Scene.SceneManagement
         [SerializeField]
         private ScenePreloadDatabase _preloadDatabase;
 
-        [Tooltip("默认过渡场景名称")]
-        [SerializeField]
-        private string _defaultLoadingSceneName = "LoadingScene";
-
         [Header("Loading UI")]
         [Tooltip("加载场景视图组件（可选，实现 ILoadingSceneView 接口）")]
         [SerializeField]

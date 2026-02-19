@@ -1,0 +1,3 @@
+{
+  "targetFrameworks": ["netstandard2.1", "net4.8", "net6.0", "net8.0"]
+}

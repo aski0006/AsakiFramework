@@ -1,13 +1,11 @@
-// 文件: Assets/Asaki/Unity/Services/Audio/AsakiAudioService.cs
-
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Audio;
+using Asaki.Core.Broker;
 using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
-using Asaki.Core.Pooling.Factories;
 using Asaki.Core.Pooling.Interfaces;
 using Asaki.Core.Resources;
 using Cysharp.Threading.Tasks;
@@ -17,502 +15,394 @@ using Object = UnityEngine.Object;
 namespace Asaki.Unity.Services.Audio
 {
     /// <summary>
-    /// Audio service manager - Pure C# implementation
-    /// Uses PoolV2 with prefab agent + resource loading for audio clips
+    /// 音频服务门户
+    /// <para>作为外观模式(Facade)的顶层服务，负责请求接收与分发。</para>
+    /// <para>具体业务逻辑交由内部子服务执行，保持接口职责单一。</para>
     /// </summary>
-    public class AsakiAudioService : IAsakiAudioService
+    /// <author>Asaki Framework</author>
+    /// <version>2.0</version>
+    public sealed class AsakiAudioService : IAsakiAudioService
     {
-        // ==========================================================
-        // 1. Dependencies & DataTable
-        // ==========================================================
         private readonly AsakiAudioConfig _config;
-        private readonly IAsakiPoolService _poolService;
         private readonly IAsakiResourceService _resourceService;
+        private readonly AudioAgentPoolService _agentPoolService;
+        private readonly AudioGroupService _groupService;
 
-        public const string AGENT_POOL_KEY = "AsakiSoundAgentPool";
-
-        // ==========================================================
-        // 2. Runtime State
-        // ==========================================================
-        private IAsakiPool<AsakiSoundAgent> _agentPool;
         private CancellationTokenSource _serviceCts;
+        private GameObject _rootObject;
+        private Transform _rootTransform;
         private int _handleCounter;
 
-        // Root node for hierarchy organization
-        private GameObject _root;
-        private Transform _rootTransform;
+        private readonly Dictionary<AsakiAudioHandle, IAudioAgent> _activeAgents =
+            new(AudioConstants.DefaultActiveAgentCapacity);
+        private readonly Dictionary<AsakiAudioHandle, int> _agentGroups = new();
 
-        // Active agent tracking (Handle -> Agent)
-        private readonly Dictionary<AsakiAudioHandle, AsakiSoundAgent> _activeAgents =
-            new Dictionary<AsakiAudioHandle, AsakiSoundAgent>(32);
+        private float _globalVolume = AudioConstants.DefaultVolume;
 
-        // ==========================================================
-        // 3. Constructor
-        // ==========================================================
         public AsakiAudioService(
             IAsakiPoolService poolService,
             IAsakiResourceService resourceService,
             AsakiAudioConfig config
         )
         {
-            _poolService = poolService ?? throw new ArgumentNullException(nameof(poolService));
             _resourceService =
                 resourceService ?? throw new ArgumentNullException(nameof(resourceService));
             _config = config ?? throw new ArgumentNullException(nameof(config));
+
+            if (poolService == null)
+                throw new ArgumentNullException(nameof(poolService));
+
+            _groupService = new AudioGroupService();
+            _agentPoolService = new AudioAgentPoolService(poolService, config, null);
         }
 
-        // ==========================================================
-        // 4. Lifecycle Management
-        // ==========================================================
         public void OnInit()
         {
             _serviceCts = new CancellationTokenSource();
 
-            _root = new GameObject("[AsakiAudioSystem]");
-            Object.DontDestroyOnLoad(_root);
-            _rootTransform = _root.transform;
+            _rootObject = new GameObject("[AsakiAudioSystem]");
+            Object.DontDestroyOnLoad(_rootObject);
+            _rootTransform = _rootObject.transform;
 
             _config?.InitializeLookup();
 
-            ALog.Info("[AsakiAudioService] Service initialized (prefab agent + resource loading)");
+            // 初始化默认分组
+            InitializeDefaultGroups();
+
+            AudioLogger.LogServiceInitialized();
+        }
+
+        private void InitializeDefaultGroups()
+        {
+            _groupService.GetOrCreateGroup(AudioConstants.GroupSFX, "SFX");
+            _groupService.GetOrCreateGroup(AudioConstants.GroupBGM, "BGM");
+            _groupService.GetOrCreateGroup(AudioConstants.GroupUI, "UI");
+            _groupService.GetOrCreateGroup(AudioConstants.GroupVoice, "Voice");
         }
 
         public async UniTask OnInitAsync()
         {
-            if (_config.AsakiSoundAgentPrefab == null)
-            {
-                ALog.Error("[AsakiAudioService] AsakiSoundAgentPrefab is null in config");
-                return;
-            }
-
-            // ✅ Create pool using prefab reference for agent
-            GameObjectFactory agentFactory = new GameObjectFactory(
-                _config.AsakiSoundAgentPrefab,
-                _rootTransform,
-                false
-            );
-
-            // Create component pool
-            _agentPool = await _poolService.CreatePoolAsync(
-                AGENT_POOL_KEY,
-                new ComponentFactoryWrapper(agentFactory),
-                new AsakiPoolConfig
-                {
-                    InitialSize = _config.InitialPoolSize,
-                    MaxSize = _config.MaxPoolSize > 0 ? _config.MaxPoolSize : 100,
-                    EnableValidation = true,
-                    EnableCollectionCheck = true,
-                    AllowSyncCreation = false,
-                },
-                _serviceCts.Token
-            );
-
-            ALog.Info(
-                $"[AsakiAudioService] Agent pool initialized, stats: {_agentPool.Statistics}"
-            );
+            await _agentPoolService.InitializeAsync(_serviceCts.Token);
+            AudioLogger.LogPoolInitialized(_agentPoolService.GetStatistics());
         }
 
         public void OnDispose()
         {
-            ALog.Info("[AsakiAudioService] Starting disposal");
+            StopAll(AudioConstants.ImmediateStop);
 
-            StopAll(0f);
+            _serviceCts?.Cancel();
+            _serviceCts?.Dispose();
+            _serviceCts = null;
 
-            if (_serviceCts != null)
+            _agentPoolService?.Dispose();
+            _groupService?.ClearAllGroups();
+
+            if (_rootObject != null)
             {
-                _serviceCts.Cancel();
-                _serviceCts.Dispose();
-                _serviceCts = null;
-            }
-
-            _agentPool?.Dispose();
-
-            if (_root != null)
-            {
-                Object.Destroy(_root);
-                _root = null;
+                Object.Destroy(_rootObject);
+                _rootObject = null;
                 _rootTransform = null;
             }
 
             _activeAgents.Clear();
+            _agentGroups.Clear();
 
-            ALog.Info("[AsakiAudioService] Disposal completed");
+            AudioLogger.LogServiceDisposed();
         }
 
-        // ==========================================================
-        // 5. Core Play Functionality
-        // ==========================================================
+        #region IAsakiAudioPlayer
+
         public AsakiAudioHandle Play(
             int assetId,
-            AsakiAudioParams p = default(AsakiAudioParams),
-            CancellationToken token = default(CancellationToken)
+            AsakiAudioParams parameters = default,
+            CancellationToken token = default
         )
         {
-            // State checks
-            if (_poolService == null)
+            ValidateServiceState();
+
+            if (!_config.TryGet(assetId, out var audioItem))
             {
-                ALog.Error("[AsakiAudioService] PoolService is null");
-                return AsakiAudioHandle.Invalid;
+                throw new ArgumentException($"AudioID {assetId} is not registered in config");
             }
 
-            if (_resourceService == null)
+            if (string.IsNullOrEmpty(audioItem.AssetPath))
             {
-                ALog.Error("[AsakiAudioService] ResourceService is null");
-                return AsakiAudioHandle.Invalid;
+                throw new InvalidOperationException(
+                    $"AssetPath is null or empty for audio ID: {assetId}"
+                );
             }
 
-            if (_rootTransform == null)
-            {
-                ALog.Error("[AsakiAudioService] RootTransform is null");
-                return AsakiAudioHandle.Invalid;
-            }
+            var mergedParams = MergeParameters(audioItem, parameters);
+            var handle = CreateHandle();
 
-            if (_agentPool == null)
-            {
-                ALog.Error("[AsakiAudioService] AgentPool is null, ensure OnInitAsync is called");
-                return AsakiAudioHandle.Invalid;
-            }
-
-            // Get audio item from config
-            if (!_config.TryGet(assetId, out AudioItem item))
-            {
-                ALog.Warn($"[AsakiAudioService] AudioID {assetId} not registered in config");
-                return AsakiAudioHandle.Invalid;
-            }
-
-            // ✅ Use asset path for resource loading
-            string path = item.AssetPath;
-            if (string.IsNullOrEmpty(path))
-            {
-                ALog.Error($"[AsakiAudioService] AssetPath is null or empty for ID {assetId}");
-                return AsakiAudioHandle.Invalid;
-            }
-
-            ALog.Info($"[AsakiAudioService] Play requested for audio: {path}");
-
-            AsakiAudioParams baseParams = item.ToParams();
-            AsakiAudioParams finalParams;
-            if (p.Volume == 0 && p.Pitch == 0 && p.Priority == 0)
-            {
-                // 用户传入的是 default，直接使用配置参数
-                finalParams = baseParams;
-
-                // 处理随机音高
-                if (item.RandomPitch)
-                {
-                    float randomPitch = baseParams.Pitch + UnityEngine.Random.Range(-0.1f, 0.1f);
-                    finalParams = finalParams.SetPitch(randomPitch);
-                }
-            }
-            else
-            {
-                // 用户传入了自定义参数，合并配置
-                finalParams = new AsakiAudioParams()
-                    .SetVolume(baseParams.Volume * p.Volume) // 相乘
-                    .SetPitch(baseParams.Pitch * p.Pitch) // 相乘
-                    .SetLoop(baseParams.IsLoop || p.IsLoop) // 逻辑或
-                    .SetPriority(p.Priority > 0 ? p.Priority : baseParams.Priority) // 优先使用用户值
-                    .SetSpatialBlend(p.SpatialBlend > 0 ? p.SpatialBlend : baseParams.SpatialBlend)
-                    .SetPosition(p.Position != Vector3.zero ? p.Position : baseParams.Position);
-
-                // 处理随机音高
-                if (item.RandomPitch)
-                {
-                    float randomPitch = finalParams.Pitch + UnityEngine.Random.Range(-0.1f, 0.1f);
-                    finalParams = finalParams.SetPitch(randomPitch);
-                }
-            }
-            // Generate handle
-            AsakiAudioHandle handle = new AsakiAudioHandle(
-                ++_handleCounter,
-                UnityEngine.Time.frameCount
-            );
-
-            ALog.Info($"[AsakiAudioService] Created handle: {handle.Id}");
-
-            // Start async playback
-            PlayInternalAsync(handle, path, finalParams, token).Forget();
+            PlayInternalAsync(handle, audioItem.AssetPath, mergedParams, audioItem.Group, token)
+                .Forget();
 
             return handle;
         }
 
-        private async UniTaskVoid PlayInternalAsync(
+        public void Stop(
             AsakiAudioHandle handle,
-            string clipPath,
-            AsakiAudioParams p,
-            CancellationToken userToken
+            float fadeDuration = AudioConstants.DefaultFadeDuration
         )
         {
-            ALog.Info($"[AsakiAudioService] PlayInternalAsync started for handle: {handle.Id}");
-            AsakiSoundAgent agent = null;
+            if (!TryGetAgent(handle, out var agent))
+                return;
 
-            try
-            {
-                // ✅ Get agent from pool (strongly typed)
-                ALog.Info("[AsakiAudioService] Requesting agent from pool");
-                agent = await _agentPool.GetAsync(_serviceCts.Token);
-
-                if (agent == null)
-                {
-                    ALog.Error("[AsakiAudioService] Failed to get agent from pool");
-                    return;
-                }
-
-                ALog.Info($"[AsakiAudioService] Agent obtained: {agent.GetInstanceID()}");
-
-                // Register to active list
-                _activeAgents[handle] = agent;
-                ALog.Info(
-                    $"[AsakiAudioService] Agent registered, active count: {_activeAgents.Count}"
-                );
-
-                // Create linked cancellation token
-                CancellationToken linkedToken = CancellationTokenSource
-                    .CreateLinkedTokenSource(_serviceCts.Token, userToken)
-                    .Token;
-
-                // ✅ Play audio (async load clip from resource path)
-                ALog.Info($"[AsakiAudioService] Playing audio from path: {clipPath}");
-                await agent.PlayAsync(clipPath, p, _resourceService, linkedToken);
-                ALog.Info($"[AsakiAudioService] Playback completed for handle: {handle.Id}");
-            }
-            catch (OperationCanceledException)
-            {
-                ALog.Info($"[AsakiAudioService] Playback canceled for handle: {handle.Id}");
-            }
-            catch (Exception ex)
-            {
-                ALog.Error($"[AsakiAudioService] Playback error: {ex.Message}", ex);
-            }
-            finally
-            {
-                // Cleanup: remove from active list
-                _activeAgents.Remove(handle);
-                ALog.Info(
-                    $"[AsakiAudioService] Agent removed from active list, count: {_activeAgents.Count}"
-                );
-
-                // ✅ Return to pool
-                if (agent != null)
-                {
-                    _agentPool.Return(agent);
-                    ALog.Info(
-                        $"[AsakiAudioService] Agent returned to pool: {agent.GetInstanceID()}"
-                    );
-                }
-            }
+            agent.Stop(fadeDuration);
+            ReturnAgent(handle, agent);
         }
 
-        // ==========================================================
-        // 6. Control Methods
-        // ==========================================================
         public void Pause(AsakiAudioHandle handle)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
             {
                 agent.Pause();
-                ALog.Info($"[AsakiAudioService] Audio paused: {handle.Id}");
             }
         }
 
         public void Resume(AsakiAudioHandle handle)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
             {
                 agent.Resume();
-                ALog.Info($"[AsakiAudioService] Audio resumed: {handle.Id}");
             }
         }
 
-        public void Stop(AsakiAudioHandle handle, float fadeDuration = 0.2f)
+        public bool IsPlaying(AsakiAudioHandle handle)
         {
-            if (_activeAgents.TryGetValue(handle, out AsakiSoundAgent agent))
-            {
-                agent.Stop(fadeDuration);
-                _activeAgents.Remove(handle);
-                ALog.Info($"[AsakiAudioService] Audio stopped: {handle.Id}");
-            }
+            return TryGetAgent(handle, out var agent) && agent.IsPlaying;
         }
 
-        public void StopAll(float fadeDuration = 0.5f)
+        public bool IsPaused(AsakiAudioHandle handle)
         {
-            var agents = new List<AsakiSoundAgent>(_activeAgents.Values);
-            _activeAgents.Clear();
-
-            foreach (AsakiSoundAgent agent in agents)
-            {
-                if (agent != null && agent.IsPlaying)
-                {
-                    agent.Stop(fadeDuration);
-                }
-            }
-
-            ALog.Info($"[AsakiAudioService] All audio stopped, count: {agents.Count}");
+            return TryGetAgent(handle, out var agent) && agent.IsPaused;
         }
 
-        // ==========================================================
-        // 7. Global Settings
-        // ==========================================================
+        #endregion
+
+        #region IAsakiAudioGlobalControl
+
         public void SetGlobalVolume(float volume)
         {
-            AudioListener.volume = volume;
-            ALog.Info($"[AsakiAudioService] Global volume set to: {volume}");
+            _globalVolume = Mathf.Clamp(volume, AudioConstants.MinVolume, AudioConstants.MaxVolume);
+
+            // 更新分组服务的全局音量系数
+            _groupService.SetGlobalVolumeFactor(_globalVolume);
+
+            // 发布全局音量变化事件
+            AsakiBroker.Publish(new GlobalVolumeChangedEvent { Volume = _globalVolume });
+        }
+
+        public float GetGlobalVolume()
+        {
+            return _globalVolume;
+        }
+
+        public void StopAll(float fadeDuration = AudioConstants.DefaultStopAllFadeDuration)
+        {
+            var handles = new List<AsakiAudioHandle>(_activeAgents.Keys);
+
+            foreach (var handle in handles)
+            {
+                if (_activeAgents.TryGetValue(handle, out var agent))
+                {
+                    agent.Stop(fadeDuration);
+                    ReturnAgent(handle, agent);
+                }
+            }
         }
 
         public void PauseAll()
         {
             AudioListener.pause = true;
-            ALog.Info("[AsakiAudioService] All audio paused globally");
         }
 
         public void ResumeAll()
         {
             AudioListener.pause = false;
-            ALog.Info("[AsakiAudioService] All audio resumed globally");
         }
 
-        // ==========================================================
-        // 8. Per-Handle Settings
-        // ==========================================================
+        #endregion
+
+        #region IAsakiAudioGroupControl
+
+        public void SetGroupVolume(int groupId, float volume)
+        {
+            _groupService.SetGroupVolume(groupId, volume);
+        }
+
+        public void SetGroupVolumeWithFade(
+            int groupId,
+            float targetVolume,
+            float duration,
+            CancellationToken cancellationToken = default
+        )
+        {
+            _groupService.SetGroupVolumeWithFade(
+                groupId,
+                targetVolume,
+                duration,
+                cancellationToken
+            );
+        }
+
+        public float GetGroupVolume(int groupId)
+        {
+            return _groupService.GetGroupVolume(groupId);
+        }
+
+        public float GetGroupEffectiveVolume(int groupId)
+        {
+            return _groupService.GetEffectiveVolume(groupId);
+        }
+
+        public void SetGroupMuted(int groupId, bool isMuted)
+        {
+            _groupService.SetGroupMuted(groupId, isMuted);
+        }
+
+        public bool IsGroupMuted(int groupId)
+        {
+            return _groupService.IsGroupMuted(groupId);
+        }
+
+        public void StopGroup(int groupId, float fadeDuration = AudioConstants.DefaultFadeDuration)
+        {
+            _groupService.StopGroup(groupId, fadeDuration);
+
+            var handlesToRemove = new List<AsakiAudioHandle>();
+            foreach (var kvp in _agentGroups)
+            {
+                if (kvp.Value == groupId)
+                {
+                    handlesToRemove.Add(kvp.Key);
+                }
+            }
+
+            foreach (var handle in handlesToRemove)
+            {
+                _activeAgents.Remove(handle);
+                _agentGroups.Remove(handle);
+            }
+        }
+
+        public void PauseGroup(int groupId)
+        {
+            _groupService.PauseGroup(groupId);
+        }
+
+        public void ResumeGroup(int groupId)
+        {
+            _groupService.ResumeGroup(groupId);
+        }
+
+        #endregion
+
+        #region IAsakiAudioRuntimeControl
+
         public void SetVolume(AsakiAudioHandle handle, float volume)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
+            {
                 agent.SetVolume(volume);
+            }
         }
 
         public void SetPitch(AsakiAudioHandle handle, float pitch)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
+            {
                 agent.SetPitch(pitch);
+            }
         }
 
         public void SetSpatialBlend(AsakiAudioHandle handle, float spatialBlend)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
-                agent.GetComponent<AudioSource>().spatialBlend = spatialBlend;
+            if (TryGetAgent(handle, out var agent))
+            {
+                agent.SetSpatialBlend(spatialBlend);
+            }
         }
 
         public void SetPosition(AsakiAudioHandle handle, Vector3 position)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
+            {
                 agent.SetPosition(position);
+            }
         }
 
         public void SetLoop(AsakiAudioHandle handle, bool isLoop)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
+            {
                 agent.SetLoop(isLoop);
+            }
         }
 
         public void SetMuted(AsakiAudioHandle handle, bool isMuted)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
+            if (TryGetAgent(handle, out var agent))
+            {
                 agent.SetMuted(isMuted);
+            }
         }
 
         public void SetPriority(AsakiAudioHandle handle, int priority)
         {
-            if (TryGetAgent(handle, out AsakiSoundAgent agent))
-                agent.GetComponent<AudioSource>().priority = priority;
+            if (TryGetAgent(handle, out var agent))
+            {
+                agent.SetPriority(priority);
+            }
         }
 
-        // ==========================================================
-        // 9. Group Methods (Placeholder)
-        // ==========================================================
-        public void SetAudioGroup(AsakiAudioHandle handle, int groupId) { }
+        #endregion
 
-        public void SetGroupVolume(int groupId, float volume) { }
+        #region Query Methods
 
-        public void SetGroupMuted(int groupId, bool isMuted) { }
-
-        public void PauseGroup(int groupId) { }
-
-        public void ResumeGroup(int groupId) { }
-
-        public void StopGroup(int groupId, float fadeDuration = 0.2f) { }
-
-        // ==========================================================
-        // 10. Query Methods (FSM-based)
-        // ==========================================================
-        public bool IsPlaying(AsakiAudioHandle handle)
-        {
-            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsPlaying;
-        }
-
-        public bool IsPaused(AsakiAudioHandle handle)
-        {
-            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsPaused;
-        }
-
-        /// <summary>
-        /// 获取音频播放器的当前状态
-        /// </summary>
         public AudioPlaybackState GetState(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent)
-                ? agent.State
-                : AudioPlaybackState.Idle;
+            return TryGetAgent(handle, out var agent) ? agent.State : AudioPlaybackState.Idle;
         }
 
-        /// <summary>
-        /// 检查音频是否处于活跃状态（Loading/Ready/Playing/Paused/FadingOut）
-        /// </summary>
         public bool IsActive(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsActive;
+            return TryGetAgent(handle, out var agent) && agent.IsActive;
         }
 
-        /// <summary>
-        /// 检查音频是否处于错误状态
-        /// </summary>
         public bool IsError(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent) && agent.IsError;
+            return TryGetAgent(handle, out var agent) && agent.IsError;
         }
 
         public float GetCurrentVolume(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent)
-                ? agent.GetComponent<AudioSource>().volume
+            return TryGetAgent(handle, out var agent)
+                ? agent.State != AudioPlaybackState.Idle
+                    ? 1f
+                    : 0f
                 : 0f;
         }
 
         public float GetCurrentPitch(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent)
-                ? agent.GetComponent<AudioSource>().pitch
-                : 1f;
+            return AudioConstants.DefaultPitch;
         }
 
         public Vector3 GetPosition(AsakiAudioHandle handle)
         {
-            return TryGetAgent(handle, out AsakiSoundAgent agent)
-                ? agent.transform.position
-                : Vector3.zero;
+            return TryGetAgent(handle, out var agent) ? agent.Transform.position : Vector3.zero;
         }
 
-        private bool TryGetAgent(AsakiAudioHandle handle, out AsakiSoundAgent agent)
-        {
-            return _activeAgents.TryGetValue(handle, out agent) && agent;
-        }
-
-        // ==========================================================
-        // 11. Statistics
-        // ==========================================================
         public string GetPoolStatistics()
         {
-            if (_agentPool == null)
-                return "[AsakiAudioService] Pool not initialized";
-
-            return $"[AsakiAudioService] {_agentPool.Statistics}, Active: {_activeAgents.Count}";
+            return $"Pool: {_agentPoolService.GetStatistics()}, Active: {_activeAgents.Count}";
         }
 
-        /// <summary>
-        /// 获取当前活跃音频的状态统计
-        /// </summary>
         public AudioStateStatistics GetStateStatistics()
         {
-            var stats = new AudioStateStatistics();
+            var statistics = new AudioStateStatistics();
 
             foreach (var agent in _activeAgents.Values)
             {
@@ -522,101 +412,178 @@ namespace Asaki.Unity.Services.Audio
                 switch (agent.State)
                 {
                     case AudioPlaybackState.Loading:
-                        stats.LoadingCount++;
+                        statistics.LoadingCount++;
                         break;
                     case AudioPlaybackState.Ready:
-                        stats.ReadyCount++;
+                        statistics.ReadyCount++;
                         break;
                     case AudioPlaybackState.Playing:
-                        stats.PlayingCount++;
+                        statistics.PlayingCount++;
                         break;
                     case AudioPlaybackState.Paused:
-                        stats.PausedCount++;
+                        statistics.PausedCount++;
                         break;
                     case AudioPlaybackState.FadingOut:
-                        stats.FadingOutCount++;
+                        statistics.FadingOutCount++;
                         break;
                     case AudioPlaybackState.Error:
-                        stats.ErrorCount++;
+                        statistics.ErrorCount++;
                         break;
                 }
             }
 
-            return stats;
+            return statistics;
         }
-    }
 
-    // ==========================================================
-    // Helper: Component Factory Wrapper
-    // ==========================================================
-    internal class ComponentFactoryWrapper : IAsakiPoolObjectFactory<AsakiSoundAgent>
-    {
-        private readonly GameObjectFactory _goFactory;
+        #endregion
 
-        public ComponentFactoryWrapper(GameObjectFactory goFactory)
+        #region Private Methods
+
+        private void ValidateServiceState()
         {
-            _goFactory = goFactory;
+            if (_resourceService == null)
+                throw new InvalidOperationException("ResourceService is not initialized");
+
+            if (_rootTransform == null)
+                throw new InvalidOperationException("Service is not initialized");
         }
 
-        public async UniTask<AsakiSoundAgent> CreateAsync(
-            CancellationToken token = default(CancellationToken)
+        private AsakiAudioHandle CreateHandle()
+        {
+            return new AsakiAudioHandle(++_handleCounter, UnityEngine.Time.frameCount);
+        }
+
+        private AsakiAudioParams MergeParameters(AudioItem audioItem, AsakiAudioParams userParams)
+        {
+            var baseParams = audioItem.ToParams();
+
+            // 检查是否使用默认参数
+            if (userParams.Volume == 0 && userParams.Pitch == 0 && userParams.Priority == 0)
+            {
+                var result = baseParams;
+
+                if (audioItem.RandomPitch)
+                {
+                    var randomPitch =
+                        baseParams.Pitch
+                        + UnityEngine.Random.Range(
+                            -AudioConstants.DefaultRandomPitchRange,
+                            AudioConstants.DefaultRandomPitchRange
+                        );
+                    result = result.SetPitch(randomPitch);
+                }
+
+                return result;
+            }
+
+            // 合并用户参数和配置参数
+            var merged = new AsakiAudioParams()
+                .SetVolume(baseParams.Volume * userParams.Volume)
+                .SetPitch(baseParams.Pitch * userParams.Pitch)
+                .SetLoop(baseParams.IsLoop || userParams.IsLoop)
+                .SetPriority(userParams.Priority > 0 ? userParams.Priority : baseParams.Priority)
+                .SetSpatialBlend(
+                    userParams.SpatialBlend > 0 ? userParams.SpatialBlend : baseParams.SpatialBlend
+                )
+                .SetPosition(
+                    userParams.Position != Vector3.zero ? userParams.Position : baseParams.Position
+                );
+
+            if (audioItem.RandomPitch)
+            {
+                var randomPitch =
+                    merged.Pitch
+                    + UnityEngine.Random.Range(
+                        -AudioConstants.DefaultRandomPitchRange,
+                        AudioConstants.DefaultRandomPitchRange
+                    );
+                merged = merged.SetPitch(randomPitch);
+            }
+
+            return merged;
+        }
+
+        private async UniTaskVoid PlayInternalAsync(
+            AsakiAudioHandle handle,
+            string clipPath,
+            AsakiAudioParams parameters,
+            AsakiAudioGroup group,
+            CancellationToken userToken
         )
         {
-            GameObject go = await _goFactory.CreateAsync(token);
-            return ExtractAgent(go);
-        }
+            IAudioAgent agent = null;
 
-        public AsakiSoundAgent CreateSync()
-        {
-            GameObject go = _goFactory.CreateSync();
-            return ExtractAgent(go);
-        }
-
-        private AsakiSoundAgent ExtractAgent(GameObject go)
-        {
-            if (!go)
-                return null;
-
-            AsakiSoundAgent agent = go.GetComponent<AsakiSoundAgent>();
-            if (agent != null)
-                return agent;
-
-            ALog.Error(
-                "[AsakiPool] ComponentFactoryWrapper: AsakiSoundAgent component missing on prefab"
-            );
-            Object.Destroy(go);
-            return null;
-        }
-
-        public void OnGet(AsakiSoundAgent obj)
-        {
-            if (obj != null && obj.gameObject != null)
+            try
             {
-                obj.gameObject.SetActive(true);
-                (obj as IAsakiPoolable)?.OnSpawn();
+                // 确定父节点：3D音效使用提供的位置，否则保持在池根节点
+                Transform parent = null;
+                if (
+                    parameters.SpatialBlend > AudioConstants.Full2D
+                    && parameters.Position != Vector3.zero
+                )
+                {
+                    // 3D音效：创建临时父节点用于定位
+                    var tempParent = new GameObject($"[Audio3D_{handle.Id}]");
+                    tempParent.transform.position = parameters.Position;
+                    parent = tempParent.transform;
+                }
+
+                agent = await _agentPoolService.BorrowAsync(parent, _serviceCts.Token);
+
+                _activeAgents[handle] = agent;
+                _agentGroups[handle] = (int)group;
+                _groupService.RegisterToGroup((int)group, handle, agent);
+
+                var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    _serviceCts.Token,
+                    userToken
+                );
+
+                try
+                {
+                    await agent.PlayAsync(clipPath, parameters, _resourceService, linkedCts.Token);
+                }
+                finally
+                {
+                    linkedCts.Dispose();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                // 取消是正常行为
+            }
+            catch (Exception ex)
+            {
+                AudioLogger.LogPlaybackError(handle.Id, ex.Message);
+                throw;
+            }
+            finally
+            {
+                if (agent != null)
+                {
+                    ReturnAgent(handle, agent);
+                }
             }
         }
 
-        public void OnReturn(AsakiSoundAgent obj)
+        private bool TryGetAgent(AsakiAudioHandle handle, out IAudioAgent agent)
         {
-            if (obj != null && obj.gameObject != null)
-            {
-                (obj as IAsakiPoolable)?.OnDespawn();
-                obj.gameObject.SetActive(false);
-            }
+            return _activeAgents.TryGetValue(handle, out agent) && agent != null;
         }
 
-        public void OnDestroy(AsakiSoundAgent obj)
+        private void ReturnAgent(AsakiAudioHandle handle, IAudioAgent agent)
         {
-            if (obj != null && obj.gameObject != null)
+            _activeAgents.Remove(handle);
+
+            if (_agentGroups.TryGetValue(handle, out var groupId))
             {
-                Object.Destroy(obj.gameObject);
+                _groupService.UnregisterFromGroup(groupId, handle);
+                _agentGroups.Remove(handle);
             }
+
+            _agentPoolService.Return(agent);
         }
 
-        public bool Validate(AsakiSoundAgent obj)
-        {
-            return obj != null && obj.gameObject != null;
-        }
+        #endregion
     }
 }

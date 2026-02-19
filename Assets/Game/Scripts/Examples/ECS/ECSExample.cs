@@ -235,7 +235,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
             ALog.Info("[ECSExample] All entities cleared");
         }
 
-        private void OnDestroy()
+        protected override void Cleanup()
         {
             _architecture?.Dispose();
             ALog.Info("[ECSExample] ECS Example destroyed");

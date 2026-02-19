@@ -1,9 +1,11 @@
-﻿namespace Asaki.Core.Audio
+namespace Asaki.Core.Audio
 {
     /// <summary>
     /// 音频播放状态枚举
-    /// 定义音频播放器的所有可能状态
+    /// <para>定义音频播放器的所有可能状态。</para>
     /// </summary>
+    /// <author>Asaki Framework</author>
+    /// <version>2.0</version>
     public enum AudioPlaybackState
     {
         /// <summary>空闲状态 - 对象在池中或未初始化</summary>

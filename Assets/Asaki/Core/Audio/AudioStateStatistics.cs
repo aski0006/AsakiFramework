@@ -1,9 +1,11 @@
-﻿namespace Asaki.Core.Audio
+namespace Asaki.Core.Audio
 {
     /// <summary>
     /// 音频状态统计信息
-    /// 用于监控和分析音频播放器的整体状态分布
+    /// <para>用于监控和分析音频播放器的整体状态分布。</para>
     /// </summary>
+    /// <author>Asaki Framework</author>
+    /// <version>2.0</version>
     public struct AudioStateStatistics
     {
         /// <summary>正在加载资源的音频数量</summary>
@@ -28,11 +30,10 @@
         public int TotalActive =>
             LoadingCount + ReadyCount + PlayingCount + PausedCount + FadingOutCount + ErrorCount;
 
-        /// <summary>获取统计信息的字符串表示</summary>
         public override string ToString()
         {
-            return $"Audio States: [Loading: {LoadingCount}, Ready: {ReadyCount}, Playing: {PlayingCount}, "
-                + $"Paused: {PausedCount}, FadingOut: {FadingOutCount}, Error: {ErrorCount}, Total: {TotalActive}]";
+            return $"Audio Stats: [Playing={PlayingCount}, Paused={PausedCount}, Loading={LoadingCount}, "
+                + $"Ready={ReadyCount}, FadingOut={FadingOutCount}, Error={ErrorCount}, Total={TotalActive}]";
         }
     }
 }

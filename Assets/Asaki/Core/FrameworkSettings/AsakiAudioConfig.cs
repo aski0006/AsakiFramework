@@ -1,5 +1,3 @@
-﻿// 文件: Assets/Asaki/Core/FrameworkSettings/AsakiAudioConfig.cs
-
 using System;
 using System.Collections.Generic;
 using Asaki.Core.Audio;
@@ -7,14 +5,21 @@ using UnityEngine;
 
 namespace Asaki.Core.FrameworkSettings
 {
+    /// <summary>
+    /// 音频分组枚举
+    /// </summary>
     public enum AsakiAudioGroup
     {
-        SFX = 0,
-        BGM = 1,
-        UI = 2,
-        Voice = 3,
+        SFX = AudioConstants.GroupSFX,
+        BGM = AudioConstants.GroupBGM,
+        UI = AudioConstants.GroupUI,
+        Voice = AudioConstants.GroupVoice,
     }
 
+    /// <summary>
+    /// 音频配置项
+    /// <para>定义单个音频资源的所有配置参数。</para>
+    /// </summary>
     [Serializable]
     public class AudioItem
     {
@@ -27,17 +32,14 @@ namespace Asaki.Core.FrameworkSettings
         [Tooltip("Asset path for resource loading")]
         public string AssetPath;
 
-        // ========================================
-        // ✅ 新增：完整的播放参数配置
-        // ========================================
         [Header("Playback Parameters")]
         [Tooltip("Audio volume (0-1)")]
-        [Range(0f, 1f)]
-        public float Volume = 1f;
+        [Range(AudioConstants.MinVolume, AudioConstants.MaxVolume)]
+        public float Volume = AudioConstants.DefaultVolume;
 
         [Tooltip("Audio pitch (0.1-3)")]
-        [Range(0.1f, 3f)]
-        public float Pitch = 1f;
+        [Range(AudioConstants.MinPitch, AudioConstants.MaxPitch)]
+        public float Pitch = AudioConstants.DefaultPitch;
 
         [Tooltip("Loop playback")]
         public bool Loop = false;
@@ -53,19 +55,17 @@ namespace Asaki.Core.FrameworkSettings
         public Vector3 Position = Vector3.zero;
 
         [Tooltip("2D/3D blend (0=2D, 1=3D)")]
-        [Range(0f, 1f)]
-        public float SpatialBlend = 0f;
+        [Range(AudioConstants.Full2D, AudioConstants.Full3D)]
+        public float SpatialBlend = AudioConstants.DefaultSpatialBlend;
 
         [Tooltip("Audio priority (0=highest)")]
-        [Range(0, 256)]
-        public int Priority = 128;
+        [Range(AudioConstants.HighestPriority, AudioConstants.LowestPriority)]
+        public int Priority = AudioConstants.DefaultPriority;
 
-        // ========================================
-        // ✅ 新增方法：转换为 AsakiAudioParams
-        // ========================================
         /// <summary>
-        /// Convert this AudioItem to AsakiAudioParams
+        /// 转换为播放参数
         /// </summary>
+        /// <returns>音频参数结构体</returns>
         public AsakiAudioParams ToParams()
         {
             return new AsakiAudioParams()
@@ -82,6 +82,10 @@ namespace Asaki.Core.FrameworkSettings
 #endif
     }
 
+    /// <summary>
+    /// 音频配置
+    /// <para>管理所有音频资源的注册表和池配置。</para>
+    /// </summary>
     [Serializable]
     public class AsakiAudioConfig
     {
@@ -89,8 +93,8 @@ namespace Asaki.Core.FrameworkSettings
         public GameObject AsakiSoundAgentPrefab;
 
         [Header("Pool Settings")]
-        public int InitialPoolSize = 16;
-        public int MaxPoolSize = 100;
+        public int InitialPoolSize = AudioConstants.DefaultInitialPoolSize;
+        public int MaxPoolSize = AudioConstants.DefaultMaxPoolSize;
 
         [Header("Audio Registry")]
         public List<AudioItem> Items = new List<AudioItem>();
@@ -103,7 +107,7 @@ namespace Asaki.Core.FrameworkSettings
                 return;
 
             _lookup = new Dictionary<int, AudioItem>(Items.Count);
-            foreach (AudioItem item in Items)
+            foreach (var item in Items)
             {
                 _lookup.TryAdd(item.ID, item);
             }
