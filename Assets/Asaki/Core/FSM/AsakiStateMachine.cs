@@ -13,6 +13,7 @@ namespace Asaki.Core.FSM
     /// <item>懒加载缓存：状态仅在首次使用时创建，之后复用</item>
     /// <item>零运行时GC：通过对象池复用避免频繁的内存分配</item>
     /// <item>泛型驱动：提供类型安全的状态管理</item>
+    /// <item>类型擦除：支持通过Type动态切换状态，适用于配置驱动场景</item>
     /// <item>Unity集成：支持与MonoBehaviour生命周期方法配合使用</item>
     /// </list>
     /// 适合用于游戏中的各种状态管理场景，如角色AI、游戏流程控制、UI状态等。
@@ -51,7 +52,7 @@ namespace Asaki.Core.FSM
         /// <param name="context">状态持有者的上下文实例。</param>
         /// <remarks>
         /// 构造函数初始化状态机的上下文和状态缓存池。
-        /// 状态机创建后，需要调用<see cref="ChangeState{TState}"/>方法来启动第一个状态。
+        /// 状态机创建后，需要调用<see cref="ChangeState{TState}"/>或<see cref="ChangeState(Type)"/>方法来启动第一个状态。
         /// </remarks>
         public AsakiStateMachine(TContext context)
         {
@@ -59,6 +60,15 @@ namespace Asaki.Core.FSM
             _stateCache = new Dictionary<Type, AsakiState<TContext>>();
         }
 
+        /// <summary>
+        /// 获取指定类型的泛型状态实例。
+        /// </summary>
+        /// <typeparam name="TState">目标状态类型，必须继承自<see cref="AsakiState{TContext}"/>并提供无参构造函数。</typeparam>
+        /// <returns>状态实例。</returns>
+        /// <remarks>
+        /// 如果状态尚未创建，则会创建新实例并缓存。
+        /// 后续调用将返回缓存的实例，实现零GC分配。
+        /// </remarks>
         public TState GetState<TState>()
             where TState : AsakiState<TContext>, new()
         {
@@ -70,6 +80,31 @@ namespace Asaki.Core.FSM
                 _stateCache.Add(type, state);
             }
             return (TState)state;
+        }
+
+        /// <summary>
+        /// 通过类型擦除方式获取状态实例。
+        /// </summary>
+        /// <param name="stateType">目标状态类型，必须继承自<see cref="AsakiState{TContext}"/>并提供无参构造函数。</param>
+        /// <returns>状态实例。</returns>
+        /// <exception cref="ArgumentNullException">当<paramref name="stateType"/>为null时抛出。</exception>
+        /// <exception cref="ArgumentException">当<paramref name="stateType"/>不是有效的状态类型时抛出。</exception>
+        /// <remarks>
+        /// 此方法提供类型擦除能力，允许在运行时动态获取状态实例。
+        /// 适用于需要根据配置或反射动态切换状态的场景。
+        /// 类型安全验证确保传入的类型必须是AsakiState&lt;TContext&gt;的子类。
+        /// </remarks>
+        public AsakiState<TContext> GetState(Type stateType)
+        {
+            ValidateStateType(stateType);
+
+            if (!_stateCache.TryGetValue(stateType, out AsakiState<TContext> state))
+            {
+                state = CreateStateInstance(stateType);
+                state.Initialize(this, Context);
+                _stateCache.Add(stateType, state);
+            }
+            return state;
         }
 
         /// <summary>
@@ -96,6 +131,40 @@ namespace Asaki.Core.FSM
                 newState = new TState();
                 newState.Initialize(this, Context);
                 _stateCache.Add(type, newState);
+            }
+
+            // 3. 进入新状态
+            _currentState = newState;
+            _currentState.OnEnter();
+        }
+
+        /// <summary>
+        /// 通过类型擦除方式切换到指定状态。
+        /// </summary>
+        /// <param name="stateType">目标状态类型，必须继承自<see cref="AsakiState{TContext}"/>并提供无参构造函数。</param>
+        /// <exception cref="ArgumentNullException">当<paramref name="stateType"/>为null时抛出。</exception>
+        /// <exception cref="ArgumentException">当<paramref name="stateType"/>不是有效的状态类型时抛出。</exception>
+        /// <remarks>
+        /// 此方法提供类型擦除能力，允许在运行时动态切换状态。
+        /// 适用于以下场景：
+        /// <list type="bullet">
+        /// <item>根据配置文件动态加载状态</item>
+        /// <item>通过反射实现状态切换</item>
+        /// <item>编辑器工具或调试器中的状态切换</item>
+        /// </list>
+        /// 类型安全验证确保传入的类型必须是AsakiState&lt;TContext&gt;的子类且具有无参构造函数。
+        /// </remarks>
+        public void ChangeState(Type stateType)
+        {
+            // 1. 退出当前状态
+            _currentState?.OnExit();
+
+            // 2. 获取目标状态 (查缓存 -> 懒加载)
+            if (!_stateCache.TryGetValue(stateType, out var newState))
+            {
+                newState = CreateStateInstance(stateType);
+                newState.Initialize(this, Context);
+                _stateCache.Add(stateType, newState);
             }
 
             // 3. 进入新状态
@@ -147,5 +216,58 @@ namespace Asaki.Core.FSM
             _currentState = null;
             _stateCache.Clear();
         }
+
+        #region 类型安全验证辅助方法
+
+        /// <summary>
+        /// 验证状态类型是否有效。
+        /// </summary>
+        /// <param name="stateType">要验证的状态类型。</param>
+        /// <exception cref="ArgumentNullException">当<paramref name="stateType"/>为null时抛出。</exception>
+        /// <exception cref="ArgumentException">当类型不是有效的状态类型时抛出。</exception>
+        private void ValidateStateType(Type stateType)
+        {
+            if (stateType == null)
+            {
+                throw new ArgumentNullException(nameof(stateType), "状态类型不能为null");
+            }
+
+            Type expectedBaseType = typeof(AsakiState<TContext>);
+            if (!expectedBaseType.IsAssignableFrom(stateType))
+            {
+                throw new ArgumentException(
+                    $"状态类型 '{stateType.Name}' 必须继承自 '{expectedBaseType.Name}'",
+                    nameof(stateType)
+                );
+            }
+
+            if (stateType.IsAbstract)
+            {
+                throw new ArgumentException(
+                    $"状态类型 '{stateType.Name}' 不能是抽象类",
+                    nameof(stateType)
+                );
+            }
+
+            if (stateType.GetConstructor(Type.EmptyTypes) == null)
+            {
+                throw new ArgumentException(
+                    $"状态类型 '{stateType.Name}' 必须提供无参公共构造函数",
+                    nameof(stateType)
+                );
+            }
+        }
+
+        /// <summary>
+        /// 创建状态实例。
+        /// </summary>
+        /// <param name="stateType">状态类型。</param>
+        /// <returns>新创建的状态实例。</returns>
+        private AsakiState<TContext> CreateStateInstance(Type stateType)
+        {
+            return (AsakiState<TContext>)Activator.CreateInstance(stateType);
+        }
+
+        #endregion
     }
 }
