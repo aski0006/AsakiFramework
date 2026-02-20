@@ -2,6 +2,37 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.13] - 2025-02-20
+
+### Performance
+- **Resource Service Concurrency** - Optimized locking mechanism for high-concurrency scenarios
+  - Replaced global lock with `ConcurrentDictionary` + 16-segment striped locks
+  - Fast path: cache hits return without lock contention
+  - Slow path: only record creation uses segment locks
+  - Expected >30% improvement in concurrent processing capacity
+
+### Architecture
+- **Preloader Responsibility Split** - Refactored `AsakiResourcePreloader` following SRP
+  - `PreloadConfigProvider` - Configuration management
+  - `PreloadExecutor` - Loading execution and state management
+  - `PreloadResourceRegistry` - Resource handle management and access
+  - `AsakiResourcePreloader` now acts as coordinator
+
+### Changed
+- **Dependency Parallel Loading** - Dependencies now load in parallel instead of sequentially
+- **Removed Obsolete API** - Removed deprecated `ReleaseBatch(IEnumerable<string>)` method
+- **Constant Naming** - Unified constant naming style to PascalCase
+
+### Documentation
+- Added UnityDoc standard comments to all core interfaces and classes
+  - `IAsakiResourceService` - Full API documentation with examples
+  - `IAsakiResStrategy` - Strategy pattern documentation
+  - `AsakiResourceService` - Internal implementation details
+  - `AsakiResourcesStrategy` / `AsakiAddressablesStrategy` - Usage scenarios
+  - `AsakiResKitFactory` - Factory pattern examples
+  - `AsakiResKitMode` - Mode selection guidelines
+  - `SerializableResourceType` - Type system documentation
+
 ## [1.3.12] - 2025-02-20
 
 ### Fixed
