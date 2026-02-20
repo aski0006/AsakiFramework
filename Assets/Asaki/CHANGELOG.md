@@ -2,6 +2,45 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.12] - 2025-02-20
+
+### Fixed
+- **Logging Thread Safety** - Fixed race condition in `AsakiLogModel.LastTimestamp`
+  - Changed from direct assignment to `Interlocked.Exchange` for atomic updates
+  - Added `System.Threading` namespace and updated documentation
+
+### Optimized
+- **FormatPayload GC Reduction** - Reduced garbage collection in `ALog.FormatPayload()`
+  - Added `ThreadStatic` StringBuilder pool for thread-safe reuse
+  - Implemented dedicated formatting methods for Unity types (Vector2/3/4, Quaternion, Color)
+  - Eliminated string interpolation allocations for common payload types
+
+### Fixed
+- **Stack Trace Capture** - Fixed incomplete stack traces in Info/Warn level logs
+  - Trace and Info methods now capture stack traces at call site
+  - `CaptureSmartStackTrace` now filters out Asaki internal frames
+  - Stack traces now correctly show user code call chain
+
+### Changed
+- **Log Dashboard Layout** - Improved editor window layout
+  - Changed split view ratio to 70% (log list) / 30% (details)
+  - Added dynamic height adjustment for long messages
+  - Added message tooltips and auto-wrap for long content
+  - Added clickable location label in detail panel
+
+### Added
+- **Rich Text Console Output** - Enhanced Unity console log formatting
+  - Added color-coded log levels (Debug=gray, Info=white, Warning=yellow, Error=red, Fatal=dark red)
+  - Added millisecond-precision timestamps to all console logs
+  - Added level badges with emoji icons (🔍 DBG, ℹ️ INF, ⚠️ WRN, ❌ ERR, 💀 FTL)
+
+### Added
+- **Log Export Feature** - Added one-click log export to TXT file
+  - Export button in Log Dashboard toolbar
+  - Generates formatted report with summary statistics
+  - Includes full log details with stack traces
+  - User can specify save location via file dialog
+
 ## [1.3.11] - 2025-02-20
 
 ### Added

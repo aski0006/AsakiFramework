@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -75,31 +76,31 @@ namespace Asaki.Editor.Debugging
             // 1. Toolbar (Top)
             DrawToolbar(root);
 
-            // 2. Split View (Main Content)
+            // 2. Split View (Main Content) - 左侧70%，右侧30%
+            float leftPaneWidth = position.width * 0.7f;
             TwoPaneSplitView split = new TwoPaneSplitView(
                 0,
-                350,
+                leftPaneWidth,
                 TwoPaneSplitViewOrientation.Horizontal
             );
             split.style.flexGrow = 1;
             root.Add(split);
 
-            // --- Left Pane: Log List ---
+            // --- Left Pane: Log List (70%) ---
             _listView = new ListView();
             _listView.style.flexGrow = 1;
             _listView.style.backgroundColor = ColorBgLight;
-            _listView.fixedItemHeight = 28; // 稍微增高以容纳徽章
-            _listView.makeItem = MakeLogItem; // 使用自定义复合控件
+            _listView.fixedItemHeight = 28;
+            _listView.makeItem = MakeLogItem;
             _listView.bindItem = BindLogItem;
             _listView.selectionChanged += OnLogSelected;
             split.Add(_listView);
 
-            // --- Right Pane: Details ---
+            // --- Right Pane: Details (30%) ---
             VisualElement rightPane = new VisualElement
             {
                 style = { flexGrow = 1, backgroundColor = ColorBgDark },
             };
-            // Detail Toolbar / Header area could go here
             _stackScrollView = new ScrollView();
             _stackScrollView.style.SetPadding(20);
             rightPane.Add(_stackScrollView);
@@ -155,7 +156,7 @@ namespace Asaki.Editor.Debugging
                 )
             );
 
-            _toolbar.Add(new VisualElement { style = { width = 10 } }); // Spacer
+            _toolbar.Add(new VisualElement { style = { width = 10 } });
 
             _toolbar.Add(CreateBtn("📂 History", OpenLogFile, 80));
             _toolbar.Add(new VisualElement { style = { width = 5 } });
@@ -169,6 +170,11 @@ namespace Asaki.Editor.Debugging
                     90
                 )
             );
+
+            _toolbar.Add(new VisualElement { style = { width = 10 } });
+
+            // 导出按钮
+            _toolbar.Add(CreateBtn("📤 Export", ExportLogsToTxt, 80));
 
             // Status Label (Right aligned logic handled by spacer or flex)
             _statusLabel = new Label("Status: Idle")
@@ -205,12 +211,13 @@ namespace Asaki.Editor.Debugging
             strip.style.SetBorderRadius(2);
             root.Add(strip);
 
-            // 2. Message Label
+            // 2. Message Label (支持自动换行和展开)
             Label label = new Label { name = "msg-label" };
             label.style.flexGrow = 1;
             label.style.fontSize = 12;
             label.style.unityTextAlign = TextAnchor.MiddleLeft;
-            label.style.overflow = Overflow.Hidden; // 防止过长溢出
+            label.style.overflow = Overflow.Hidden;
+            label.style.whiteSpace = WhiteSpace.Normal;
             root.Add(label);
 
             // 3. Count Badge (聚合计数徽章)
@@ -219,10 +226,10 @@ namespace Asaki.Editor.Debugging
             badge.style.color = Color.white;
             badge.style.fontSize = 10;
             badge.style.unityFontStyleAndWeight = FontStyle.Bold;
-            badge.style.SetPadding(2, 6); // Horizontal padding
+            badge.style.SetPadding(2, 6);
             badge.style.SetBorderRadius(8);
             badge.style.marginRight = 5;
-            badge.style.display = DisplayStyle.None; // 默认隐藏
+            badge.style.display = DisplayStyle.None;
             root.Add(badge);
 
             // 4. Time Label
@@ -251,8 +258,24 @@ namespace Asaki.Editor.Debugging
             Label time = e.Q<Label>("time-label");
 
             // Data Binding
-            label.text = log.Message;
+            string message = log.Message;
+            label.text = message;
+            label.tooltip = message;
             time.text = log.DisplayTime;
+
+            // 根据消息长度动态调整高度
+            if (message != null && message.Length > 50)
+            {
+                e.style.minHeight = 40;
+                e.style.maxHeight = 80;
+                label.style.whiteSpace = WhiteSpace.Normal;
+            }
+            else
+            {
+                e.style.minHeight = StyleKeyword.Null;
+                e.style.maxHeight = StyleKeyword.Null;
+                label.style.whiteSpace = WhiteSpace.Pre;
+            }
 
             // Badge Logic
             if (log.Count > 1)
@@ -281,7 +304,7 @@ namespace Asaki.Editor.Debugging
                     textColor = new Color(1f, 0.9f, 0.5f);
                     break;
                 default:
-                    stripColor = ColorSystemCode; // Info/Debug
+                    stripColor = ColorSystemCode;
                     textColor = new Color(0.8f, 0.8f, 0.8f);
                     break;
             }
@@ -321,7 +344,7 @@ namespace Asaki.Editor.Debugging
             lvlBadge.style.SetBorderRadius(3);
             header.Add(lvlBadge);
 
-            // Message
+            // Message (支持自动换行和完整显示)
             Label msgLabel = new Label(log.Message)
             {
                 style =
@@ -352,6 +375,34 @@ namespace Asaki.Editor.Debugging
                 }
             });
             header.Add(msgLabel);
+
+            // 添加调用位置信息
+            if (!string.IsNullOrEmpty(log.CallerPath))
+            {
+                Label locationLabel = new Label($"📍 {log.CallerPath}:{log.CallerLine}")
+                {
+                    style =
+                    {
+                        fontSize = 11,
+                        color = new Color(0.5f, 0.7f, 0.9f),
+                        marginTop = 5,
+                        whiteSpace = WhiteSpace.Normal,
+                    },
+                };
+                locationLabel.RegisterCallback<MouseDownEvent>(evt =>
+                {
+                    if (evt.button == 0)
+                    {
+                        string sysPath = log.CallerPath.Replace('/', Path.DirectorySeparatorChar);
+                        UnityEditorInternal.InternalEditorUtility.OpenFileAtLineExternal(
+                            sysPath,
+                            log.CallerLine
+                        );
+                    }
+                });
+                header.Add(locationLabel);
+            }
+
             _stackScrollView.Add(header);
 
             // === 2. Payload Area (Code Block Style) ===
@@ -700,6 +751,164 @@ namespace Asaki.Editor.Debugging
                 default:
                     return ColorSystemCode;
             }
+        }
+
+        /// <summary>
+        /// 导出日志到TXT文件
+        /// </summary>
+        private void ExportLogsToTxt()
+        {
+            var logs = _mode == DashboardMode.Live ? _liveAggregator?.GetSnapshot() : _localLogs;
+            if (logs == null || logs.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Export Logs", "No logs to export.", "OK");
+                return;
+            }
+
+            // 选择保存路径
+            string defaultName = $"AsakiLog_Export_{DateTime.Now:yyyyMMdd_HHmmss}.txt";
+            string defaultDir = Path.Combine(Application.persistentDataPath, "Logs");
+            if (!Directory.Exists(defaultDir))
+                Directory.CreateDirectory(defaultDir);
+
+            string savePath = EditorUtility.SaveFilePanel(
+                "Export Logs",
+                defaultDir,
+                defaultName,
+                "txt"
+            );
+
+            if (string.IsNullOrEmpty(savePath))
+                return;
+
+            try
+            {
+                ExportLogsToFile(logs, savePath);
+                EditorUtility.RevealInFinder(savePath);
+                _statusLabel.text = $"Exported: {Path.GetFileName(savePath)}";
+                _statusLabel.style.color = new Color(0.4f, 1f, 0.4f);
+            }
+            catch (Exception ex)
+            {
+                EditorUtility.DisplayDialog(
+                    "Export Error",
+                    $"Failed to export logs: {ex.Message}",
+                    "OK"
+                );
+                Debug.LogError($"[AsakiLogDashboard] Export failed: {ex}");
+            }
+        }
+
+        /// <summary>
+        /// 将日志列表导出到文件
+        /// </summary>
+        private void ExportLogsToFile(List<AsakiLogModel> logs, string filePath)
+        {
+            using (var writer = new StreamWriter(filePath, false, System.Text.Encoding.UTF8))
+            {
+                // 写入文件头
+                writer.WriteLine(
+                    "╔════════════════════════════════════════════════════════════════╗"
+                );
+                writer.WriteLine(
+                    "║                    ASAKI LOG EXPORT REPORT                     ║"
+                );
+                writer.WriteLine(
+                    "╚════════════════════════════════════════════════════════════════╝"
+                );
+                writer.WriteLine();
+                writer.WriteLine($"Export Time: {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}");
+                writer.WriteLine($"Total Entries: {logs.Count}");
+                writer.WriteLine($"Total Occurrences: {logs.Sum(l => l.Count)}");
+                writer.WriteLine();
+                writer.WriteLine(new string('═', 80));
+                writer.WriteLine();
+
+                // 按级别分组统计
+                var levelGroups = logs.GroupBy(l => l.Level).OrderBy(g => (int)g.Key);
+                writer.WriteLine("📊 SUMMARY BY LEVEL:");
+                writer.WriteLine();
+                writer.WriteLine($"{"Level", -10} {"Count", -10} {"Occurrences", -15}");
+                writer.WriteLine(new string('-', 35));
+                foreach (var group in levelGroups)
+                {
+                    string levelName = group.Key.ToString();
+                    int count = group.Count();
+                    int occurrences = group.Sum(l => l.Count);
+                    writer.WriteLine($"{levelName, -10} {count, -10} {occurrences, -15}");
+                }
+                writer.WriteLine();
+                writer.WriteLine(new string('═', 80));
+                writer.WriteLine();
+
+                // 写入详细日志
+                int index = 1;
+                foreach (var log in logs)
+                {
+                    string levelIcon = GetLevelIcon(log.Level);
+                    string time = new DateTime(log.LastTimestamp)
+                        .ToLocalTime()
+                        .ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                    writer.WriteLine(
+                        $"[{index++}] {levelIcon} [{log.Level.ToString().ToUpper()}] {time}"
+                    );
+                    writer.WriteLine($"    Message: {log.Message}");
+
+                    if (!string.IsNullOrEmpty(log.PayloadJson))
+                    {
+                        writer.WriteLine($"    Payload: {log.PayloadJson}");
+                    }
+
+                    writer.WriteLine($"    Location: {log.CallerPath}:{log.CallerLine}");
+
+                    if (log.Count > 1)
+                    {
+                        writer.WriteLine($"    Occurrences: {log.Count} times");
+                    }
+
+                    // 写入堆栈信息
+                    if (log.StackFrames != null && log.StackFrames.Count > 0)
+                    {
+                        writer.WriteLine("    Stack Trace:");
+                        foreach (var frame in log.StackFrames)
+                        {
+                            string userCodeMarker = frame.IsUserCode ? "→" : " ";
+                            writer.WriteLine(
+                                $"      {userCodeMarker} {frame.DeclaringType}.{frame.MethodName}"
+                            );
+                            if (frame.IsUserCode && !string.IsNullOrEmpty(frame.FilePath))
+                            {
+                                writer.WriteLine(
+                                    $"          at {frame.FilePath}:{frame.LineNumber}"
+                                );
+                            }
+                        }
+                    }
+
+                    writer.WriteLine();
+                }
+
+                writer.WriteLine(new string('═', 80));
+                writer.WriteLine($"End of Report - {logs.Count} unique log entries");
+                writer.WriteLine($"Generated by Asaki Log Dashboard");
+            }
+        }
+
+        /// <summary>
+        /// 获取日志级别对应的图标
+        /// </summary>
+        private string GetLevelIcon(AsakiLogLevel level)
+        {
+            return level switch
+            {
+                AsakiLogLevel.Debug => "🔍",
+                AsakiLogLevel.Info => "ℹ️",
+                AsakiLogLevel.Warning => "⚠️",
+                AsakiLogLevel.Error => "❌",
+                AsakiLogLevel.Fatal => "💀",
+                _ => "❓",
+            };
         }
 
         [System.Serializable]

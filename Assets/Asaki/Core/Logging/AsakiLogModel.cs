@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Asaki.Core.Logging
 {
@@ -7,18 +8,22 @@ namespace Asaki.Core.Logging
     /// V2 日志核心单元 (纯数据)，用于存储日志相关的各种信息。
     /// </summary>
     /// <remarks>
+    /// 线程安全说明：
+    /// - Count 字段使用 Interlocked 进行原子更新
+    /// - LastTimestamp 字段使用 Interlocked.Exchange 进行原子更新
     /// </remarks>
     [Serializable]
     public class AsakiLogModel
     {
         /// <summary>
         /// 聚合计数，记录该日志项出现的次数。
-        /// 使用 <see cref="System.Threading.Interlocked.Increment"/> 进行线程安全的更新。
+        /// 使用 <see cref="Interlocked.Increment"/> 进行线程安全的更新。
         /// </summary>
         public int Count = 1;
 
         /// <summary>
         /// 最后一次发生时间，以长整型时间戳表示。
+        /// 使用 <see cref="Interlocked.Exchange"/> 进行线程安全的更新。
         /// </summary>
         public long LastTimestamp;
 

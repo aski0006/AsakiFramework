@@ -366,7 +366,7 @@ namespace Asaki.Core.Logging
                 {
                     // === Inc ===
                     Interlocked.Increment(ref model.Count);
-                    model.LastTimestamp = p.Timestamp;
+                    Interlocked.Exchange(ref model.LastTimestamp, p.Timestamp);
 
                     // 池化创建 Command
                     LogWriteCommand cmd = LogCommandPool.Get();
@@ -469,6 +469,18 @@ namespace Asaki.Core.Logging
                 string fileName = frame.GetFileName();
                 fileName = fileName?.Replace('\\', '/') ?? string.Empty;
 
+                string declaringTypeName = method.DeclaringType?.Name ?? "Global";
+                string methodName = method.Name;
+
+                bool isAsakiInternal =
+                    fileName.Contains("/Asaki/Core/Logging/")
+                    || fileName.Contains("/Asaki/Unity/Logging/")
+                    || (declaringTypeName == "ALog" && methodName != null)
+                    || (declaringTypeName == "AsakiLoggingService");
+
+                if (isAsakiInternal)
+                    continue;
+
                 bool isUserCode =
                     fileName.Contains("/Assets/")
                     && !fileName.Contains("/Asaki/")
@@ -477,8 +489,8 @@ namespace Asaki.Core.Logging
                 list.Add(
                     new StackFrameModel
                     {
-                        DeclaringType = method.DeclaringType?.Name ?? "Global",
-                        MethodName = method.Name,
+                        DeclaringType = declaringTypeName,
+                        MethodName = methodName,
                         FilePath = fileName,
                         LineNumber = frame.GetFileLineNumber(),
                         IsUserCode = isUserCode,

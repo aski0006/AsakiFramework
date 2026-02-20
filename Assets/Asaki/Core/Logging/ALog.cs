@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Asaki.Core.Context;
 using UnityEngine;
 
@@ -17,6 +18,26 @@ namespace Asaki.Core.Logging
         /// 使用volatile确保多线程环境下的可见性。
         /// </summary>
         private static volatile IAsakiLoggingService _cachedService;
+
+        /// <summary>
+        /// 复用的StringBuilder实例，用于减少FormatPayload的GC分配。
+        /// 使用ThreadLocal确保多线程安全。
+        /// </summary>
+        [ThreadStatic]
+        private static StringBuilder _tlsStringBuilder;
+
+        /// <summary>
+        /// 获取当前线程的StringBuilder实例（延迟初始化）
+        /// </summary>
+        private static StringBuilder StringBuilderInstance
+        {
+            get
+            {
+                if (_tlsStringBuilder == null)
+                    _tlsStringBuilder = new StringBuilder(256);
+                return _tlsStringBuilder;
+            }
+        }
 
 #if UNITY_EDITOR
         /// <summary>
@@ -141,8 +162,7 @@ namespace Asaki.Core.Logging
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
         /// <remarks>
-        /// Trace 级别日志仅保存调用位置（文件:行号），不捕获完整调用堆栈以优化性能。
-        /// 如需完整堆栈信息，请使用 <see cref="Warn"/> 级别。
+        /// Trace 级别日志会捕获调用堆栈信息，便于问题排查。
         /// </remarks>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
@@ -168,7 +188,8 @@ namespace Asaki.Core.Logging
                 return;
             }
 
-            s.LogTrace(AsakiLogLevel.Debug, message, pJson, file, line);
+            var stackTrace = new StackTrace(1, true);
+            s.LogTrace(AsakiLogLevel.Debug, message, pJson, file, line, stackTrace);
         }
 
         // ========================================================================
@@ -184,8 +205,7 @@ namespace Asaki.Core.Logging
         /// <param name="file">调用此方法的文件路径，由 <see cref="CallerFilePathAttribute"/> 自动填充。</param>
         /// <param name="line">调用此方法的行号，由 <see cref="CallerLineNumberAttribute"/> 自动填充。</param>
         /// <remarks>
-        /// Info 级别日志仅保存调用位置（文件:行号），不捕获完整调用堆栈以优化性能。
-        /// 如需完整堆栈信息，请使用 <see cref="Warn"/> 级别。
+        /// Info 级别日志会捕获调用堆栈信息，便于问题排查。
         /// </remarks>
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
@@ -211,7 +231,8 @@ namespace Asaki.Core.Logging
                 return;
             }
 
-            s.LogTrace(AsakiLogLevel.Info, message, pJson, file, line);
+            var stackTrace = new StackTrace(1, true);
+            s.LogTrace(AsakiLogLevel.Info, message, pJson, file, line, stackTrace);
         }
 
         /// <summary>
@@ -375,6 +396,7 @@ namespace Asaki.Core.Logging
         /// <summary>
         /// 简单的 Payload 格式化方法。
         /// 根据不同的数据类型将其转换为字符串格式。
+        /// 使用ThreadLocal StringBuilder减少GC分配。
         /// </summary>
         /// <param name="payload">要格式化的对象。</param>
         /// <returns>格式化后的字符串，如果对象为 null，则返回 null。</returns>
@@ -384,31 +406,140 @@ namespace Asaki.Core.Logging
             {
                 case null:
                     return null;
-                // 1. 基础类型直接转
                 case string s:
                     return s;
-                case int:
-                case float:
-                case bool:
-                    return payload.ToString();
-                // 2. Unity 向量类型特化 (常用)
+                case int i:
+                    return i.ToString();
+                case float f:
+                    return f.ToString();
+                case bool b:
+                    return b.ToString();
                 case Vector3 v3:
-                    return $"({v3.x:F2}, {v3.y:F2}, {v3.z:F2})";
+                    return FormatVector3(v3);
                 case Vector2 v2:
-                    return $"({v2.x:F2}, {v2.y:F2})";
+                    return FormatVector2(v2);
+                case Vector4 v4:
+                    return FormatVector4(v4);
+                case Quaternion q:
+                    return FormatQuaternion(q);
+                case Color c:
+                    return FormatColor(c);
                 default:
-                    try
-                    {
+                    return FormatComplexPayload(payload);
+            }
+        }
+
+        /// <summary>
+        /// 格式化Vector3，使用StringBuilder避免GC
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatVector3(Vector3 v)
+        {
+            var sb = StringBuilderInstance;
+            sb.Clear();
+            sb.Append('(');
+            sb.Append(v.x.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.y.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.z.ToString("F2"));
+            sb.Append(')');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 格式化Vector2，使用StringBuilder避免GC
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatVector2(Vector2 v)
+        {
+            var sb = StringBuilderInstance;
+            sb.Clear();
+            sb.Append('(');
+            sb.Append(v.x.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.y.ToString("F2"));
+            sb.Append(')');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 格式化Vector4，使用StringBuilder避免GC
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatVector4(Vector4 v)
+        {
+            var sb = StringBuilderInstance;
+            sb.Clear();
+            sb.Append('(');
+            sb.Append(v.x.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.y.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.z.ToString("F2"));
+            sb.Append(", ");
+            sb.Append(v.w.ToString("F2"));
+            sb.Append(')');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 格式化Quaternion，使用StringBuilder避免GC
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatQuaternion(Quaternion q)
+        {
+            var sb = StringBuilderInstance;
+            sb.Clear();
+            sb.Append('(');
+            sb.Append(q.x.ToString("F3"));
+            sb.Append(", ");
+            sb.Append(q.y.ToString("F3"));
+            sb.Append(", ");
+            sb.Append(q.z.ToString("F3"));
+            sb.Append(", ");
+            sb.Append(q.w.ToString("F3"));
+            sb.Append(')');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 格式化Color，使用StringBuilder避免GC
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatColor(Color c)
+        {
+            var sb = StringBuilderInstance;
+            sb.Clear();
+            sb.Append("RGBA(");
+            sb.Append((int)(c.r * 255));
+            sb.Append(", ");
+            sb.Append((int)(c.g * 255));
+            sb.Append(", ");
+            sb.Append((int)(c.b * 255));
+            sb.Append(", ");
+            sb.Append(c.a.ToString("F2"));
+            sb.Append(')');
+            return sb.ToString();
+        }
+
+        /// <summary>
+        /// 格式化复杂对象，仅在编辑器模式下使用JSON序列化
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static string FormatComplexPayload(object payload)
+        {
+            try
+            {
 #if UNITY_EDITOR
-                        return JsonUtility.ToJson(payload);
+                return JsonUtility.ToJson(payload);
 #else
-                        return null;
+                return payload.ToString();
 #endif
-                    }
-                    catch
-                    {
-                        return payload.ToString();
-                    }
+            }
+            catch
+            {
+                return payload.ToString();
             }
         }
     }
