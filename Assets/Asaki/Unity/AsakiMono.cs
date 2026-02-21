@@ -25,6 +25,7 @@ namespace Asaki.Unity
 
         private int _lifecycleTrackingId;
         private bool _isRegisteredWithLifecycleManager;
+        private bool _enableComponentCalled;
         private readonly Dictionary<Type, Component> _componentCache = new();
 
         protected virtual void Awake()
@@ -58,7 +59,11 @@ namespace Asaki.Unity
         protected virtual void OnEnable()
         {
             this.AsakiRegister();
-            EnableComponent();
+            if (IsActivated && !_enableComponentCalled)
+            {
+                _enableComponentCalled = true;
+                EnableComponent();
+            }
         }
 
         protected virtual void EnableComponent() { }
@@ -66,6 +71,7 @@ namespace Asaki.Unity
         protected virtual void OnDisable()
         {
             this.AsakiUnregister();
+            _enableComponentCalled = false;
             DisableComponent();
         }
 
@@ -89,6 +95,12 @@ namespace Asaki.Unity
             {
                 IsActivated = true;
                 OnStart();
+
+                if (gameObject.activeInHierarchy && !_enableComponentCalled)
+                {
+                    _enableComponentCalled = true;
+                    EnableComponent();
+                }
             }
             catch (Exception ex)
             {

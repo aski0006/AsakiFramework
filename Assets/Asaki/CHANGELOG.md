@@ -2,6 +2,29 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.15] - 2025-02-22
+
+### Added
+- **IAsakiArchitecture Interface Enhancement** - Extended interface with CQRS methods
+  - Added 8 `SendCommand` method declarations (sync/async, with/without return value, with/without configure delegate)
+  - Added 6 `SendQuery` method declarations (sync/async, with/without cache, with/without configure delegate)
+  - Added 2 `SendUndoCommand` method declarations
+  - Added Undo/Redo operations (`Undo()`, `Redo()`) and state properties (`CanUndo`, `CanRedo`, `UndoCount`, `RedoCount`)
+  - Enables interface-based programming without casting to concrete `AsakiArchitecture` class
+
+### Fixed
+- **AsakiSystemBase.ServiceProvider Null Reference** - Fixed critical bug where `ServiceProvider` was never set
+  - Root cause: `AsakiArchitecture.Inject()` called parameterless `Create()` through `IAsakiSystem` interface
+  - Solution: Added type check to call `Create(this)` for `AsakiSystemBase` derived systems
+  - Systems can now properly access architecture via `ServiceProvider` to send commands/queries
+  - Maintains backward compatibility for systems directly implementing `IAsakiSystem`
+
+### Changed
+- **AsakiMono Lifecycle** - Improved `EnableComponent` call timing
+  - Added `_enableComponentCalled` flag to prevent duplicate calls
+  - `EnableComponent()` now called after `OnStart()` when component is already active
+  - Ensures proper initialization order: Awake → OnEnable → Start → EnableComponent
+
 ## [1.3.14] - 2025-02-21
 
 ### Added

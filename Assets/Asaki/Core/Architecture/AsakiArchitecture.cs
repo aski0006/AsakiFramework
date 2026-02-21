@@ -44,7 +44,10 @@ namespace Asaki.Core.Architecture
             foreach (IAsakiSystem system in _systems.Values)
             {
                 AsakiGlobalInjector.Inject(system, Resolver);
-                system.Create();
+                if (system is AsakiSystemBase sysBase)
+                    sysBase.Create(this);
+                else
+                    system.Create();
             }
 
             // Phase 3: 调用所有 System 的 Start（此时所有 System 已就绪）
