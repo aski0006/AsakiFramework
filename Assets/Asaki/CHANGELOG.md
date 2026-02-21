@@ -2,6 +2,26 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.3.14] - 2025-02-21
+
+### Added
+- **Architecture Register** - Added centralized architecture registration system
+  - `ArchitectureRegister` - Central registry for managing all architecture instances
+  - `AsakiArchitectureModule` - Unity module for architecture lifecycle management
+  - `AsakiArchitectureDebugger` - Editor window for debugging architecture states
+  - `ArchitectureRegisterWindow` - Editor tool for visualizing registered architectures
+
+### Changed
+- **Framework Settings** - Refactored framework configuration system
+  - Moved pool configuration to dedicated `AsakiPoolConfig` class
+  - Moved timer configuration to dedicated `AsakiTimerConfig` class
+  - Improved settings serialization and validation
+
+### Fixed
+- **Scene Context Editor** - Optimized editor performance and initialization
+- **Pool System** - Fixed generic pool implementation issues
+- **Audio Constants** - Unified constant naming conventions
+
 ## [1.3.13] - 2025-02-20
 
 ### Performance
