@@ -1,23 +1,27 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Text;
+using Asaki.Core.FrameworkSettings;
 
 namespace Asaki.Unity.Utils
 {
     /// <summary>
     /// [工具类] StringBuilder 对象池。
     /// 用于避免字符串拼接时的临时内存分配。
+    /// 配置参数从全局配置 AsakiPoolGlobalConfig 获取
     /// </summary>
     public static class AsakiStringBuilderPool
     {
-        // 使用 Stack 配合 lock 实现轻量级线程安全
-        private static readonly Stack<StringBuilder> _pool = new Stack<StringBuilder>(32);
-        private static readonly object _lock = new object();
+        private static int PoolInitialCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderPoolInitialCapacity;
+        private static int MaxRetainCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderMaxRetainCapacity;
+        private static int StringBuilderInitialCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderInitialCapacity;
 
-        // 扩容限制提升至 64KB (覆盖绝大多数游戏内 JSON)
-        // 只有超过 64KB 的超大包才会被 GC 此时 GC 是合理的代价
-        private const int MAX_RETAIN_CAPACITY = 64 * 1024;
+        // 使用 Stack 配合 lock 实现轻量级线程安全
+        private static readonly Stack<StringBuilder> _pool = new Stack<StringBuilder>(
+            AsakiPoolGlobalConfig.Instance.StringBuilderPoolInitialCapacity
+        );
+        private static readonly object _lock = new object();
 
         public static StringBuilder Rent()
         {
@@ -28,7 +32,7 @@ namespace Asaki.Unity.Utils
                     return _pool.Pop();
                 }
             }
-            return new StringBuilder(1024); // 初始容量提升，减少初期扩容次数
+            return new StringBuilder(StringBuilderInitialCapacity);
         }
 
         public static void Return(StringBuilder sb)
@@ -38,7 +42,7 @@ namespace Asaki.Unity.Utils
 
             // 策略调整：如果容量过大，尝试通过 Capacity 属性缩容 (.NET 优化)
             // 或者直接丢弃以释放大块内存
-            if (sb.Capacity > MAX_RETAIN_CAPACITY)
+            if (sb.Capacity > MaxRetainCapacity)
             {
                 // 选项 A: 丢弃 (防止大内存长期驻留) -> 选这个，简单安全
                 return;

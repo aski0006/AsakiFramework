@@ -97,7 +97,6 @@ namespace Asaki.Tests.UI
         public string LastReleasedLocation { get; private set; }
         public Type LastReleasedType { get; private set; }
 
-        private int _handleCounter = 0;
         private Dictionary<string, GameObject> _loadedAssets = new Dictionary<string, GameObject>();
 
         public UniTask<ResHandle<T>> LoadAsync<T>(
@@ -109,7 +108,7 @@ namespace Asaki.Tests.UI
             return LoadAsync<T>(location, null, token);
         }
 
-        public async UniTask<ResHandle<Object>> LoadAsync(
+        public UniTask<ResHandle<Object>> LoadAsync(
             string location,
             Type type,
             Action<float> onProgress,
@@ -233,7 +232,7 @@ namespace Asaki.Tests.UI
     /// </summary>
     public class MockPoolService : IAsakiPoolService
     {
-        public async UniTask<IAsakiPool<T>> CreatePoolAsync<T>(
+        public UniTask<IAsakiPool<T>> CreatePoolAsync<T>(
             string key,
             IAsakiPoolObjectFactory<T> factory,
             AsakiPoolConfig config = null,

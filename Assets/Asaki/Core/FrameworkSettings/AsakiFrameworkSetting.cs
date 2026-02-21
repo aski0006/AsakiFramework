@@ -67,6 +67,16 @@ namespace Asaki.Core.FrameworkSettings
         private AsakiSaveConfig saveConfig = new AsakiSaveConfig();
         public AsakiSaveConfig SaveConfig => saveConfig;
 
+        [Header("Modules: Pooling")]
+        [SerializeField]
+        private AsakiPoolGlobalConfig poolGlobalConfig = new AsakiPoolGlobalConfig();
+        public AsakiPoolGlobalConfig PoolGlobalConfig => poolGlobalConfig;
+
+        [Header("Modules: Timer")]
+        [SerializeField]
+        private AsakiTimerConfig timerConfig = new AsakiTimerConfig();
+        public AsakiTimerConfig TimerConfig => timerConfig;
+
         // =========================================================
         // 4. Runtime Initialization
         // =========================================================

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling.Interfaces;
 using Cysharp.Threading.Tasks;
@@ -50,7 +51,10 @@ namespace Asaki.Core.Pooling
             _factory = factory ?? throw new ArgumentNullException(nameof(factory));
             Config = poolConfig ?? AsakiPoolConfig.Default;
 
-            int capacity = Config.InitialSize > 0 ? Config.InitialSize : 16;
+            int capacity =
+                Config.InitialSize > 0
+                    ? Config.InitialSize
+                    : AsakiPoolGlobalConfig.Instance.DefaultPoolCapacity;
             _stack = new Stack<T>(capacity);
             _objectMetadata = new Dictionary<T, PoolObjectMetadata>(capacity);
             _activeObjects = Config.EnableCollectionCheck ? new HashSet<T>() : null;
@@ -63,13 +67,18 @@ namespace Asaki.Core.Pooling
         /// </summary>
         public async UniTask PrewarmAsync(
             int count,
-            int itemsPerFrame = 5,
+            int itemsPerFrame = -1,
             CancellationToken token = default(CancellationToken)
         )
         {
             ThrowIfDisposed();
             if (count <= 0)
                 return;
+
+            int actualItemsPerFrame =
+                itemsPerFrame > 0
+                    ? itemsPerFrame
+                    : AsakiPoolGlobalConfig.Instance.DefaultPrewarmItemsPerFrame;
 
             int batchCount = 0;
             int createdCount = 0;
@@ -106,7 +115,7 @@ namespace Asaki.Core.Pooling
                     createdCount++;
                     batchCount++;
 
-                    if (batchCount >= itemsPerFrame)
+                    if (batchCount >= actualItemsPerFrame)
                     {
                         batchCount = 0;
                         await UniTask.Yield(PlayerLoopTiming.Update);

@@ -17,7 +17,6 @@ namespace Asaki.Editor.FrameworkSettings
 
         private Vector2 _scrollPosition;
         private int _selectedIndex = -1;
-        private int _dragIndex = -1;
 
         private GUIStyle _headerStyle;
         private GUIStyle _boxStyle;

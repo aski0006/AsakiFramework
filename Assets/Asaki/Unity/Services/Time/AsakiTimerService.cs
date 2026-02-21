@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Time;
 using UnityEngine;
@@ -43,17 +45,41 @@ namespace Asaki.Unity.Services.Time
         private ulong _versionCounter = 0; // 递增版本号
         private bool _isDisposed = false;
         private bool _isTicking = false; // 标记是否正在 Tick 中
-        private const int MAX_LOOP_ITERATIONS = 10; // 单帧最大循环次数
+        private readonly int _maxLoopIterations; // 单帧最大循环次数
 #if UNITY_EDITOR
-        private float _globalTimeScale = 1f;
+        private float _globalTimeScale;
 #endif
 
-        public AsakiTimerService(int initialCapacity = 64)
+        /// <summary>
+        /// 创建定时器服务实例
+        /// </summary>
+        /// <param name="initialCapacity">初始容量（可选，默认从配置读取）</param>
+        public AsakiTimerService(int initialCapacity = -1)
         {
-            _timers = new List<TimerData>(initialCapacity);
-            _idToIndex = new Dictionary<int, int>(initialCapacity);
+            AsakiTimerConfig config = GetTimerConfig();
+            int capacity = initialCapacity > 0 ? initialCapacity : config.DefaultInitialCapacity;
+            _maxLoopIterations = config.MaxLoopIterations;
+
+            _timers = new List<TimerData>(capacity);
+            _idToIndex = new Dictionary<int, int>(capacity);
             _taggedTimers = new Dictionary<string, List<int>>();
-            _pendingRemoveIndices = new List<int>(initialCapacity);
+            _pendingRemoveIndices = new List<int>(capacity);
+
+#if UNITY_EDITOR
+            _globalTimeScale = config.GlobalTimeScale;
+#endif
+        }
+
+        /// <summary>
+        /// 获取定时器配置
+        /// </summary>
+        private static AsakiTimerConfig GetTimerConfig()
+        {
+            if (AsakiContext.TryGet<AsakiFrameworkSetting>(out var setting) && setting != null)
+            {
+                return setting.TimerConfig;
+            }
+            return new AsakiTimerConfig();
         }
 
         #region IDisposable
@@ -162,7 +188,7 @@ namespace Asaki.Unity.Services.Time
                 {
                     int loopCount = 0;
                     while (
-                        t.Elapsed >= t.Duration && !t.IsCancelled && loopCount < MAX_LOOP_ITERATIONS
+                        t.Elapsed >= t.Duration && !t.IsCancelled && loopCount < _maxLoopIterations
                     )
                     {
                         loopCount++;
@@ -203,10 +229,10 @@ namespace Asaki.Unity.Services.Time
                         }
                     }
 
-                    if (loopCount >= MAX_LOOP_ITERATIONS && t.IsLooped && !t.IsCancelled)
+                    if (loopCount >= _maxLoopIterations && t.IsLooped && !t.IsCancelled)
                     {
                         ALog.Warn(
-                            $"[AsakiTimer] Loop timer (Id={t.Id}) hit max iterations ({MAX_LOOP_ITERATIONS}) in single frame"
+                            $"[AsakiTimer] Loop timer (Id={t.Id}) hit max iterations ({_maxLoopIterations}) in single frame"
                         );
                     }
                 }

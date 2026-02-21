@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Asaki.Core.FrameworkSettings;
 using Cysharp.Threading.Tasks;
 
 namespace Asaki.Core.Pooling.Interfaces
@@ -39,11 +40,11 @@ namespace Asaki.Core.Pooling.Interfaces
         /// 异步预热池
         /// </summary>
         /// <param name="count">预热数量</param>
-        /// <param name="itemsPerFrame">每帧创建数量</param>
+        /// <param name="itemsPerFrame">每帧创建数量（默认从全局配置获取）</param>
         /// <param name="token">取消令牌</param>
         UniTask PrewarmAsync(
             int count,
-            int itemsPerFrame = 5,
+            int itemsPerFrame = -1,
             CancellationToken token = default(CancellationToken)
         );
 
@@ -61,5 +62,19 @@ namespace Asaki.Core.Pooling.Interfaces
         /// 归还对象到池
         /// </summary>
         bool Return(T item);
+    }
+
+    /// <summary>
+    /// IAsakiPool扩展方法
+    /// </summary>
+    public static class IAsakiPoolExtensions
+    {
+        /// <summary>
+        /// 获取默认的每帧预热数量
+        /// </summary>
+        public static int GetDefaultPrewarmItemsPerFrame()
+        {
+            return AsakiPoolGlobalConfig.Instance.DefaultPrewarmItemsPerFrame;
+        }
     }
 }

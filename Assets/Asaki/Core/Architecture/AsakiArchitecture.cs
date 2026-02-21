@@ -7,13 +7,14 @@ using Asaki.Core.Simulation;
 
 namespace Asaki.Core.Architecture
 {
-    public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInject
+    public abstract partial class AsakiArchitecture : IAsakiArchitecture, IAsakiInject, IDisposable
     {
         private readonly Dictionary<Type, IAsakiModel> _models =
             new Dictionary<Type, IAsakiModel>();
         private readonly Dictionary<Type, IAsakiSystem> _systems =
             new Dictionary<Type, IAsakiSystem>();
         private IAsakiSimulationService _simulationService;
+        private ArchitectureRegister _architectureRegister;
         protected IAsakiResolver Resolver { get; private set; }
         private bool _isInited;
 
@@ -29,6 +30,7 @@ namespace Asaki.Core.Architecture
 
             Resolver = resolver ?? AsakiGlobalResolver.Instance;
             Resolver.TryGet(out _simulationService);
+            Resolver.TryGet(out _architectureRegister);
             OnSetup();
 
             // Phase 1: 创建所有 Model
@@ -52,6 +54,17 @@ namespace Asaki.Core.Architecture
                 BindSimulation(system); // Start 之后再绑定 Simulation
             }
 
+            if (_architectureRegister == null)
+            {
+                ALog.Error(
+                    $"[AsakiArchitecture] {GetType().Name} is not initialized. Register it in AsakiArchitectureModule."
+                );
+            }
+            else
+            {
+                _architectureRegister.RegisterArchitecture((IAsakiArchitecture)this);
+            }
+
             _isInited = true;
             ALog.Info(
                 $"[AsakiArchitecture] {GetType().Name} initialized. (M:{_models.Count}, S:{_systems.Count})"
@@ -64,7 +77,10 @@ namespace Asaki.Core.Architecture
             where T : class, IAsakiModel
         {
             if (model == null)
+            {
                 return;
+            }
+
             Type type = typeof(T);
             if (!_models.TryAdd(type, model))
             {
@@ -78,7 +94,10 @@ namespace Asaki.Core.Architecture
             where T : class, IAsakiSystem
         {
             if (system == null)
+            {
                 return;
+            }
+
             Type type = typeof(T);
             if (!_systems.TryAdd(type, system))
             {
@@ -184,7 +203,9 @@ namespace Asaki.Core.Architecture
         public void Dispose()
         {
             if (!_isInited)
+            {
                 return;
+            }
 
             // 分别处理每个 System，避免一个失败影响其他
             foreach (IAsakiSystem system in _systems.Values)
@@ -210,7 +231,7 @@ namespace Asaki.Core.Architecture
                 {
                     model.Dispose();
                 }
-                catch (System.Exception ex)
+                catch (Exception ex)
                 {
                     ALog.Error(
                         $"[AsakiArchitecture] Error disposing model {model.GetType().Name}: {ex}"
@@ -222,33 +243,75 @@ namespace Asaki.Core.Architecture
             Resolver = null;
             _simulationService = null;
             _isInited = false;
+            if (_architectureRegister != null)
+            {
+                _architectureRegister.RemoveArchitecture(this);
+            }
             ALog.Info($"[AsakiArchitecture] Disposed {GetType().Name}");
         }
 
         private void BindSimulation(IAsakiSystem system)
         {
             if (_simulationService == null)
+            {
                 return;
+            }
 
             if (system is IAsakiTickable tickable)
+            {
                 _simulationService.Register(tickable);
+            }
+
             if (system is IAsakiLateTickable lateTickable)
+            {
                 _simulationService.Register(lateTickable);
+            }
+
             if (system is IAsakiFixedTickable fixedTickable)
+            {
                 _simulationService.Register(fixedTickable);
+            }
         }
 
         private void UnbindSimulation(IAsakiSystem system)
         {
             if (_simulationService == null)
+            {
                 return;
+            }
 
             if (system is IAsakiTickable tickable)
+            {
                 _simulationService.Unregister(tickable);
+            }
+
             if (system is IAsakiFixedTickable fixedTickable)
+            {
                 _simulationService.Unregister(fixedTickable);
+            }
+
             if (system is IAsakiLateTickable lateTickable)
+            {
                 _simulationService.Unregister(lateTickable);
+            }
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// 编辑器专用：获取所有已注册的Model
+        /// </summary>
+        public IReadOnlyDictionary<Type, IAsakiModel> GetModelsForEditor()
+        {
+            return _models;
+        }
+
+        /// <summary>
+        /// 编辑器专用：获取所有已注册的System
+        /// </summary>
+        public IReadOnlyDictionary<Type, IAsakiSystem> GetSystemsForEditor()
+        {
+            return _systems;
+        }
+#endif
     }
 }

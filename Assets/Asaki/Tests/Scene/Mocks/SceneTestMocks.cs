@@ -389,7 +389,7 @@ namespace Asaki.Tests.Scene.Mocks
             return UniTask.FromResult(new ResHandle<T>(location, null, this));
         }
 
-        public async UniTask<ResHandle<Object>> LoadAsync(
+        public UniTask<ResHandle<Object>> LoadAsync(
             string location,
             Type type,
             Action<float> onProgress,

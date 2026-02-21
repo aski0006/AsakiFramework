@@ -1,3 +1,4 @@
+using Asaki.Core.FrameworkSettings;
 using UnityEngine;
 
 namespace Asaki.Core.Audio
@@ -5,6 +6,7 @@ namespace Asaki.Core.Audio
     /// <summary>
     /// 音频常量定义
     /// <para>集中管理音频系统使用的所有常量值，消除魔法数字。</para>
+    /// <para>池相关配置从全局配置 AsakiPoolGlobalConfig 获取。</para>
     /// </summary>
     /// <author>Asaki Framework</author>
     /// <version>2.0</version>
@@ -78,16 +80,19 @@ namespace Asaki.Core.Audio
 
         #endregion
 
-        #region Pool
+        #region Pool (从全局配置获取)
 
-        /// <summary>默认初始池大小</summary>
-        public const int DefaultInitialPoolSize = 16;
+        /// <summary>默认初始池大小（从全局配置获取）</summary>
+        public static int DefaultInitialPoolSize =>
+            AsakiPoolGlobalConfig.Instance.AudioPoolDefaultInitialSize;
 
-        /// <summary>默认最大池大小</summary>
-        public const int DefaultMaxPoolSize = 100;
+        /// <summary>默认最大池大小（从全局配置获取）</summary>
+        public static int DefaultMaxPoolSize =>
+            AsakiPoolGlobalConfig.Instance.AudioPoolDefaultMaxSize;
 
-        /// <summary>默认活跃音频字典初始容量</summary>
-        public const int DefaultActiveAgentCapacity = 32;
+        /// <summary>默认活跃音频字典初始容量（从全局配置获取）</summary>
+        public static int DefaultActiveAgentCapacity =>
+            AsakiPoolGlobalConfig.Instance.AudioPoolDefaultActiveAgentCapacity;
 
         #endregion
 

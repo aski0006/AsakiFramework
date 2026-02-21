@@ -549,12 +549,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 587700ab177046ac8cd958571152446d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _pureCSharpServices: []
+  _pureCSharpServices:
+  - rid: 117223817463464019
+  - rid: -2
   _servicePrefabs: []
   _instanceParent: {fileID: 0}
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: -2
+      type: {class: , ns: , asm: }
+    - rid: 117223817463464019
+      type: {class: ECSArchitecture, ns: Asaki.Game.Scripts.Examples.ECS, asm: Game}
+      data: 
 --- !u!4 &1856238781
 Transform:
   m_ObjectHideFlags: 0

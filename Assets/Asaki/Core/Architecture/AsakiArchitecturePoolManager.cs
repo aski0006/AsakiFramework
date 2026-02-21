@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Pooling;
 using Asaki.Core.Pooling.Factories;
@@ -241,15 +242,16 @@ namespace Asaki.Core.Architecture
                 validate: obj => obj != null
             );
 
-            // 配置：轻量级对象，大容量，无预热
+            // 配置：轻量级对象，大容量，无预热（从全局配置获取）
+            var globalConfig = AsakiPoolGlobalConfig.Instance;
             var config = new AsakiPoolConfig
             {
-                InitialSize = 0, // 懒加载，无预热
-                MaxSize = 128, // 限制最大 128 个缓存
-                EnableValidation = true, // 启用验证
-                EnableCollectionCheck = false, // 架构对象无需检测重复归还
-                AllowSyncCreation = true, // 允许同步创建 (轻量级对象)
-                OperationTimeout = 0f, // 无超时
+                InitialSize = globalConfig.ArchitecturePoolInitialSize,
+                MaxSize = globalConfig.ArchitecturePoolMaxSize,
+                EnableValidation = globalConfig.ArchitecturePoolEnableValidation,
+                EnableCollectionCheck = globalConfig.ArchitecturePoolEnableCollectionCheck,
+                AllowSyncCreation = globalConfig.ArchitecturePoolAllowSyncCreation,
+                OperationTimeout = 0f,
             };
 
             var pool = await _poolService.CreatePoolAsync(poolKey, factory, config, token);

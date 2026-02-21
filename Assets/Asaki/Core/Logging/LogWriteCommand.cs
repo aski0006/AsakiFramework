@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Asaki.Core.FrameworkSettings;
 
 namespace Asaki.Core.Logging
 {
@@ -150,8 +151,10 @@ namespace Asaki.Core.Logging
     /// <seealso cref="AsakiLogAggregator.Sync"/>
     public static class LogCommandPool
     {
-        /// <summary>对象池最大容量，防止高负载场景下内存无限增长</summary>
-        private const int MAX_POOL_SIZE = 256;
+        /// <summary>
+        /// 获取对象池最大容量（从全局配置获取），防止高负载场景下内存无限增长
+        /// </summary>
+        private static int MaxPoolSize => AsakiPoolGlobalConfig.Instance.LogCommandPoolMaxSize;
 
         /// <summary>线程安全的并发栈，存储可复用的命令对象</summary>
         /// <remarks>
@@ -217,7 +220,7 @@ namespace Asaki.Core.Logging
             if (cmd == null)
                 return;
             cmd.Reset();
-            if (_pool.Count < MAX_POOL_SIZE)
+            if (_pool.Count < MaxPoolSize)
                 _pool.Push(cmd);
         }
     }

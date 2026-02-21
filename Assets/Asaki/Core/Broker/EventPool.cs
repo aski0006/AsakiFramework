@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Concurrent;
+using Asaki.Core.FrameworkSettings;
 
 namespace Asaki.Core.Broker
 {
@@ -9,14 +10,24 @@ namespace Asaki.Core.Broker
     public static class EventPool
     {
         /// <summary>
-        /// 默认阈值：32字节以下使用结构体，以上使用类
+        /// 默认阈值：从全局配置获取，32字节以下使用结构体，以上使用类
         /// </summary>
-        public const int DefaultThreshold = 32;
+        public static int DefaultThreshold =>
+            AsakiPoolGlobalConfig.Instance.EventPoolDefaultThreshold;
+
+        /// <summary>
+        /// 当前阈值配置（首次访问时从全局配置初始化）
+        /// </summary>
+        private static int _threshold = -1;
 
         /// <summary>
         /// 当前阈值配置
         /// </summary>
-        public static int Threshold { get; set; } = DefaultThreshold;
+        public static int Threshold
+        {
+            get => _threshold >= 0 ? _threshold : DefaultThreshold;
+            set => _threshold = value;
+        }
 
         /// <summary>
         /// 类型到对象池的映射
@@ -74,7 +85,11 @@ namespace Asaki.Core.Broker
             private readonly ConcurrentBag<T> _items = new();
             private readonly object _lock = new();
             private int _count;
-            private const int MaxPoolSize = 64;
+
+            /// <summary>
+            /// 获取最大池大小（从全局配置获取）
+            /// </summary>
+            private static int MaxPoolSize => AsakiPoolGlobalConfig.Instance.EventPoolMaxSize;
 
             public T Rent()
             {
