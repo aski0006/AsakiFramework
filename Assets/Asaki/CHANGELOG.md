@@ -2,6 +2,31 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.0.0] - 2025-02-24
+
+### BREAKING CHANGES
+- **AsakiAutoSaveService 构造函数签名变更** - 参数类型从 `IAsakiAutoSaveConfig` 改为 `AsakiSaveConfig`
+  - 迁移：将 `new AsakiAutoSaveService(slotManager, eventService, autoSaveConfig)` 改为 `new AsakiAutoSaveService(slotManager, eventService, saveConfig)`
+  - 服务内部会自动从 `saveConfig.AutoSave` 获取自动保存配置
+
+- **IAsakiAutoSaveConfig.AutoSaveSlotStartIndex 已移除** - 槽位索引统一由 `AsakiSaveConfig.AutoSaveSlotIndex` 管理
+  - 迁移：使用 `AsakiSaveConfig.AutoSaveSlotIndex` 替代 `AsakiAutoSaveConfig.AutoSaveSlotStartIndex`
+
+### Added
+- **统一存档配置入口** - `AsakiSaveConfig` 现在包含 `AutoSave` 子配置属性
+  - 开发者只需管理一个配置对象即可控制所有存档行为
+  - Unity Inspector 中可直接编辑嵌套的自动保存配置
+
+### Changed
+- **重构存档系统服务分层架构** - 明确职责分层，消除代码重复
+  - `AsakiSaveSlotManager` 现在完全依赖 `IAsakiSaveService` 进行底层存储操作
+  - 所有文件操作统一由 `SaveService` 管理
+  - 事件发布统一由 `SaveService` 处理，避免重复通知
+  - 移除 `AsakiSaveSlotManager` 中的路径 fallback 逻辑
+
+- **AsakiAutoSaveConfig 属性序列化** - 添加 `[field: SerializeField]` 特性
+  - 所有属性现在可以在 Unity Inspector 中正确显示和编辑
+
 ## [1.4.0] - 2025-02-24
 
 ### Added
