@@ -138,6 +138,17 @@ namespace Asaki.Unity
 
         protected virtual void OnDestroy()
         {
+            // 强制取消订阅所有事件，防止内存泄漏
+            try
+            {
+                this.AsakiUnregister();
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[{GetType().Name}] Error during forced unsubscribe on destroy: {ex}");
+            }
+
+            // 原有逻辑
             if (_isRegisteredWithLifecycleManager && _lifecycleTrackingId > 0)
             {
                 try

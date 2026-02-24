@@ -27,7 +27,7 @@ namespace Asaki.Unity.Services.Resources
     ///     asyncService,
     ///     eventService
     /// );
-    /// 
+    ///
     /// // 注册自定义策略
     /// AsakiResKitFactory.RegisterCustom(
     ///     () => new MyCustomStrategy(),
@@ -56,7 +56,8 @@ namespace Asaki.Unity.Services.Resources
             Func<IAsakiResDependencyLookup> lookupBuilder = null
         )
         {
-            _customStrategyBuilder = strategyBuilder ?? throw new ArgumentNullException(nameof(strategyBuilder));
+            _customStrategyBuilder =
+                strategyBuilder ?? throw new ArgumentNullException(nameof(strategyBuilder));
             _customLookupBuilder = lookupBuilder;
         }
 
@@ -86,7 +87,10 @@ namespace Asaki.Unity.Services.Resources
         )
         {
             if (asyncService == null)
-                throw new ArgumentNullException(nameof(asyncService), "AsyncService cannot be null.");
+                throw new ArgumentNullException(
+                    nameof(asyncService),
+                    "AsyncService cannot be null."
+                );
 
             IAsakiResStrategy strategy;
             IAsakiResDependencyLookup lookup;
@@ -111,14 +115,21 @@ namespace Asaki.Unity.Services.Resources
 
                 case AsakiResKitMode.Custom:
                     if (_customStrategyBuilder == null)
-                        throw new InvalidOperationException("Custom mode selected but no custom strategy registered.");
+                        throw new InvalidOperationException(
+                            "Custom mode selected but no custom strategy registered."
+                        );
 
                     strategy = _customStrategyBuilder();
-                    lookup = _customLookupBuilder?.Invoke() ?? AsakiNullResDependencyLookup.Instance;
+                    lookup =
+                        _customLookupBuilder?.Invoke() ?? AsakiNullResDependencyLookup.Instance;
                     break;
 
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(mode), mode, $"Unsupported mode: {mode}");
+                    throw new ArgumentOutOfRangeException(
+                        nameof(mode),
+                        mode,
+                        $"Unsupported mode: {mode}"
+                    );
             }
 
             return new AsakiResourceService(strategy, asyncService, lookup);

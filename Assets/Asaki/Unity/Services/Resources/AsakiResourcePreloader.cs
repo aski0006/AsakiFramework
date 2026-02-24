@@ -96,7 +96,8 @@ namespace Asaki.Unity.Services.Resources
         /// <summary>
         /// 配置的资源组列表（只读）
         /// </summary>
-        public IReadOnlyList<ResourceGroup> ResourceGroups => _configProvider?.ResourceGroups ?? new List<ResourceGroup>();
+        public IReadOnlyList<ResourceGroup> ResourceGroups =>
+            _configProvider?.ResourceGroups ?? new List<ResourceGroup>();
 
         #endregion
 

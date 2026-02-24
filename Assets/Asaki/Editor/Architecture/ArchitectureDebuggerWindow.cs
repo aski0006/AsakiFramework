@@ -39,7 +39,9 @@ namespace Asaki.Editor.Architecture
         [MenuItem("Asaki/Diagnostics/Architecture Debugger", false, 51)]
         public static void OpenWindow()
         {
-            ArchitectureDebuggerWindow window = GetWindow<ArchitectureDebuggerWindow>("Architecture Debugger");
+            ArchitectureDebuggerWindow window = GetWindow<ArchitectureDebuggerWindow>(
+                "Architecture Debugger"
+            );
             window.minSize = new Vector2(600, 400);
             window.Show();
         }
@@ -151,7 +153,7 @@ namespace Asaki.Editor.Architecture
                     Type = kvp.Key,
                     Instance = arch,
                     Models = arch.GetModelsForEditor(),
-                    Systems = arch.GetSystemsForEditor()
+                    Systems = arch.GetSystemsForEditor(),
                 };
                 _architectureInfos.Add(info);
             }
@@ -196,19 +198,19 @@ namespace Asaki.Editor.Architecture
             _headerStyle = new GUIStyle(EditorStyles.boldLabel)
             {
                 fontSize = 12,
-                margin = new RectOffset(5, 5, 5, 5)
+                margin = new RectOffset(5, 5, 5, 5),
             };
 
             _itemStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(2, 2, 2, 2)
+                margin = new RectOffset(2, 2, 2, 2),
             };
 
             _selectedStyle = new GUIStyle(EditorStyles.helpBox)
             {
                 padding = new RectOffset(10, 10, 8, 8),
-                margin = new RectOffset(2, 2, 2, 2)
+                margin = new RectOffset(2, 2, 2, 2),
             };
             _selectedStyle.normal.background = MakeTex(2, 2, new Color(0.24f, 0.48f, 0.72f, 0.3f));
 
@@ -216,7 +218,7 @@ namespace Asaki.Editor.Architecture
             {
                 alignment = TextAnchor.MiddleCenter,
                 fontSize = 10,
-                normal = { textColor = Color.white }
+                normal = { textColor = Color.white },
             };
 
             _stylesInitialized = true;
@@ -241,18 +243,12 @@ namespace Asaki.Editor.Architecture
             );
 
             GUILayout.FlexibleSpace();
-            EditorGUILayout.LabelField(
-                "等待进入PlayMode...",
-                EditorStyles.centeredGreyMiniLabel
-            );
+            EditorGUILayout.LabelField("等待进入PlayMode...", EditorStyles.centeredGreyMiniLabel);
         }
 
         private void DrawRetryUI()
         {
-            EditorGUILayout.HelpBox(
-                _retryMessage ?? "正在初始化...",
-                MessageType.Info
-            );
+            EditorGUILayout.HelpBox(_retryMessage ?? "正在初始化...", MessageType.Info);
 
             Rect rect = GUILayoutUtility.GetRect(200, 20);
             float progress = _retryCount / 3f;
@@ -345,7 +341,10 @@ namespace Asaki.Editor.Architecture
             GUILayout.Label("Details", _headerStyle, GUILayout.Height(24));
             EditorGUILayout.EndHorizontal();
 
-            _rightScrollPos = EditorGUILayout.BeginScrollView(_rightScrollPos, EditorStyles.helpBox);
+            _rightScrollPos = EditorGUILayout.BeginScrollView(
+                _rightScrollPos,
+                EditorStyles.helpBox
+            );
 
             if (_selectedIndex >= 0 && _selectedIndex < _architectureInfos.Count)
             {
@@ -456,17 +455,11 @@ namespace Asaki.Editor.Architecture
         {
             EditorGUILayout.BeginHorizontal(EditorStyles.toolbar);
 
-            GUILayout.Label(
-                $"Architectures: {_architectureInfos.Count}",
-                EditorStyles.miniLabel
-            );
+            GUILayout.Label($"Architectures: {_architectureInfos.Count}", EditorStyles.miniLabel);
 
             GUILayout.FlexibleSpace();
 
-            GUILayout.Label(
-                $"自动刷新间隔: {RefreshInterval}s",
-                EditorStyles.miniLabel
-            );
+            GUILayout.Label($"自动刷新间隔: {RefreshInterval}s", EditorStyles.miniLabel);
 
             EditorGUILayout.EndHorizontal();
         }

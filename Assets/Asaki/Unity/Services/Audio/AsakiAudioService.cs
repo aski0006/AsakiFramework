@@ -33,8 +33,9 @@ namespace Asaki.Unity.Services.Audio
         private Transform _rootTransform;
         private int _handleCounter;
 
-        private readonly Dictionary<AsakiAudioHandle, IAudioAgent> _activeAgents =
-            new(AudioConstants.DefaultActiveAgentCapacity);
+        private readonly Dictionary<AsakiAudioHandle, IAudioAgent> _activeAgents = new(
+            AudioConstants.DefaultActiveAgentCapacity
+        );
         private readonly Dictionary<AsakiAudioHandle, int> _agentGroups = new();
 
         private float _globalVolume = AudioConstants.DefaultVolume;

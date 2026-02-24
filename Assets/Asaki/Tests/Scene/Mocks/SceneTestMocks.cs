@@ -359,6 +359,12 @@ namespace Asaki.Tests.Scene.Mocks
             LastPublishedEvent = null;
             PublishedEvents.Clear();
         }
+
+        public void SubscribeWeak<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

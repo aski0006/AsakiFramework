@@ -68,7 +68,8 @@ namespace Asaki.Core.Context
     /// </remarks>
     public static class AsakiResolveContext
     {
-        private static readonly AsyncLocal<HashSet<Type>> _resolveChain = new AsyncLocal<HashSet<Type>>();
+        private static readonly AsyncLocal<HashSet<Type>> _resolveChain =
+            new AsyncLocal<HashSet<Type>>();
 
         /// <summary>
         /// 获取当前线程的解析链。

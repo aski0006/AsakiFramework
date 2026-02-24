@@ -13,9 +13,12 @@ namespace Asaki.Unity.Utils
     /// </summary>
     public static class AsakiStringBuilderPool
     {
-        private static int PoolInitialCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderPoolInitialCapacity;
-        private static int MaxRetainCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderMaxRetainCapacity;
-        private static int StringBuilderInitialCapacity => AsakiPoolGlobalConfig.Instance.StringBuilderInitialCapacity;
+        private static int PoolInitialCapacity =>
+            AsakiPoolGlobalConfig.Instance.StringBuilderPoolInitialCapacity;
+        private static int MaxRetainCapacity =>
+            AsakiPoolGlobalConfig.Instance.StringBuilderMaxRetainCapacity;
+        private static int StringBuilderInitialCapacity =>
+            AsakiPoolGlobalConfig.Instance.StringBuilderInitialCapacity;
 
         // 使用 Stack 配合 lock 实现轻量级线程安全
         private static readonly Stack<StringBuilder> _pool = new Stack<StringBuilder>(

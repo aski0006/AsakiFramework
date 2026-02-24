@@ -91,8 +91,10 @@ namespace Asaki.Unity.Services.Resources.Preloader
             PreloadResourceRegistry registry
         )
         {
-            _resourceService = resourceService ?? throw new ArgumentNullException(nameof(resourceService));
-            _configProvider = configProvider ?? throw new ArgumentNullException(nameof(configProvider));
+            _resourceService =
+                resourceService ?? throw new ArgumentNullException(nameof(resourceService));
+            _configProvider =
+                configProvider ?? throw new ArgumentNullException(nameof(configProvider));
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         }
 
@@ -102,7 +104,10 @@ namespace Asaki.Unity.Services.Resources.Preloader
         /// <param name="loadInParallel">是否并行加载各组</param>
         /// <param name="onProgress">进度回调</param>
         /// <returns>加载任务</returns>
-        public async UniTask StartPreloadAsync(bool loadInParallel = true, Action<float> onProgress = null)
+        public async UniTask StartPreloadAsync(
+            bool loadInParallel = true,
+            Action<float> onProgress = null
+        )
         {
             if (State == PreloadState.Loading)
             {
@@ -198,7 +203,10 @@ namespace Asaki.Unity.Services.Resources.Preloader
             _loadingCts = null;
         }
 
-        private async UniTask LoadGroupsSequentiallyAsync(Action<float> onProgress, CancellationToken token)
+        private async UniTask LoadGroupsSequentiallyAsync(
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             var groups = _configProvider.ResourceGroups;
             float[] groupProgresses = new float[groups.Count];
@@ -229,7 +237,10 @@ namespace Asaki.Unity.Services.Resources.Preloader
             }
         }
 
-        private async UniTask LoadGroupsInParallelAsync(Action<float> onProgress, CancellationToken token)
+        private async UniTask LoadGroupsInParallelAsync(
+            Action<float> onProgress,
+            CancellationToken token
+        )
         {
             var groups = _configProvider.ResourceGroups;
             float[] groupProgresses = new float[groups.Count];

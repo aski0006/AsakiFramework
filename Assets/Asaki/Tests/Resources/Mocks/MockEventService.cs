@@ -33,5 +33,11 @@ namespace Asaki.Tests.Resources.Mocks
             PublishCallCount = 0;
             LastPublishedEvent = null;
         }
+
+        public void SubscribeWeak<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }

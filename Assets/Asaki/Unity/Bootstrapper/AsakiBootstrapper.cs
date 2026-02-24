@@ -36,6 +36,7 @@ namespace Asaki.Unity.Bootstrapper
 
         private static AsakiBootstrapper _instance;
         private static bool _isReady;
+        private static readonly HashSet<Type> _globalServiceTypes = new HashSet<Type>();
         private IAsakiLoggingService _logService;
         private readonly List<GameObject> _instantiatedServiceObjects = new();
         private readonly List<IAsakiGlobalService> _allGlobalServices = new();
@@ -314,14 +315,42 @@ namespace Asaki.Unity.Bootstrapper
             }
         }
 
+        /// <summary>
+        /// 检测全局服务是否存在重复实例
+        /// </summary>
+        /// <param name="service">待检测的全局服务实例</param>
+        /// <returns>如果服务类型已存在返回 true（重复），否则返回 false</returns>
+        private static bool DetectDuplicateGlobalService(IAsakiGlobalService service)
+        {
+            var serviceType = service.GetType();
+            if (_globalServiceTypes.Contains(serviceType))
+            {
+                ALog.Warn(
+                    $"[AsakiBootstrapper] Duplicate global service detected: {serviceType.Name}. "
+                        + "A global service should have only one instance. The duplicate will be skipped."
+                );
+                return true;
+            }
+            _globalServiceTypes.Add(serviceType);
+            return false;
+        }
+
         private void InitializeGlobalServices()
         {
             ALog.Info("== [GlobalServices] Phase 1: Dependency Injection ==");
             int injectSuccessCount = 0;
             int injectFailCount = 0;
+            int duplicateSkipCount = 0;
 
             foreach (var service in _allGlobalServices)
             {
+                // 检测重复实例，跳过重复的全局服务
+                if (DetectDuplicateGlobalService(service))
+                {
+                    duplicateSkipCount++;
+                    continue;
+                }
+
                 try
                 {
                     AsakiGlobalInjector.Inject(service);
@@ -347,8 +376,15 @@ namespace Asaki.Unity.Bootstrapper
             int initSuccessCount = 0;
             int initFailCount = 0;
 
+            // 重置 HashSet 用于第二阶段检测（使用已记录的类型）
             foreach (var service in _allGlobalServices)
             {
+                var serviceType = service.GetType();
+                if (!_globalServiceTypes.Contains(serviceType))
+                {
+                    continue;
+                }
+
                 try
                 {
                     service.OnBootstrapInit();
@@ -367,6 +403,12 @@ namespace Asaki.Unity.Bootstrapper
             {
                 ALog.Warn(
                     $"[AsakiBootstrapper] Initialization completed with {initFailCount} failures, {initSuccessCount} successes."
+                );
+            }
+            else if (duplicateSkipCount > 0)
+            {
+                ALog.Info(
+                    $"[AsakiBootstrapper] {initSuccessCount} global services initialized successfully ({duplicateSkipCount} duplicates skipped)."
                 );
             }
             else
@@ -438,6 +480,7 @@ namespace Asaki.Unity.Bootstrapper
                 return;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             AsakiContext.ClearAll();
+            _globalServiceTypes.Clear();
             ALog.Reset();
             _instance = null;
             _isReady = false;

@@ -30,7 +30,7 @@ namespace Asaki.Core.Context.Resolvers
         /// <summary>
         /// 构建失败：构建过程中发生异常。
         /// </summary>
-        Failed
+        Failed,
     }
 
     /// <summary>

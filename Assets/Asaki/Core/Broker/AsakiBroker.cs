@@ -51,6 +51,25 @@ namespace Asaki.Core.Broker
         }
 
         /// <summary>
+        /// 使用弱引用订阅事件处理程序。
+        /// 通过懒加载获取事件总线实例，并调用其 <see cref="IAsakiEventService.SubscribeWeak{T}(IAsakiHandler{T})"/> 方法订阅事件处理程序。
+        /// </summary>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
+        /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
+        /// <exception cref="System.ArgumentNullException">当 <paramref name="handler"/> 为 null 时抛出。</exception>
+        /// <remarks>
+        /// 弱引用订阅允许处理程序被 GC 回收后自动失效，避免内存泄漏。
+        /// 但性能略低于强引用订阅，建议仅在必要时使用。
+        /// </remarks>
+        public static void SubscribeWeak<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent
+        {
+            if (handler == null)
+                throw new System.ArgumentNullException(nameof(handler));
+            GetOrRegisterBus().SubscribeWeak(handler);
+        }
+
+        /// <summary>
         /// 取消订阅一个事件处理程序。
         /// 首先尝试从 <see cref="AsakiContext"/> 中获取事件总线实例，如果获取成功，则调用其
         /// <see cref="IAsakiEventService.Unsubscribe{T}(IAsakiHandler{T})"/> 方法取消订阅事件处理程序。

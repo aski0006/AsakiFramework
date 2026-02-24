@@ -481,6 +481,12 @@ namespace Asaki.Tests.Serialization
             {
                 throw new System.NotImplementedException();
             }
+
+            public void SubscribeWeak<T>(IAsakiHandler<T> handler)
+                where T : IAsakiEvent
+            {
+                throw new System.NotImplementedException();
+            }
         }
 
         public class TestDataProvider

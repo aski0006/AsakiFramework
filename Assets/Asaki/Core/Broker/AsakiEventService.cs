@@ -44,6 +44,14 @@ namespace Asaki.Core.Broker
             private readonly List<IAsakiHandler<T>> _handlers = new List<IAsakiHandler<T>>(8);
 
             /// <summary>
+            /// 存储弱引用事件处理程序的列表。
+            /// 用于支持弱引用订阅，避免内存泄漏。
+            /// </summary>
+            private readonly List<WeakReference<IAsakiHandler<T>>> _weakHandlers = new List<
+                WeakReference<IAsakiHandler<T>>
+            >(4);
+
+            /// <summary>
             /// 用于快速读取的缓存数组，采用 Copy - On - Write 策略。
             /// 当订阅列表发生变化时，会重新生成此缓存数组以确保读取的一致性。
             /// </summary>
@@ -79,15 +87,41 @@ namespace Asaki.Core.Broker
             }
 
             /// <summary>
+            /// 使用弱引用订阅事件处理程序。
+            /// 当处理程序被 GC 回收后，订阅将自动失效。
+            /// </summary>
+            /// <param name="handler">要订阅的事件处理程序。</param>
+            public void SubscribeWeak(IAsakiHandler<T> handler)
+            {
+                lock (_bucketLock)
+                {
+                    _weakHandlers.Add(new WeakReference<IAsakiHandler<T>>(handler));
+                    _dirty = true;
+                }
+            }
+
+            /// <summary>
             /// 从当前事件桶中取消订阅事件处理程序。
-            /// 如果处理程序在订阅列表中，则将其移除，并设置脏标记。
+            /// 同时检查强引用和弱引用列表，如果处理程序在其中，则将其移除，并设置脏标记。
             /// </summary>
             /// <param name="handler">要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
             public void Unsubscribe(IAsakiHandler<T> handler)
             {
                 lock (_bucketLock)
                 {
-                    if (_handlers.Remove(handler))
+                    bool removed = _handlers.Remove(handler);
+
+                    // 同时检查弱引用列表
+                    for (int i = _weakHandlers.Count - 1; i >= 0; i--)
+                    {
+                        if (_weakHandlers[i].TryGetTarget(out var target) && target == handler)
+                        {
+                            _weakHandlers.RemoveAt(i);
+                            removed = true;
+                        }
+                    }
+
+                    if (removed)
                     {
                         _dirty = true;
                     }
@@ -96,7 +130,8 @@ namespace Asaki.Core.Broker
 
             /// <summary>
             /// 发布事件到所有订阅的处理程序。
-            /// 首先检查脏标记，如果需要则更新缓存数组，然后遍历缓存数组并调用每个处理程序的 <see cref="IAsakiHandler{T}.OnEvent(in T)"/> 方法。
+            /// 首先检查脏标记，如果需要则更新缓存数组（清理无效弱引用，合并强引用和有效弱引用），
+            /// 然后遍历缓存数组并调用每个处理程序的 <see cref="IAsakiHandler{T}.OnEvent(in T)"/> 方法。
             /// </summary>
             /// <param name="e">要发布的事件实例（只读引用传递）。</param>
             /// <remarks>
@@ -115,7 +150,29 @@ namespace Asaki.Core.Broker
                     {
                         if (_dirty)
                         {
-                            _cache = _handlers.ToArray();
+                            // 清理无效弱引用并收集有效弱引用
+                            var validWeakHandlers = new List<IAsakiHandler<T>>(_weakHandlers.Count);
+                            for (int i = _weakHandlers.Count - 1; i >= 0; i--)
+                            {
+                                if (_weakHandlers[i].TryGetTarget(out var target))
+                                {
+                                    validWeakHandlers.Add(target);
+                                }
+                                else
+                                {
+                                    // 移除无效的弱引用
+                                    _weakHandlers.RemoveAt(i);
+                                }
+                            }
+
+                            // 合并强引用和有效弱引用到缓存
+                            var combinedHandlers = new IAsakiHandler<T>[
+                                _handlers.Count + validWeakHandlers.Count
+                            ];
+                            _handlers.CopyTo(combinedHandlers, 0);
+                            validWeakHandlers.CopyTo(combinedHandlers, _handlers.Count);
+
+                            _cache = combinedHandlers;
                             _dirty = false;
                         }
                     }
@@ -134,13 +191,14 @@ namespace Asaki.Core.Broker
 
             /// <summary>
             /// 清理事件桶的内部状态。
-            /// 清空订阅列表，重置缓存数组，并清除脏标记。
+            /// 清空订阅列表（包括强引用和弱引用），重置缓存数组，并清除脏标记。
             /// </summary>
             public void Cleanup()
             {
                 lock (_bucketLock)
                 {
                     _handlers.Clear();
+                    _weakHandlers.Clear();
                     _cache = Array.Empty<IAsakiHandler<T>>();
                     _dirty = false;
                 }
@@ -174,6 +232,18 @@ namespace Asaki.Core.Broker
             where T : IAsakiEvent
         {
             GetBucket<T>().Subscribe(handler);
+        }
+
+        /// <summary>
+        /// 使用弱引用订阅事件处理程序到事件总线。
+        /// 当处理程序被 GC 回收后，订阅将自动失效，避免内存泄漏。
+        /// </summary>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
+        /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
+        public void SubscribeWeak<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent
+        {
+            GetBucket<T>().SubscribeWeak(handler);
         }
 
         /// <summary>

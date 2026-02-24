@@ -157,7 +157,8 @@ namespace Asaki.Unity.Services.Resources
         {
             _strategy = strategy ?? throw new ArgumentNullException(nameof(strategy));
             _asyncService = asyncService ?? throw new ArgumentNullException(nameof(asyncService));
-            _dependencyLookup = dependencyLookup ?? throw new ArgumentNullException(nameof(dependencyLookup));
+            _dependencyLookup =
+                dependencyLookup ?? throw new ArgumentNullException(nameof(dependencyLookup));
 
             _cache = new ConcurrentDictionary<int, ResRecord>();
             _segmentLocks = new object[SegmentCount];
@@ -205,7 +206,9 @@ namespace Asaki.Unity.Services.Resources
                     }
                     catch (Exception ex)
                     {
-                        ALog.Error($"[Resources] Failed to unload asset '{record.Location}': {ex.Message}");
+                        ALog.Error(
+                            $"[Resources] Failed to unload asset '{record.Location}': {ex.Message}"
+                        );
                     }
                 }
             }
@@ -393,12 +396,13 @@ namespace Asaki.Unity.Services.Resources
             }
 
             var asset = await _asyncService.RunTask(
-                async () => await _strategy.LoadAssetInternalAsync(
-                    record.Location,
-                    record.AssetType,
-                    record.ReportProgress,
-                    default
-                ),
+                async () =>
+                    await _strategy.LoadAssetInternalAsync(
+                        record.Location,
+                        record.AssetType,
+                        record.ReportProgress,
+                        default
+                    ),
                 default
             );
 
@@ -414,7 +418,10 @@ namespace Asaki.Unity.Services.Resources
             record.ReportProgress(1f);
         }
 
-        private async UniTask LoadDependenciesParallelAsync(ResRecord record, IEnumerable<string> dependencies)
+        private async UniTask LoadDependenciesParallelAsync(
+            ResRecord record,
+            IEnumerable<string> dependencies
+        )
         {
             var depList = dependencies.ToList();
             if (depList.Count == 0)
@@ -442,7 +449,10 @@ namespace Asaki.Unity.Services.Resources
             await UniTask.WhenAll(loadTasks);
         }
 
-        private async UniTask WaitForDependencyWithTimeoutAsync(ResRecord depRecord, string parentLocation)
+        private async UniTask WaitForDependencyWithTimeoutAsync(
+            ResRecord depRecord,
+            string parentLocation
+        )
         {
             var loadTask = depRecord.LoadingTcs.Task.AsUniTask();
             var timeoutTask = UniTask.Delay(_timeoutMs);
@@ -573,14 +583,15 @@ namespace Asaki.Unity.Services.Resources
             for (int i = 0; i < locList.Count; i++)
             {
                 int index = i;
-                Action<float> progressHandler = onProgress != null
-                    ? p =>
-                    {
-                        progresses[index] = p;
-                        float avg = progresses.Average();
-                        onProgress(avg);
-                    }
-                    : null;
+                Action<float> progressHandler =
+                    onProgress != null
+                        ? p =>
+                        {
+                            progresses[index] = p;
+                            float avg = progresses.Average();
+                            onProgress(avg);
+                        }
+                        : null;
 
                 tasks[i] = LoadAsync<T>(locList[i], progressHandler, token);
             }

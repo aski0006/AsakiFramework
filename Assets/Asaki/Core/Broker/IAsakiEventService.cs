@@ -22,6 +22,21 @@ namespace Asaki.Core.Broker
             where T : IAsakiEvent;
 
         /// <summary>
+        /// 使用弱引用订阅事件。
+        /// 当处理程序被 GC 回收后，订阅将自动失效。
+        /// </summary>
+        /// <typeparam name="T">事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。</typeparam>
+        /// <param name="handler">要订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。</param>
+        /// <remarks>
+        /// <para>弱引用订阅适用于以下场景：</para>
+        /// <para>1. 处理程序的生命周期不确定，无法保证及时取消订阅。</para>
+        /// <para>2. 需要避免因忘记取消订阅导致的内存泄漏。</para>
+        /// <para>注意：弱引用订阅的性能略低于强引用订阅，建议仅在必要时使用。</para>
+        /// </remarks>
+        void SubscribeWeak<T>(IAsakiHandler<T> handler)
+            where T : IAsakiEvent;
+
+        /// <summary>
         /// 从事件服务中取消订阅一个事件处理程序。
         /// 泛型类型参数 <typeparamref name="T"/> 表示事件类型，必须实现 <see cref="IAsakiEvent"/> 接口。
         /// <paramref name="handler"/> 是要取消订阅的事件处理程序，必须实现 <see cref="IAsakiHandler{T}"/> 接口。

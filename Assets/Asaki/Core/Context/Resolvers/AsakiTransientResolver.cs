@@ -34,8 +34,8 @@ namespace Asaki.Core.Context.Resolvers
             if (param != null && !(param is IAsakiService))
             {
                 ALog.Warn(
-                    $"[AsakiTransientResolver] Parameter '{param.GetType().Name}' does not implement IAsakiService. " +
-                    "AsakiTransientResolver is intended for passing temporary service instances, not arbitrary data."
+                    $"[AsakiTransientResolver] Parameter '{param.GetType().Name}' does not implement IAsakiService. "
+                        + "AsakiTransientResolver is intended for passing temporary service instances, not arbitrary data."
                 );
             }
 #endif

@@ -29,41 +29,38 @@ namespace Asaki.Unity.Logging
     public class ALogUnityBridge : IALogUnityBridge
     {
         private static ALogUnityBridge _instance;
-        private static readonly Dictionary<AsakiLogLevel, LogType> LogTypeMap =
-            new()
-            {
-                { AsakiLogLevel.Debug, LogType.Log },
-                { AsakiLogLevel.Info, LogType.Log },
-                { AsakiLogLevel.Warning, LogType.Warning },
-                { AsakiLogLevel.Error, LogType.Error },
-                { AsakiLogLevel.Fatal, LogType.Error },
-            };
+        private static readonly Dictionary<AsakiLogLevel, LogType> LogTypeMap = new()
+        {
+            { AsakiLogLevel.Debug, LogType.Log },
+            { AsakiLogLevel.Info, LogType.Log },
+            { AsakiLogLevel.Warning, LogType.Warning },
+            { AsakiLogLevel.Error, LogType.Error },
+            { AsakiLogLevel.Fatal, LogType.Error },
+        };
 
         /// <summary>
         /// 日志级别对应的富文本颜色
         /// </summary>
-        private static readonly Dictionary<AsakiLogLevel, string> LevelColors =
-            new()
-            {
-                { AsakiLogLevel.Debug, "#808080" },
-                { AsakiLogLevel.Info, "#FFFFFF" },
-                { AsakiLogLevel.Warning, "#FFDD00" },
-                { AsakiLogLevel.Error, "#FF5555" },
-                { AsakiLogLevel.Fatal, "#FF0000" },
-            };
+        private static readonly Dictionary<AsakiLogLevel, string> LevelColors = new()
+        {
+            { AsakiLogLevel.Debug, "#808080" },
+            { AsakiLogLevel.Info, "#FFFFFF" },
+            { AsakiLogLevel.Warning, "#FFDD00" },
+            { AsakiLogLevel.Error, "#FF5555" },
+            { AsakiLogLevel.Fatal, "#FF0000" },
+        };
 
         /// <summary>
         /// 日志级别对应的标签文本
         /// </summary>
-        private static readonly Dictionary<AsakiLogLevel, string> LevelLabels =
-            new()
-            {
-                { AsakiLogLevel.Debug, "🔍 DBG" },
-                { AsakiLogLevel.Info, "ℹ️ INF" },
-                { AsakiLogLevel.Warning, "⚠️ WRN" },
-                { AsakiLogLevel.Error, "❌ ERR" },
-                { AsakiLogLevel.Fatal, "💀 FTL" },
-            };
+        private static readonly Dictionary<AsakiLogLevel, string> LevelLabels = new()
+        {
+            { AsakiLogLevel.Debug, "🔍 DBG" },
+            { AsakiLogLevel.Info, "ℹ️ INF" },
+            { AsakiLogLevel.Warning, "⚠️ WRN" },
+            { AsakiLogLevel.Error, "❌ ERR" },
+            { AsakiLogLevel.Fatal, "💀 FTL" },
+        };
 
         private bool? _isEnabled;
 

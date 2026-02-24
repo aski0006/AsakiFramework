@@ -25,7 +25,12 @@ namespace Asaki.Core.Audio
         /// <param name="targetVolume">目标音量(0-1)</param>
         /// <param name="duration">渐变时长(秒)</param>
         /// <param name="cancellationToken">取消令牌</param>
-        void SetGroupVolumeWithFade(int groupId, float targetVolume, float duration, CancellationToken cancellationToken = default);
+        void SetGroupVolumeWithFade(
+            int groupId,
+            float targetVolume,
+            float duration,
+            CancellationToken cancellationToken = default
+        );
 
         /// <summary>
         /// 获取音频组音量

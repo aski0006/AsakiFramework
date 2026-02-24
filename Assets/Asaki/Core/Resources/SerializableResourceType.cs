@@ -182,8 +182,8 @@ namespace Asaki.Core.Resources
     public class CustomResourceType : SerializableResourceType
     {
         [Tooltip(
-            "类型全名，格式: 命名空间.类型名, 程序集名\n" +
-            "例如: UnityEngine.Video.VideoClip, UnityEngine.VideoModule"
+            "类型全名，格式: 命名空间.类型名, 程序集名\n"
+                + "例如: UnityEngine.Video.VideoClip, UnityEngine.VideoModule"
         )]
         public string TypeFullName = "UnityEngine.Object, UnityEngine.CoreModule";
 

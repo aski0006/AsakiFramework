@@ -21,7 +21,11 @@ namespace Asaki.Core.Context
         /// <param name="target">目标对象</param>
         /// <param name="resolver">依赖解析器</param>
         /// <param name="injectedTypes">已注入类型集合，用于追踪和冲突检测</param>
-        void Inject(object target, IAsakiResolver resolver = null, HashSet<Type> injectedTypes = null);
+        void Inject(
+            object target,
+            IAsakiResolver resolver = null,
+            HashSet<Type> injectedTypes = null
+        );
     }
 
     /// <summary>
@@ -70,7 +74,11 @@ namespace Asaki.Core.Context
                 }
 
                 _injectors.Add(
-                    new InjectorEntry { Injector = injector, Priority = priority ?? injector.Priority }
+                    new InjectorEntry
+                    {
+                        Injector = injector,
+                        Priority = priority ?? injector.Priority,
+                    }
                 );
                 _isSorted = false;
 

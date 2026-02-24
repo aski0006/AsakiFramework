@@ -25,7 +25,8 @@ namespace Asaki.Unity.Services.Resources.Preloader
         /// <summary>
         /// 获取实际的资源类型
         /// </summary>
-        public Type GetActualType() => ResourceType?.GetResourceType() ?? typeof(UnityEngine.Object);
+        public Type GetActualType() =>
+            ResourceType?.GetResourceType() ?? typeof(UnityEngine.Object);
     }
 
     /// <summary>
@@ -131,8 +132,7 @@ namespace Asaki.Unity.Services.Resources.Preloader
         public IReadOnlyList<string> GetGroupResourceLocations(string groupName)
         {
             var group = GetGroup(groupName);
-            return group?.GetValidEntries().Select(r => r.Location).ToList()
-                ?? new List<string>();
+            return group?.GetValidEntries().Select(r => r.Location).ToList() ?? new List<string>();
         }
 
         /// <summary>

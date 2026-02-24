@@ -19,7 +19,7 @@ namespace Asaki.Core.Resources
     /// {
     ///     Instantiate(handle.Asset);
     /// } // 自动调用Release
-    /// 
+    ///
     /// // 隐式转换
     /// using (var handle = await resourceService.LoadAsync&lt;GameObject&gt;("Prefabs/Enemy"))
     /// {
