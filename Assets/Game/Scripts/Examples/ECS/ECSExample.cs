@@ -28,7 +28,7 @@ namespace Asaki.Game.Scripts.Examples.ECS
         private readonly List<IEntity> _entities = new();
 
         [AsakiInject]
-        public void Inject(ECSArchitecture args)
+        public void Inject([ANull] ECSArchitecture args)
         {
             _architecture = args;
         }

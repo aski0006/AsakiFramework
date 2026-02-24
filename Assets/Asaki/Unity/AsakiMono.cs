@@ -19,7 +19,7 @@ namespace Asaki.Unity
     /// </remarks>
     public abstract class AsakiMono : MonoBehaviour, IAsakiHandler<OnAsakiFrameworkReadyEvent>
     {
-        protected bool IsActivated { get; private set; }
+        public bool IsActivated { get; private set; }
         public bool IsInitialized => IsActivated;
         public bool IsPendingInitialization => !IsActivated && _lifecycleTrackingId > 0;
 
@@ -86,7 +86,7 @@ namespace Asaki.Unity
             ActivateFrameworkReady();
         }
 
-        internal void ActivateFrameworkReady()
+        public void ActivateFrameworkReady()
         {
             if (IsActivated)
                 return;

@@ -1,20 +1,31 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Asaki.CodeGen.Generators
 {
     public static class AsakiInjectGenerator
     {
-        public static void Execute(GeneratorExecutionContext context, List<MethodDeclarationSyntax> candidates)
+        public static void Execute(
+            GeneratorExecutionContext context,
+            List<MethodDeclarationSyntax> candidates
+        )
         {
-            if (candidates == null || candidates.Count == 0) return;
+            if (candidates == null || candidates.Count == 0)
+                return;
 
             var compilation = context.Compilation;
-            var attributeSymbol = compilation.GetTypeByMetadataName("Asaki.Core.Attributes.AsakiInjectAttribute");
-            if (attributeSymbol == null) return;
+            var attributeSymbol = compilation.GetTypeByMetadataName(
+                "Asaki.Core.Attributes.AsakiInjectAttribute"
+            );
+            if (attributeSymbol == null)
+                return;
+
+            var anullAttributeSymbol = compilation.GetTypeByMetadataName(
+                "Asaki.Core.Attributes.ANullAttribute"
+            );
 
             // 筛选有效方法
             var validMethods = new List<(MethodDeclarationSyntax Syntax, IMethodSymbol Symbol)>();
@@ -22,18 +33,31 @@ namespace Asaki.CodeGen.Generators
             {
                 var model = compilation.GetSemanticModel(methodDeclaration.SyntaxTree);
                 var methodSymbol = model.GetDeclaredSymbol(methodDeclaration) as IMethodSymbol;
-                if (methodSymbol == null) continue;
+                if (methodSymbol == null)
+                    continue;
 
-                if (methodSymbol.GetAttributes().Any(ad => SymbolEqualityComparer.Default.Equals(ad.AttributeClass, attributeSymbol)))
+                if (
+                    methodSymbol
+                        .GetAttributes()
+                        .Any(ad =>
+                            SymbolEqualityComparer.Default.Equals(
+                                ad.AttributeClass,
+                                attributeSymbol
+                            )
+                        )
+                )
                 {
                     validMethods.Add((methodDeclaration, methodSymbol));
                 }
             }
 
-            if (validMethods.Count == 0) return;
+            if (validMethods.Count == 0)
+                return;
 
             // 开始生成
-            string assemblyNameSafe = context.Compilation.AssemblyName.Replace(".", "_").Replace("-", "_");
+            string assemblyNameSafe = context
+                .Compilation.AssemblyName.Replace(".", "_")
+                .Replace("-", "_");
             string className = $"AsakiAssemblyInjector_{assemblyNameSafe}";
             var sb = new StringBuilder();
 
@@ -46,15 +70,23 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine();
             sb.AppendLine("namespace Asaki.Generated.Injectors");
             sb.AppendLine("{");
-            sb.AppendLine($"    /// <summary> 程序集专用注入器 (O(1) Dictionary Lookup): {context.Compilation.AssemblyName} </summary>");
+            sb.AppendLine(
+                $"    /// <summary> 程序集专用注入器 (O(1) Dictionary Lookup): {context.Compilation.AssemblyName} </summary>"
+            );
             sb.AppendLine($"    public class {className} : IAsakiInjector");
             sb.AppendLine("    {");
 
             // 1. 静态字典存储注入逻辑
-            sb.AppendLine("        private static readonly Dictionary<Type, Action<object, IAsakiResolver>> _injectMap = new Dictionary<Type, Action<object, IAsakiResolver>>();");
+            sb.AppendLine(
+                "        private static readonly Dictionary<Type, Action<object, IAsakiResolver>> _injectMap = new Dictionary<Type, Action<object, IAsakiResolver>>();"
+            );
             sb.AppendLine();
-            sb.AppendLine("        /// <summary> 注入优先级 (基于程序集名称哈希，确保稳定顺序) </summary>");
-            sb.AppendLine($"        public int Priority => {GetAssemblyPriority(context.Compilation.AssemblyName)};");
+            sb.AppendLine(
+                "        /// <summary> 注入优先级 (基于程序集名称哈希，确保稳定顺序) </summary>"
+            );
+            sb.AppendLine(
+                $"        public int Priority => {GetAssemblyPriority(context.Compilation.AssemblyName)};"
+            );
             sb.AppendLine();
 
             // 2. 静态构造/初始化
@@ -64,18 +96,42 @@ namespace Asaki.CodeGen.Generators
             {
                 var methodSymbol = pair.Symbol;
                 var classSymbol = methodSymbol.ContainingType;
-                string fullClassName = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                string fullClassName = classSymbol.ToDisplayString(
+                    SymbolDisplayFormat.FullyQualifiedFormat
+                );
                 string methodName = methodSymbol.Name;
 
-                sb.Append($"            _injectMap[typeof({fullClassName})] = (target, resolver) => (({fullClassName})target).{methodName}(");
+                sb.Append(
+                    $"            _injectMap[typeof({fullClassName})] = (target, resolver) => (({fullClassName})target).{methodName}("
+                );
 
                 var parameters = methodSymbol.Parameters;
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    var paramType = parameters[i].Type;
-                    string fullParamTypeName = paramType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
-                    sb.Append($"resolver.Get<{fullParamTypeName}>()");
-                    if (i < parameters.Length - 1) sb.Append(", ");
+                    var paramSymbol = parameters[i];
+                    var paramType = paramSymbol.Type;
+                    bool isOptional = IsOptionalParameter(
+                        paramType,
+                        paramSymbol,
+                        anullAttributeSymbol
+                    );
+                    string fullParamTypeName = paramType.ToDisplayString(
+                        SymbolDisplayFormat.FullyQualifiedFormat
+                    );
+
+                    if (isOptional)
+                    {
+                        string underlyingTypeName = GetUnderlyingTypeName(paramType);
+                        sb.Append(
+                            $"resolver.TryGet<{underlyingTypeName}>(out var arg{i}) ? arg{i} : null"
+                        );
+                    }
+                    else
+                    {
+                        sb.Append($"resolver.Get<{fullParamTypeName}>()");
+                    }
+                    if (i < parameters.Length - 1)
+                        sb.Append(", ");
                 }
                 sb.AppendLine(");");
             }
@@ -83,10 +139,14 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine();
 
             // 3. 自动注册
-            sb.AppendLine("        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]");
+            sb.AppendLine(
+                "        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]"
+            );
             sb.AppendLine("        private static void AutoRegister()");
             sb.AppendLine("        {");
-            sb.AppendLine($"            global::Asaki.Core.Context.AsakiGlobalInjector.Register(new {className}());");
+            sb.AppendLine(
+                $"            global::Asaki.Core.Context.AsakiGlobalInjector.Register(new {className}());"
+            );
             sb.AppendLine("        }");
             sb.AppendLine();
 
@@ -96,13 +156,21 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("        /// </summary>");
             sb.AppendLine("        /// <param name=\"target\">目标对象</param>");
             sb.AppendLine("        /// <param name=\"resolver\">依赖解析器</param>");
-            sb.AppendLine("        /// <param name=\"injectedTypes\">已注入类型集合，用于追踪和冲突检测</param>");
-            sb.AppendLine("        public void Inject(object target, IAsakiResolver resolver = null, HashSet<Type> injectedTypes = null)");
+            sb.AppendLine(
+                "        /// <param name=\"injectedTypes\">已注入类型集合，用于追踪和冲突检测</param>"
+            );
+            sb.AppendLine(
+                "        public void Inject(object target, IAsakiResolver resolver = null, HashSet<Type> injectedTypes = null)"
+            );
             sb.AppendLine("        {");
             sb.AppendLine("            if (target == null) return;");
-            sb.AppendLine("            if (resolver == null) resolver = global::Asaki.Core.Context.Resolvers.AsakiGlobalResolver.Instance;");
+            sb.AppendLine(
+                "            if (resolver == null) resolver = global::Asaki.Core.Context.Resolvers.AsakiGlobalResolver.Instance;"
+            );
             sb.AppendLine();
-            sb.AppendLine("            if (_injectMap.TryGetValue(target.GetType(), out var action))");
+            sb.AppendLine(
+                "            if (_injectMap.TryGetValue(target.GetType(), out var action))"
+            );
             sb.AppendLine("            {");
             sb.AppendLine("                var targetType = target.GetType();");
             sb.AppendLine("                var stopwatch = Stopwatch.StartNew();");
@@ -110,25 +178,33 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("                try");
             sb.AppendLine("                {");
             sb.AppendLine("                    // 设置源服务类型用于日志追踪");
-            sb.AppendLine("                    global::Asaki.Core.Context.AsakiResolveContext.SetSourceType(targetType);");
+            sb.AppendLine(
+                "                    global::Asaki.Core.Context.AsakiResolveContext.SetSourceType(targetType);"
+            );
             sb.AppendLine();
             sb.AppendLine("                    action(target, resolver);");
             sb.AppendLine("                    injectedTypes?.Add(target.GetType());");
             sb.AppendLine();
             sb.AppendLine("                    stopwatch.Stop();");
             sb.AppendLine("#if UNITY_EDITOR || DEVELOPMENT_BUILD");
-            sb.AppendLine("                    global::Asaki.Core.Logging.ALog.Info($\"[DI] Inject | Source: {targetType.Name} | Status: SUCCESS | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms\");");
+            sb.AppendLine(
+                "                    global::Asaki.Core.Logging.ALog.Info($\"[DI] Inject | Source: {targetType.Name} | Status: SUCCESS | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms\");"
+            );
             sb.AppendLine("#endif");
             sb.AppendLine("                }");
             sb.AppendLine("                catch (System.Exception ex)");
             sb.AppendLine("                {");
             sb.AppendLine("                    stopwatch.Stop();");
-            sb.AppendLine("                    global::Asaki.Core.Logging.ALog.Error($\"[DI] Inject | Source: {targetType.Name} | Status: FAILURE | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms\");");
+            sb.AppendLine(
+                "                    global::Asaki.Core.Logging.ALog.Error($\"[DI] Inject | Source: {targetType.Name} | Status: FAILURE | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms\");"
+            );
             sb.AppendLine("                    throw;");
             sb.AppendLine("                }");
             sb.AppendLine("                finally");
             sb.AppendLine("                {");
-            sb.AppendLine("                    global::Asaki.Core.Context.AsakiResolveContext.ClearSourceType();");
+            sb.AppendLine(
+                "                    global::Asaki.Core.Context.AsakiResolveContext.ClearSourceType();"
+            );
             sb.AppendLine("                }");
             sb.AppendLine("            }");
             sb.AppendLine("        }");
@@ -140,16 +216,101 @@ namespace Asaki.CodeGen.Generators
         }
 
         /// <summary>
+        /// 检测参数是否为可选类型（可空引用类型、Nullable&lt;T&gt; 或带有 [ANull] 特性）
+        /// </summary>
+        /// <param name="paramType">参数类型符号</param>
+        /// <param name="paramSymbol">参数符号，用于检查特性</param>
+        /// <param name="anullAttributeSymbol">ANullAttribute 符号</param>
+        /// <returns>如果参数是可选类型返回 true，否则返回 false</returns>
+        private static bool IsOptionalParameter(
+            ITypeSymbol paramType,
+            IParameterSymbol paramSymbol,
+            INamedTypeSymbol anullAttributeSymbol
+        )
+        {
+            // 检查参数是否带有 [ANull] 特性
+            if (anullAttributeSymbol != null)
+            {
+                foreach (var attr in paramSymbol.GetAttributes())
+                {
+                    if (
+                        SymbolEqualityComparer.Default.Equals(
+                            attr.AttributeClass,
+                            anullAttributeSymbol
+                        )
+                    )
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            // 检查是否为 Nullable<T> 值类型
+            if (paramType.OriginalDefinition?.SpecialType == SpecialType.System_Nullable_T)
+            {
+                return true;
+            }
+
+            // 检查是否为可空引用类型（C# 8.0+ 可空引用类型注解）
+            if (paramType is INamedTypeSymbol namedType)
+            {
+                if (namedType.NullableAnnotation == NullableAnnotation.Annotated)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 获取可空类型的底层类型名称
+        /// </summary>
+        /// <param name="type">可空类型符号</param>
+        /// <returns>底层类型的完全限定名称</returns>
+        private static string GetUnderlyingTypeName(ITypeSymbol type)
+        {
+            // 处理 Nullable<T> 值类型
+            if (
+                type.OriginalDefinition?.SpecialType == SpecialType.System_Nullable_T
+                && type is INamedTypeSymbol nullableType
+            )
+            {
+                return nullableType
+                    .TypeArguments[0]
+                    .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+
+            // 处理可空引用类型 - 返回去掉 ? 的类型
+            if (
+                type is INamedTypeSymbol namedType
+                && namedType.NullableAnnotation == NullableAnnotation.Annotated
+            )
+            {
+                return namedType
+                    .WithNullableAnnotation(NullableAnnotation.NotAnnotated)
+                    .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            }
+
+            // 非可空类型，直接返回原类型名称
+            return type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        }
+
+        /// <summary>
         /// 根据程序集名称计算优先级
         /// 核心程序集优先级更高（数值更小），确保先注入
         /// </summary>
         private static int GetAssemblyPriority(string assemblyName)
         {
             // 核心程序集优先级最高
-            if (assemblyName.Contains("Asaki.Core")) return 100;
-            if (assemblyName.Contains("Asaki.Unity")) return 200;
-            if (assemblyName.Contains("Asaki.Plugin")) return 500;
-            if (assemblyName.Contains("Game")) return 1000;
+            if (assemblyName.Contains("Asaki.Core"))
+                return 100;
+            if (assemblyName.Contains("Asaki.Unity"))
+                return 200;
+            if (assemblyName.Contains("Asaki.Plugin"))
+                return 500;
+            if (assemblyName.Contains("Game"))
+                return 1000;
 
             // 默认优先级
             return 1000 + assemblyName.GetHashCode() % 1000;

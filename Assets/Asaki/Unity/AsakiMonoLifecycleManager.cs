@@ -233,6 +233,14 @@ namespace Asaki.Unity
                             ALog.Info(
                                 $"[Lifecycle] Re-injected persistent component: {state.Component.GetType().Name}"
                             );
+
+                            if (!state.Component.IsActivated)
+                            {
+                                state.Component.ActivateFrameworkReady();
+                                ALog.Info(
+                                    $"[Lifecycle] Activated persistent component: {state.Component.GetType().Name}"
+                                );
+                            }
                         }
                         catch (Exception ex)
                         {

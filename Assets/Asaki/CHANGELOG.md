@@ -2,6 +2,27 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.1.0] - 2026-02-25
+
+### Added
+
+#### 可选依赖注入支持
+- **新增 [ANull] 特性** - 标记注入方法参数为可空依赖
+  - 使用 `[ANull]` 特性标记可选依赖，依赖不存在时注入 null 而非抛出异常
+  - 支持三种可选依赖标记方式：
+    - `[ANull] IService service` - Asaki 框架特性
+    - `IService? service` - C# 可空引用类型
+    - `int? value` - Nullable<T> 值类型
+  - 保持向后兼容，现有代码无需修改
+
+### Fixed
+
+#### 持久化组件激活问题修复
+- **修复持久化组件重新注入后未激活的 Bug**
+  - `AsakiMonoLifecycleManager.ReinjectGlobalServices` 在成功注入后检查并激活未激活的组件
+  - `AsakiMono.ActivateFrameworkReady` 访问修饰符从 `internal` 改为 `public`
+  - 解决跨场景持久化对象陷入"已注入但未激活"僵尸状态的问题
+
 ## [2.0.0] - 2025-02-24
 
 ### BREAKING CHANGES
