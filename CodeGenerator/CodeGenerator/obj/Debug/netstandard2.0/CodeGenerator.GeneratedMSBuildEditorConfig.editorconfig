@@ -11,3 +11,6 @@ build_property.RootNamespace = Asaki.CodeGen
 build_property.ProjectDir = E:\Projects\UnityGame\Asaki\CodeGenerator\CodeGenerator\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
+build_property.CsWinRTUseWindowsUIXamlProjections = false
+build_property.EffectiveAnalysisLevelStyle = 
+build_property.EnableCodeStyleSeverity = 

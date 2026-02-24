@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using Asaki.Core.Logging;
 
 namespace Asaki.Core.Context.Resolvers
@@ -52,23 +54,51 @@ namespace Asaki.Core.Context.Resolvers
         /// 首先检查临时参数是否匹配请求的服务类型，如果匹配则返回。
         /// 如果临时参数不匹配，则委托给父级解析器查找服务。
         /// 解析过程中会进行循环依赖检测，确保依赖链的正确性。
+        /// 在开发模式下会记录详细的解析日志，包括解析状态、来源和耗时。
         /// </remarks>
         public T Get<T>()
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                // 1. 优先匹配参数 (InitArgs)
-                if (_param is T t)
-                    return t;
+                // 检查参数是否匹配
+                if (_param is T typedParam)
+                {
+                    stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    ALog.Info(
+                        $"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: Transient | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                    );
+#endif
+                    return typedParam;
+                }
 
-                // 2. 没匹配上，交给父级去查
-                return _parent.Get<T>();
+                // 委托给父级解析器
+                var service = _parent.Get<T>();
+                stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                ALog.Info(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: Parent | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+#endif
+                return service;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
 
@@ -83,24 +113,52 @@ namespace Asaki.Core.Context.Resolvers
         /// 首先检查临时参数是否匹配请求的服务类型，如果匹配则返回true。
         /// 如果临时参数不匹配，则委托给父级解析器查找服务。
         /// 解析过程中会进行循环依赖检测，确保依赖链的正确性。
+        /// 在开发模式下会记录详细的解析日志，包括解析状态、来源和耗时。
         /// </remarks>
         public bool TryGet<T>(out T service)
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                // 1. 优先匹配参数 (InitArgs)
-                if (_param is not T t)
-                    return _parent.TryGet(out service);
-                service = t;
-                return true;
+                // 检查参数是否匹配
+                if (_param is T typedParam)
+                {
+                    service = typedParam;
+                    stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    ALog.Info(
+                        $"[DI] TryGet | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: Transient | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                    );
+#endif
+                    return true;
+                }
 
-                // 2. 没匹配上，交给父级去查
+                // 委托给父级解析器
+                var result = _parent.TryGet(out service);
+                stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                ALog.Info(
+                    $"[DI] TryGet | Type: {targetType.Name} | Status: {(result ? "SUCCESS" : "NOT_FOUND")} | Source: {sourceType?.Name ?? "Unknown"} | Provider: Parent | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+#endif
+                return result;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error(
+                    $"[DI] TryGet | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
     }

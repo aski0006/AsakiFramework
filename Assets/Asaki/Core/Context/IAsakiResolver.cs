@@ -72,6 +72,11 @@ namespace Asaki.Core.Context
             new AsyncLocal<HashSet<Type>>();
 
         /// <summary>
+        /// 当前解析的源服务类型（用于日志追踪依赖关系）
+        /// </summary>
+        private static readonly AsyncLocal<Type> _sourceType = new AsyncLocal<Type>();
+
+        /// <summary>
         /// 获取当前线程的解析链。
         /// </summary>
         public static HashSet<Type> CurrentChain
@@ -115,6 +120,32 @@ namespace Asaki.Core.Context
         public static void Clear()
         {
             CurrentChain.Clear();
+        }
+
+        /// <summary>
+        /// 设置当前解析的源服务类型
+        /// </summary>
+        /// <param name="type">源服务类型</param>
+        public static void SetSourceType(Type type)
+        {
+            _sourceType.Value = type;
+        }
+
+        /// <summary>
+        /// 获取当前解析的源服务类型
+        /// </summary>
+        /// <returns>源服务类型，未设置时返回 null</returns>
+        public static Type GetSourceType()
+        {
+            return _sourceType.Value;
+        }
+
+        /// <summary>
+        /// 清除源服务类型
+        /// </summary>
+        public static void ClearSourceType()
+        {
+            _sourceType.Value = null;
         }
     }
 

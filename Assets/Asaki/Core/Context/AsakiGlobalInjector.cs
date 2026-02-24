@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using Asaki.Core.Logging;
 
@@ -104,6 +105,9 @@ namespace Asaki.Core.Context
             if (target == null)
                 return;
 
+            var targetType = target.GetType();
+            var totalStopwatch = Stopwatch.StartNew();
+
             _rwLock.EnterReadLock();
             try
             {
@@ -115,7 +119,6 @@ namespace Asaki.Core.Context
                     _rwLock.EnterWriteLock();
                     try
                     {
-                        // 双重检查，防止其他线程已经完成排序
                         if (!_isSorted)
                         {
                             SortInjectors();
@@ -128,22 +131,28 @@ namespace Asaki.Core.Context
                     }
                 }
 
-                var injectedTypes = new HashSet<Type>();
-                var injectorNames = new Dictionary<Type, string>(); // 记录每个类型是由哪个注入器处理的
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                ALog.Info(
+                    $"[DI] InjectStart | Target: {targetType.Name} | InjectorCount: {_injectors.Count}"
+                );
+#endif
 
-                int injectedCount = 0;
+                var injectedTypes = new HashSet<Type>();
+                var injectorNames = new Dictionary<Type, string>();
+                int successCount = 0;
+                int failureCount = 0;
+
                 foreach (var entry in _injectors)
                 {
                     try
                     {
                         int beforeCount = injectedTypes.Count;
                         entry.Injector.Inject(target, resolver, injectedTypes);
-                        injectedCount++;
+                        successCount++;
 
                         // 检测是否有新类型被注入
                         if (injectedTypes.Count > beforeCount)
                         {
-                            // 记录新注入的类型
                             foreach (var type in injectedTypes)
                             {
                                 if (!injectorNames.ContainsKey(type))
@@ -152,25 +161,33 @@ namespace Asaki.Core.Context
                                 }
                                 else
                                 {
-                                    // 冲突检测：同一类型被多个注入器处理
                                     ALog.Warn(
-                                        $"[AsakiGlobalInjector] Conflict detected: Type {type.Name} was already injected by {injectorNames[type]}, now also by {entry.Injector.GetType().Name}"
+                                        $"[DI] Conflict | Type: {type.Name} | First: {injectorNames[type]} | Second: {entry.Injector.GetType().Name}"
                                     );
                                 }
                             }
                         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                        ALog.Info(
+                            $"[DI] InjectorRun | Injector: {entry.Injector.GetType().Name} | Target: {targetType.Name} | Status: SUCCESS"
+                        );
+#endif
                     }
                     catch (Exception ex)
                     {
+                        failureCount++;
                         ALog.Error(
-                            $"[AsakiGlobalInjector] Injector {entry.Injector.GetType().Name} failed to inject {target.GetType().Name}: {ex}"
+                            $"[DI] InjectorRun | Injector: {entry.Injector.GetType().Name} | Target: {targetType.Name} | Status: FAILURE | Error: {ex.Message}"
                         );
                     }
                 }
 
+                totalStopwatch.Stop();
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 ALog.Info(
-                    $"[AsakiGlobalInjector] Injected {injectedCount} injectors into {target.GetType().Name}, types: {injectedTypes.Count}"
+                    $"[DI] InjectComplete | Target: {targetType.Name} | Success: {successCount} | Failure: {failureCount} | Types: {injectedTypes.Count} | Duration: {totalStopwatch.Elapsed.TotalMilliseconds:F2}ms"
                 );
 #endif
             }

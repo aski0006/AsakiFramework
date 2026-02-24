@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
@@ -437,20 +438,44 @@ namespace Asaki.Core.Context.Resolvers
         /// <returns>请求的服务实例。</returns>
         /// <exception cref="KeyNotFoundException">当指定类型的服务未找到时抛出。</exception>
         /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
+        /// <remarks>
+        /// 包含详细的依赖注入日志记录，记录解析类型、状态、来源、提供者和耗时。
+        /// </remarks>
         public T Get<T>()
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                if (_localServices.TryGetValue(typeof(T), out IAsakiService service))
+                if (_localServices.TryGetValue(targetType, out IAsakiService service))
+                {
+                    stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    ALog.Info($"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+#endif
                     return (T)service;
+                }
 
-                return AsakiContext.Get<T>();
+                var result = AsakiContext.Get<T>();
+                stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                ALog.Info($"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: GlobalContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+#endif
+                return result;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error($"[DI] Resolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
 
@@ -461,22 +486,46 @@ namespace Asaki.Core.Context.Resolvers
         /// <param name="service">如果找到服务，将返回的服务实例赋值给此参数；否则为null。</param>
         /// <returns>如果找到服务则返回true，否则返回false。</returns>
         /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
+        /// <remarks>
+        /// 包含详细的依赖注入日志记录，记录解析类型、状态、来源、提供者和耗时。
+        /// </remarks>
         public bool TryGet<T>(out T service)
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                if (_localServices.TryGetValue(typeof(T), out IAsakiService s))
+                if (_localServices.TryGetValue(targetType, out IAsakiService s))
                 {
                     service = (T)s;
+                    stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    ALog.Info($"[DI] TryResolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+#endif
                     return true;
                 }
-                return AsakiContext.TryGet(out service);
+
+                var found = AsakiContext.TryGet(out service);
+                stopwatch.Stop();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                var provider = found ? "GlobalContext" : "NotFound";
+                ALog.Info($"[DI] TryResolve | Type: {targetType.Name} | Status: {(found ? "SUCCESS" : "NOT_FOUND")} | Source: {sourceType?.Name ?? "Unknown"} | Provider: {provider} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+#endif
+                return found;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error($"[DI] TryResolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
     }

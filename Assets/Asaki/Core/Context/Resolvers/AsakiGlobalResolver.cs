@@ -1,3 +1,7 @@
+using System;
+using System.Diagnostics;
+using Asaki.Core.Logging;
+
 namespace Asaki.Core.Context.Resolvers
 {
     /// <summary>
@@ -28,18 +32,39 @@ namespace Asaki.Core.Context.Resolvers
         /// <remarks>
         /// 此方法直接调用<see cref="AsakiContext.Get{T}()"/>，提供了与全局容器一致的服务解析行为。
         /// 使用<see cref="AsakiResolveContext"/>进行循环依赖检测，确保解析过程的安全性。
+        /// 在开发环境下会记录详细的依赖注入日志，包括解析类型、状态、来源和耗时。
         /// </remarks>
         public T Get<T>()
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                return AsakiContext.Get<T>();
+                var service = AsakiContext.Get<T>();
+                stopwatch.Stop();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                ALog.Info(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+#endif
+                return service;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
 
@@ -53,18 +78,40 @@ namespace Asaki.Core.Context.Resolvers
         /// <remarks>
         /// 此方法直接调用<see cref="AsakiContext.TryGet{T}(out T)"/>，提供了与全局容器一致的服务解析行为。
         /// 使用<see cref="AsakiResolveContext"/>进行循环依赖检测，确保解析过程的安全性。
+        /// 在开发环境下会记录详细的依赖注入日志，包括解析类型、状态、来源和耗时。
         /// </remarks>
         public bool TryGet<T>(out T service)
             where T : class, IAsakiService
         {
-            AsakiResolveContext.BeginResolve(typeof(T));
+            var targetType = typeof(T);
+            var sourceType = AsakiResolveContext.GetSourceType();
+            var stopwatch = Stopwatch.StartNew();
+
+            AsakiResolveContext.BeginResolve(targetType);
             try
             {
-                return AsakiContext.TryGet(out service);
+                var result = AsakiContext.TryGet(out service);
+                stopwatch.Stop();
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                var status = result ? "SUCCESS" : "NOT_FOUND";
+                ALog.Info(
+                    $"[DI] TryGet | Type: {targetType.Name} | Status: {status} | Source: {sourceType?.Name ?? "Unknown"} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+#endif
+                return result;
+            }
+            catch (Exception ex)
+            {
+                stopwatch.Stop();
+                ALog.Error(
+                    $"[DI] TryGet | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
+                throw;
             }
             finally
             {
-                AsakiResolveContext.EndResolve(typeof(T));
+                AsakiResolveContext.EndResolve(targetType);
             }
         }
     }
