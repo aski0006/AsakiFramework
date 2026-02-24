@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Asaki.Core.Serialization;
 
 namespace Asaki.Core.FrameworkSettings
 {
@@ -76,6 +77,14 @@ namespace Asaki.Core.FrameworkSettings
         [Tooltip("压缩级别 (1-9，9为最高压缩)")]
         [Range(1, 9)]
         public int CompressionLevel = 6;
+
+        #endregion
+
+        #region 自动保存配置
+
+        [Header("Auto Save Settings")]
+        [Tooltip("自动保存配置")]
+        public AsakiAutoSaveConfig AutoSave = new AsakiAutoSaveConfig();
 
         #endregion
 

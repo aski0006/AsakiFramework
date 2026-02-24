@@ -1,6 +1,7 @@
 using System.Collections;
 using Asaki.Core.Broker;
 using Asaki.Core.Serialization;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Unity.Services.Serialization;
 using Cysharp.Threading.Tasks;
 using NUnit.Framework;
@@ -18,15 +19,20 @@ namespace Asaki.Tests.Serialization
         private AsakiAutoSaveService _autoSaveService;
         private TestSaveSlotManager _mockSlotManager;
         private TestEventService _mockEventService;
+        private AsakiSaveConfig _testConfig;
 
         [SetUp]
         public void Setup()
         {
             _mockSlotManager = new TestSaveSlotManager();
             _mockEventService = new TestEventService();
+            _testConfig = new AsakiSaveConfig();
 
-            _autoSaveService = new AsakiAutoSaveService();
-            _autoSaveService.Init(_mockSlotManager, _mockEventService);
+            _autoSaveService = new AsakiAutoSaveService(
+                _mockSlotManager,
+                _mockEventService,
+                _testConfig
+            );
             _autoSaveService.OnInit();
         }
 

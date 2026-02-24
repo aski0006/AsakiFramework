@@ -1121,7 +1121,6 @@ namespace Asaki.Editor.Debugging
             DrawInfoRow("Time Interval:", $"{config.TimeIntervalSeconds:F0} seconds");
             DrawInfoRow("Countdown:", $"{config.CountdownSeconds:F0} seconds");
             DrawInfoRow("Max Auto Saves:", config.MaxAutoSaveCount.ToString());
-            DrawInfoRow("Start Index:", config.AutoSaveSlotStartIndex.ToString());
             DrawInfoRow("Show Notification:", config.ShowNotification.ToString());
             DrawInfoRow("Generate Thumbnail:", config.GenerateThumbnail.ToString());
 

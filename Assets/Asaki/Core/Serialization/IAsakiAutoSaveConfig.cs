@@ -1,4 +1,5 @@
 using System;
+using UnityEngine;
 
 namespace Asaki.Core.Serialization
 {
@@ -49,6 +50,7 @@ namespace Asaki.Core.Serialization
     /// </summary>
     /// <remarks>
     /// 配置自动保存的行为，包括触发条件、时间间隔、最大存档数等。
+    /// 注意：槽位索引已移至 AsakiSaveConfig.AutoSaveSlotIndex，不再由此接口管理。
     /// 可通过 IAsakiAutoSaveService 注册此配置来控制自动保存行为。
     /// </remarks>
     public interface IAsakiAutoSaveConfig
@@ -87,11 +89,6 @@ namespace Asaki.Core.Serialization
         /// 自动保存存档的最大数量（循环覆盖）
         /// </summary>
         int MaxAutoSaveCount { get; }
-
-        /// <summary>
-        /// 自动保存槽位起始索引
-        /// </summary>
-        int AutoSaveSlotStartIndex { get; }
 
         /// <summary>
         /// 是否在自动保存时创建缩略图
@@ -156,58 +153,72 @@ namespace Asaki.Core.Serialization
     public class AsakiAutoSaveConfig : IAsakiAutoSaveConfig
     {
         /// <inheritdoc />
+        [field: SerializeField]
         public bool Enabled { get; set; } = true;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public AsakiAutoSaveTrigger Triggers { get; set; } =
             AsakiAutoSaveTrigger.Checkpoint | AsakiAutoSaveTrigger.ApplicationPause;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public float TimeIntervalSeconds { get; set; } = 300f; // 5分钟
 
         /// <inheritdoc />
+        [field: SerializeField]
         public float CountdownSeconds { get; set; } = 3f;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public bool ShowNotification { get; set; } = true;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public string NotificationText { get; set; } = "正在自动保存...";
 
         /// <inheritdoc />
+        [field: SerializeField]
         public int MaxAutoSaveCount { get; set; } = 3;
 
         /// <inheritdoc />
-        public int AutoSaveSlotStartIndex { get; set; } = 0;
-
-        /// <inheritdoc />
+        [field: SerializeField]
         public bool GenerateThumbnail { get; set; } = true;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public int ThumbnailWidth { get; set; } = 320;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public int ThumbnailHeight { get; set; } = 180;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public int ThumbnailQuality { get; set; } = 75;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public bool CheckStorageSpace { get; set; } = true;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public long MinFreeSpaceMB { get; set; } = 100;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public float MinIntervalBetweenSaves { get; set; } = 60f; // 1分钟
 
         /// <inheritdoc />
+        [field: SerializeField]
         public bool KeepLatestAutoSave { get; set; } = true;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public bool SaveOnSceneEnter { get; set; } = false;
 
         /// <inheritdoc />
+        [field: SerializeField]
         public bool SaveOnSceneExit { get; set; } = true;
 
         /// <inheritdoc />
@@ -234,12 +245,6 @@ namespace Asaki.Core.Serialization
             if (MaxAutoSaveCount < 1)
             {
                 errorMessage = "最大自动存档数必须至少为 1";
-                return false;
-            }
-
-            if (AutoSaveSlotStartIndex < 0)
-            {
-                errorMessage = "自动保存槽位起始索引不能为负数";
                 return false;
             }
 

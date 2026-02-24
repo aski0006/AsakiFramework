@@ -211,7 +211,6 @@ namespace Asaki.Tests.Serialization
                 ShowNotification = false,
                 NotificationText = "Saving...",
                 MaxAutoSaveCount = 5,
-                AutoSaveSlotStartIndex = 0,
                 GenerateThumbnail = true,
                 ThumbnailWidth = 320,
                 ThumbnailHeight = 180,

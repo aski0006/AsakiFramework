@@ -1,6 +1,7 @@
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Serialization;
 using Asaki.Core.Simulation;
 using Asaki.Unity.Services.Serialization;
@@ -33,8 +34,11 @@ namespace Asaki.Unity.Modules
 
         public void OnInit()
         {
-            _autoSaveService = new AsakiAutoSaveService();
-            ((AsakiAutoSaveService)_autoSaveService).Init(_slotManager, _eventService);
+            // 从框架配置获取存档配置
+            var frameworkSetting = AsakiContext.Get<AsakiFrameworkSetting>();
+            var config = frameworkSetting.SaveConfig;
+
+            _autoSaveService = new AsakiAutoSaveService(_slotManager, _eventService, config);
             ((AsakiAutoSaveService)_autoSaveService).SetSimulationService(_simulationService);
             _autoSaveService.OnInit();
 

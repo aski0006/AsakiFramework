@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Asaki.Core.Broker;
+using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Core.Simulation;
@@ -66,14 +67,24 @@ namespace Asaki.Unity.Services.Serialization
         /// <inheritdoc />
         public event Action OnCountdownCancelled;
 
+        /// <summary>
+        /// 构造函数，从统一的存档配置中获取自动保存配置
+        /// </summary>
+        /// <param name="slotManager">槽位管理器</param>
+        /// <param name="eventService">事件服务</param>
+        /// <param name="config">统一的存档配置</param>
         public AsakiAutoSaveService(
             IAsakiSaveSlotManager slotManager,
-            IAsakiEventService eventService
-        )
+            IAsakiEventService eventService,
+            AsakiSaveConfig config)
         {
             _slotManager = slotManager ?? throw new ArgumentNullException(nameof(slotManager));
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
-            _config = AsakiAutoSaveConfig.CreateDefault();
+
+            if (config == null)
+                throw new ArgumentNullException(nameof(config));
+
+            SetConfig(config.AutoSave);
         }
 
         // 无参构造函数供框架使用
