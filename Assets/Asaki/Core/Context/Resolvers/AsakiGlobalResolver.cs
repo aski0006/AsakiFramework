@@ -24,13 +24,23 @@ namespace Asaki.Core.Context.Resolvers
         /// <typeparam name="T">服务类型，必须是实现了<see cref="IAsakiService"/>接口的类类型。</typeparam>
         /// <returns>请求的服务实例。</returns>
         /// <exception cref="KeyNotFoundException">当指定类型的服务未找到时抛出。</exception>
+        /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
         /// <remarks>
         /// 此方法直接调用<see cref="AsakiContext.Get{T}()"/>，提供了与全局容器一致的服务解析行为。
+        /// 使用<see cref="AsakiResolveContext"/>进行循环依赖检测，确保解析过程的安全性。
         /// </remarks>
         public T Get<T>()
             where T : class, IAsakiService
         {
-            return AsakiContext.Get<T>();
+            AsakiResolveContext.BeginResolve(typeof(T));
+            try
+            {
+                return AsakiContext.Get<T>();
+            }
+            finally
+            {
+                AsakiResolveContext.EndResolve(typeof(T));
+            }
         }
 
         /// <summary>
@@ -39,13 +49,23 @@ namespace Asaki.Core.Context.Resolvers
         /// <typeparam name="T">服务类型，必须是实现了<see cref="IAsakiService"/>接口的类类型。</typeparam>
         /// <param name="service">如果找到服务，将返回的服务实例赋值给此参数；否则为null。</param>
         /// <returns>如果找到服务则返回true，否则返回false。</returns>
+        /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
         /// <remarks>
         /// 此方法直接调用<see cref="AsakiContext.TryGet{T}(out T)"/>，提供了与全局容器一致的服务解析行为。
+        /// 使用<see cref="AsakiResolveContext"/>进行循环依赖检测，确保解析过程的安全性。
         /// </remarks>
         public bool TryGet<T>(out T service)
             where T : class, IAsakiService
         {
-            return AsakiContext.TryGet(out service);
+            AsakiResolveContext.BeginResolve(typeof(T));
+            try
+            {
+                return AsakiContext.TryGet(out service);
+            }
+            finally
+            {
+                AsakiResolveContext.EndResolve(typeof(T));
+            }
         }
     }
 }

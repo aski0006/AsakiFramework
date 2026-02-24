@@ -37,10 +37,22 @@ namespace Asaki.Core.Context
         // 框架就绪标志
         private static volatile bool _isReady;
 
+        // 动态阶段计数器：用于支持运行时动态注册窗口
+        private static int _dynamicPhaseCount;
+
+        // 动态阶段专用锁对象
+        private static readonly object _dynamicPhaseLock = new object();
+
         /// <summary>
         /// 框架是否已就绪
         /// </summary>
         public static bool IsReady => _isReady;
+
+        /// <summary>
+        /// 是否处于动态阶段
+        /// <para>动态阶段期间允许新服务注册，即使容器已冻结。</para>
+        /// </summary>
+        public static bool IsDynamicPhase => _dynamicPhaseCount > 0;
 
         /// <summary>
         /// 标记框架为就绪状态
@@ -72,6 +84,22 @@ namespace Asaki.Core.Context
                 return (T)service;
             }
             throw new KeyNotFoundException($"[AsakiContext] Service not found: {typeof(T).Name}");
+        }
+
+        /// <summary>
+        /// 获取服务实例（非泛型版本）。
+        /// <para>用于运行时动态获取服务，性能略低于泛型版本。</para>
+        /// </summary>
+        /// <param name="type">服务类型，必须是实现了 IAsakiService 接口的类型。</param>
+        /// <returns>请求的服务实例。</returns>
+        /// <exception cref="KeyNotFoundException">当指定类型的服务未找到时抛出。</exception>
+        public static IAsakiService Get(Type type)
+        {
+            if (_services.TryGetValue(type, out IAsakiService service))
+            {
+                return service;
+            }
+            throw new KeyNotFoundException($"[AsakiContext] Service not found: {type.Name}");
         }
 
         /// <summary>
@@ -153,8 +181,8 @@ namespace Asaki.Core.Context
             // 1. 获取写锁 (阻塞其他写入者，但不阻塞读取者)
             lock (_writeLock)
             {
-                // 2. 状态检查
-                if (_isFrozen && !isReplacement)
+                // 2. 状态检查（动态阶段允许新服务注册）
+                if (_isFrozen && !isReplacement && !IsDynamicPhase)
                 {
                     throw new InvalidOperationException(
                         $"[AsakiContext] Container is Frozen! Cannot register new service '{type.Name}' at runtime. "
@@ -217,6 +245,48 @@ namespace Asaki.Core.Context
         // ========================================================================
         // 架构控制 API
         // ========================================================================
+
+        /// <summary>
+        /// 进入动态阶段。
+        /// <para>动态阶段期间允许新服务注册，即使容器已冻结。</para>
+        /// <para>支持嵌套调用，每次调用都会递增计数器。</para>
+        /// </summary>
+        public static void EnterDynamicPhase()
+        {
+            lock (_dynamicPhaseLock)
+            {
+                lock (_writeLock)
+                {
+                    _dynamicPhaseCount++;
+                    // 解冻容器以允许注册
+                    _isFrozen = false;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 退出动态阶段。
+        /// <para>当计数器归零时，自动冻结容器。</para>
+        /// <para>支持嵌套调用，每次调用都会递减计数器。</para>
+        /// </summary>
+        public static void ExitDynamicPhase()
+        {
+            lock (_dynamicPhaseLock)
+            {
+                lock (_writeLock)
+                {
+                    if (_dynamicPhaseCount > 0)
+                    {
+                        _dynamicPhaseCount--;
+                        // 计数器归零时冻结容器
+                        if (_dynamicPhaseCount == 0)
+                        {
+                            _isFrozen = true;
+                        }
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// [架构] 冻结容器。

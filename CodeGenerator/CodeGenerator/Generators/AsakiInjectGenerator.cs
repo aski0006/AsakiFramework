@@ -90,7 +90,13 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine();
 
             // 4. 接口实现 (O(1) 查找)
-            sb.AppendLine("        public void Inject(object target, IAsakiResolver resolver = null)");
+            sb.AppendLine("        /// <summary>");
+            sb.AppendLine("        /// 尝试为目标对象注入依赖项");
+            sb.AppendLine("        /// </summary>");
+            sb.AppendLine("        /// <param name=\"target\">目标对象</param>");
+            sb.AppendLine("        /// <param name=\"resolver\">依赖解析器</param>");
+            sb.AppendLine("        /// <param name=\"injectedTypes\">已注入类型集合，用于追踪和冲突检测</param>");
+            sb.AppendLine("        public void Inject(object target, IAsakiResolver resolver = null, HashSet<Type> injectedTypes = null)");
             sb.AppendLine("        {");
             sb.AppendLine("            if (target == null) return;");
             sb.AppendLine("            if (resolver == null) resolver = global::Asaki.Core.Context.Resolvers.AsakiGlobalResolver.Instance;");
@@ -98,6 +104,7 @@ namespace Asaki.CodeGen.Generators
             sb.AppendLine("            if (_injectMap.TryGetValue(target.GetType(), out var action))");
             sb.AppendLine("            {");
             sb.AppendLine("                action(target, resolver);");
+            sb.AppendLine("                injectedTypes?.Add(target.GetType());");
             sb.AppendLine("            }");
             sb.AppendLine("        }");
 

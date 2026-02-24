@@ -551,14 +551,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _pureCSharpServices:
   - rid: 117223817463464019
-  - rid: -2
   _servicePrefabs: []
   _instanceParent: {fileID: 0}
   references:
     version: 2
     RefIds:
-    - rid: -2
-      type: {class: , ns: , asm: }
     - rid: 117223817463464019
       type: {class: ECSArchitecture, ns: Asaki.Game.Scripts.Examples.ECS, asm: Game}
       data: 

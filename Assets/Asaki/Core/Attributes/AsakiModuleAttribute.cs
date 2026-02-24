@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Asaki.Core.Attributes
 {
@@ -22,6 +22,20 @@ namespace Asaki.Core.Attributes
         /// <para>加载器会确保这些依赖项在此模块之前完成初始化。</para>
         /// </summary>
         public Type[] Dependencies { get; }
+
+        /// <summary>
+        /// 是否为可选模块。
+        /// <para>可选模块初始化失败时不会阻止系统启动。</para>
+        /// <para>默认值为 false，即模块初始化失败会导致系统启动失败。</para>
+        /// </summary>
+        public bool Optional { get; set; } = false;
+
+        /// <summary>
+        /// 模块初始化超时时间（毫秒）。
+        /// <para>超过此时间未完成初始化将视为初始化失败。</para>
+        /// <para>默认值为 30000 毫秒（30 秒）。</para>
+        /// </summary>
+        public int TimeoutMs { get; set; } = 30000;
 
         /// <summary>
         /// 声明一个 Asaki 模块。

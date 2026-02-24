@@ -98,7 +98,18 @@ namespace Asaki.Unity.Bootstrapper
             {
                 ALog.Info("Starting module discovery...");
                 AsakiStaticModuleDiscovery discovery = new AsakiStaticModuleDiscovery();
-                await AsakiModuleLoader.Startup(discovery);
+                var summary = await AsakiModuleLoader.Startup(discovery);
+
+                // 检查模块加载结果
+                if (!summary.IsAllSuccess && summary.HasRequiredFailure)
+                {
+                    // 必需模块失败时，ModuleLoadException 已经在 Startup 内部抛出
+                    // 这里只是防御性代码
+                    ALog.Fatal(
+                        $"Framework boot failed! {summary.FailCount} required modules failed to load."
+                    );
+                    return;
+                }
 
                 AsakiContext.Freeze();
 
@@ -111,7 +122,22 @@ namespace Asaki.Unity.Bootstrapper
                 _isReady = true;
                 AsakiContext.SetReady();
                 AsakiBroker.Publish(new Asaki.Core.Context.OnAsakiFrameworkReadyEvent());
-                ALog.Info("== ASAKI FRAMEWORK READY ==");
+
+                if (summary.IsAllSuccess)
+                {
+                    ALog.Info("== ASAKI FRAMEWORK READY ==");
+                }
+                else
+                {
+                    ALog.Warn(
+                        $"== ASAKI FRAMEWORK READY (with {summary.FailCount} optional module failures) =="
+                    );
+                }
+            }
+            catch (ModuleLoadException ex)
+            {
+                ALog.Fatal($"Module load failed: {ex.ModuleName}", ex.InnerException);
+                throw;
             }
             catch (Exception ex)
             {

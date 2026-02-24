@@ -8,6 +8,32 @@ using UnityEngine;
 namespace Asaki.Core.Context.Resolvers
 {
     /// <summary>
+    /// 构建状态枚举，表示场景上下文的构建生命周期状态。
+    /// </summary>
+    public enum BuildState
+    {
+        /// <summary>
+        /// 未构建：初始状态或已销毁重置后的状态。
+        /// </summary>
+        NotBuilt,
+
+        /// <summary>
+        /// 构建中：正在执行服务注入和初始化。
+        /// </summary>
+        Building,
+
+        /// <summary>
+        /// 已构建：构建成功完成。
+        /// </summary>
+        Built,
+
+        /// <summary>
+        /// 构建失败：构建过程中发生异常。
+        /// </summary>
+        Failed
+    }
+
+    /// <summary>
     /// Asaki场景上下文组件，用于管理场景级别的服务和依赖注入。
     /// </summary>
     /// <remarks>
@@ -67,6 +93,26 @@ namespace Asaki.Core.Context.Resolvers
         private readonly object _buildLock = new object();
 
         private bool _isInitializing = false;
+
+        /// <summary>
+        /// 当前构建状态
+        /// </summary>
+        private BuildState _buildState = BuildState.NotBuilt;
+
+        /// <summary>
+        /// 构建失败时捕获的异常
+        /// </summary>
+        private Exception _buildException;
+
+        /// <summary>
+        /// 获取当前构建状态
+        /// </summary>
+        public BuildState State => _buildState;
+
+        /// <summary>
+        /// 获取构建失败时的异常信息
+        /// </summary>
+        public Exception BuildException => _buildException;
 
         public bool IsBuilt => _isBuilt;
 
@@ -217,17 +263,26 @@ namespace Asaki.Core.Context.Resolvers
         /// 构建上下文。
         /// 此方法必须由 Bootstrapper 在确认全局环境（如 SimulationService）就绪后调用。
         /// </summary>
+        /// <remarks>
+        /// 状态转换：
+        /// - NotBuilt -> Building -> Built (成功)
+        /// - NotBuilt -> Building -> Failed (异常)
+        /// - Built/Failed -> 直接返回（不重复构建）
+        /// </remarks>
         public void Build()
         {
-            // 快速路径检查 (无锁)
-            if (_isBuilt)
+            // 快速路径检查 (无锁)：已构建或已失败时直接返回
+            if (_buildState == BuildState.Built || _buildState == BuildState.Failed)
                 return;
 
             lock (_buildLock)
             {
                 // 双重检查锁定 (Double-Check Lock)
-                if (_isBuilt)
+                if (_buildState == BuildState.Built || _buildState == BuildState.Failed)
                     return;
+
+                // 设置状态为构建中
+                _buildState = BuildState.Building;
 
                 ALog.Info(
                     $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
@@ -235,39 +290,57 @@ namespace Asaki.Core.Context.Resolvers
 
                 int successCount = 0;
                 int failCount = 0;
+                Exception caughtException = null;
 
-                foreach (IAsakiInject service in _pendingInitServices)
+                try
                 {
-                    try
+                    foreach (IAsakiInject service in _pendingInitServices)
                     {
-                        service.Inject(this);
-                        successCount++;
+                        try
+                        {
+                            service.Inject(this);
+                            successCount++;
+                        }
+                        catch (Exception ex)
+                        {
+                            failCount++;
+                            ALog.Error(
+                                $"[AsakiSceneContext] Failed to init service {service.GetType().Name}: {ex}"
+                            );
+                        }
                     }
-                    catch (Exception ex)
+
+                    _pendingInitServices.Clear();
+                    _isBuilt = true;
+
+                    // 构建成功，设置状态为已构建
+                    _buildState = BuildState.Built;
+
+                    if (failCount > 0)
                     {
-                        failCount++;
-                        ALog.Error(
-                            $"[AsakiSceneContext] Failed to init service {service.GetType().Name}: {ex}"
+                        ALog.Warn(
+                            $"[AsakiSceneContext] Build completed with {failCount} failures, {successCount} successes."
                         );
                     }
+                    else
+                    {
+                        ALog.Info("[AsakiSceneContext] Build Complete.");
+                    }
                 }
-
-                _pendingInitServices.Clear();
-                _isBuilt = true;
-
-                if (failCount > 0)
+                catch (Exception ex)
                 {
-                    ALog.Warn(
-                        $"[AsakiSceneContext] Build completed with {failCount} failures, {successCount} successes."
-                    );
-                }
-                else
-                {
-                    ALog.Info("[AsakiSceneContext] Build Complete.");
+                    caughtException = ex;
+                    _buildException = ex;
+                    _buildState = BuildState.Failed;
+
+                    ALog.Error($"[AsakiSceneContext] Build failed with exception: {ex}");
                 }
             }
         }
 
+        /// <summary>
+        /// 销毁时清理场景服务并重置构建状态。
+        /// </summary>
         private void OnDestroy()
         {
             ALog.Info($"[AsakiSceneContext] Cleaning up scene services...");
@@ -291,7 +364,10 @@ namespace Asaki.Core.Context.Resolvers
             }
             _instantiatedPrefabs.Clear();
 
+            // 重置构建状态
             _isBuilt = false;
+            _buildState = BuildState.NotBuilt;
+            _buildException = null;
         }
 
         // ========================================================================
@@ -354,24 +430,54 @@ namespace Asaki.Core.Context.Resolvers
         // 服务解析（IAsakiResolver 实现）
         // ========================================================================
 
+        /// <summary>
+        /// 获取指定类型的服务实例。
+        /// </summary>
+        /// <typeparam name="T">服务类型，必须是实现了<see cref="IAsakiService"/>接口的类类型。</typeparam>
+        /// <returns>请求的服务实例。</returns>
+        /// <exception cref="KeyNotFoundException">当指定类型的服务未找到时抛出。</exception>
+        /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
         public T Get<T>()
             where T : class, IAsakiService
         {
-            if (_localServices.TryGetValue(typeof(T), out IAsakiService service))
-                return (T)service;
+            AsakiResolveContext.BeginResolve(typeof(T));
+            try
+            {
+                if (_localServices.TryGetValue(typeof(T), out IAsakiService service))
+                    return (T)service;
 
-            return AsakiContext.Get<T>();
+                return AsakiContext.Get<T>();
+            }
+            finally
+            {
+                AsakiResolveContext.EndResolve(typeof(T));
+            }
         }
 
+        /// <summary>
+        /// 尝试获取指定类型的服务实例，如果找到则返回true，否则返回false。
+        /// </summary>
+        /// <typeparam name="T">服务类型，必须是实现了<see cref="IAsakiService"/>接口的类类型。</typeparam>
+        /// <param name="service">如果找到服务，将返回的服务实例赋值给此参数；否则为null。</param>
+        /// <returns>如果找到服务则返回true，否则返回false。</returns>
+        /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
         public bool TryGet<T>(out T service)
             where T : class, IAsakiService
         {
-            if (_localServices.TryGetValue(typeof(T), out IAsakiService s))
+            AsakiResolveContext.BeginResolve(typeof(T));
+            try
             {
-                service = (T)s;
-                return true;
+                if (_localServices.TryGetValue(typeof(T), out IAsakiService s))
+                {
+                    service = (T)s;
+                    return true;
+                }
+                return AsakiContext.TryGet(out service);
             }
-            return AsakiContext.TryGet(out service);
+            finally
+            {
+                AsakiResolveContext.EndResolve(typeof(T));
+            }
         }
     }
 }
