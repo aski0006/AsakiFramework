@@ -36,4 +36,21 @@ namespace Asaki.Core.Context
         /// </remarks>
         void OnBootstrapInit();
     }
+
+    /// <summary>
+    /// 线程安全销毁接口。
+    /// 实现此接口的服务将在 AsakiContext.ClearAll() 的锁内被销毁，确保线程安全。
+    /// </summary>
+    /// <remarks>
+    /// 适用于需要在多线程环境下安全销毁的服务。
+    /// 注意：ThreadSafeDispose 方法应避免死锁（不要在方法内尝试获取 AsakiContext 的锁）。
+    /// </remarks>
+    public interface IAsakiThreadSafeDisposable
+    {
+        /// <summary>
+        /// 线程安全地销毁服务。
+        /// 此方法在 AsakiContext 的写锁内调用，确保不会有其他线程访问服务。
+        /// </summary>
+        void ThreadSafeDispose();
+    }
 }

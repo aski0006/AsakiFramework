@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Asaki.Core.Broker;
 using Asaki.Core.Logging;
 using UnityEngine;
 
@@ -304,6 +305,12 @@ namespace Asaki.Core.Context
         /// <summary>
         /// [生命周期] 清空并销毁所有服务。
         /// </summary>
+        /// <remarks>
+        /// 此方法执行以下步骤：
+        /// 1. 获取当前服务快照并清空容器
+        /// 2. 发布清理前事件，让使用者提前释放引用
+        /// 3. 按优先级销毁服务（线程安全销毁优先）
+        /// </remarks>
         public static void ClearAll()
         {
             Dictionary<Type, IAsakiService> oldSnapshot;
@@ -319,18 +326,37 @@ namespace Asaki.Core.Context
                 _isReady = false;
             }
 
-            // 3. 在锁外执行 Dispose，防止 Dispose 逻辑死锁
+            // 3. 发布清理前事件，让使用者提前释放引用
+            try
+            {
+                AsakiBroker.Publish(new OnAsakiContextClearingEvent(oldSnapshot.Count));
+            }
+            catch (Exception ex)
+            {
+                ALog.Error($"[AsakiContext] Error publishing clearing event: {ex}");
+            }
+
+            // 4. 按优先级销毁服务
             foreach (var kvp in oldSnapshot)
             {
                 IAsakiService service = kvp.Value;
                 try
                 {
-                    // 优先调用模块销毁
-                    if (service is IAsakiModule module)
+                    // 优先处理线程安全销毁
+                    if (service is IAsakiThreadSafeDisposable tsDisposable)
+                    {
+                        // 线程安全销毁：在锁内执行
+                        lock (_writeLock)
+                        {
+                            tsDisposable.ThreadSafeDispose();
+                        }
+                    }
+                    // 其次处理模块销毁
+                    else if (service is IAsakiModule module)
                     {
                         module.OnDispose();
                     }
-                    // 其次调用通用销毁 (需去重，如果既是Module又是Disposable)
+                    // 最后处理通用销毁
                     else if (service is IDisposable disposable)
                     {
                         disposable.Dispose();

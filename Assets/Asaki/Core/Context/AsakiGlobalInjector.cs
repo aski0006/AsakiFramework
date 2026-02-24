@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Asaki.Core.Logging;
 
 namespace Asaki.Core.Context
@@ -25,11 +26,13 @@ namespace Asaki.Core.Context
 
     /// <summary>
     /// 注入器注册表，管理所有程序集注入器的注册和执行
+    /// 支持线程安全的注册和注入操作
     /// </summary>
     public static class AsakiGlobalInjector
     {
         private static readonly List<InjectorEntry> _injectors = new List<InjectorEntry>();
         private static bool _isSorted = false;
+        private static readonly ReaderWriterLockSlim _rwLock = new ReaderWriterLockSlim();
 
         private struct InjectorEntry
         {
@@ -39,6 +42,7 @@ namespace Asaki.Core.Context
 
         /// <summary>
         /// 注册程序集注入器（由生成的代码在 RuntimeInitializeOnLoadMethod 中调用）
+        /// 线程安全：使用写锁保护注册操作
         /// </summary>
         /// <param name="injector">注入器实例</param>
         /// <param name="priority">可选优先级，默认为注入器自身定义的优先级</param>
@@ -50,90 +54,128 @@ namespace Asaki.Core.Context
                 return;
             }
 
-            // 检查重复注册
-            foreach (var entry in _injectors)
+            _rwLock.EnterWriteLock();
+            try
             {
-                if (ReferenceEquals(entry.Injector, injector))
+                // 检查重复注册
+                foreach (var entry in _injectors)
                 {
-                    ALog.Warn(
-                        $"[AsakiGlobalInjector] Injector {injector.GetType().Name} already registered, ignoring duplicate."
-                    );
-                    return;
+                    if (ReferenceEquals(entry.Injector, injector))
+                    {
+                        ALog.Warn(
+                            $"[AsakiGlobalInjector] Injector {injector.GetType().Name} already registered, ignoring duplicate."
+                        );
+                        return;
+                    }
                 }
+
+                _injectors.Add(
+                    new InjectorEntry { Injector = injector, Priority = priority ?? injector.Priority }
+                );
+                _isSorted = false;
+
+                ALog.Info(
+                    $"[AsakiGlobalInjector] Registered injector: {injector.GetType().Name} (Priority: {priority ?? injector.Priority})"
+                );
             }
-
-            _injectors.Add(
-                new InjectorEntry { Injector = injector, Priority = priority ?? injector.Priority }
-            );
-            _isSorted = false;
-
-            ALog.Info(
-                $"[AsakiGlobalInjector] Registered injector: {injector.GetType().Name} (Priority: {priority ?? injector.Priority})"
-            );
+            finally
+            {
+                _rwLock.ExitWriteLock();
+            }
         }
 
         /// <summary>
         /// 对目标对象执行全量注入，按优先级顺序调用所有注入器
         /// 支持类型追踪和冲突检测
+        /// 线程安全：使用读锁保护注入操作，需要排序时升级为写锁
         /// </summary>
+        /// <param name="target">目标对象</param>
+        /// <param name="resolver">依赖解析器</param>
         public static void Inject(object target, IAsakiResolver resolver = null)
         {
             if (target == null)
                 return;
 
-            // 确保注入器按优先级排序
-            if (!_isSorted)
+            _rwLock.EnterReadLock();
+            try
             {
-                SortInjectors();
-            }
-
-            var injectedTypes = new HashSet<Type>();
-            var injectorNames = new Dictionary<Type, string>(); // 记录每个类型是由哪个注入器处理的
-
-            int injectedCount = 0;
-            foreach (var entry in _injectors)
-            {
-                try
+                // 确保注入器按优先级排序
+                if (!_isSorted)
                 {
-                    int beforeCount = injectedTypes.Count;
-                    entry.Injector.Inject(target, resolver, injectedTypes);
-                    injectedCount++;
-
-                    // 检测是否有新类型被注入
-                    if (injectedTypes.Count > beforeCount)
+                    // 需要升级为写锁进行排序
+                    _rwLock.ExitReadLock();
+                    _rwLock.EnterWriteLock();
+                    try
                     {
-                        // 记录新注入的类型
-                        foreach (var type in injectedTypes)
+                        // 双重检查，防止其他线程已经完成排序
+                        if (!_isSorted)
                         {
-                            if (!injectorNames.ContainsKey(type))
+                            SortInjectors();
+                        }
+                    }
+                    finally
+                    {
+                        _rwLock.ExitWriteLock();
+                        _rwLock.EnterReadLock();
+                    }
+                }
+
+                var injectedTypes = new HashSet<Type>();
+                var injectorNames = new Dictionary<Type, string>(); // 记录每个类型是由哪个注入器处理的
+
+                int injectedCount = 0;
+                foreach (var entry in _injectors)
+                {
+                    try
+                    {
+                        int beforeCount = injectedTypes.Count;
+                        entry.Injector.Inject(target, resolver, injectedTypes);
+                        injectedCount++;
+
+                        // 检测是否有新类型被注入
+                        if (injectedTypes.Count > beforeCount)
+                        {
+                            // 记录新注入的类型
+                            foreach (var type in injectedTypes)
                             {
-                                injectorNames[type] = entry.Injector.GetType().Name;
-                            }
-                            else
-                            {
-                                // 冲突检测：同一类型被多个注入器处理
-                                ALog.Warn(
-                                    $"[AsakiGlobalInjector] Conflict detected: Type {type.Name} was already injected by {injectorNames[type]}, now also by {entry.Injector.GetType().Name}"
-                                );
+                                if (!injectorNames.ContainsKey(type))
+                                {
+                                    injectorNames[type] = entry.Injector.GetType().Name;
+                                }
+                                else
+                                {
+                                    // 冲突检测：同一类型被多个注入器处理
+                                    ALog.Warn(
+                                        $"[AsakiGlobalInjector] Conflict detected: Type {type.Name} was already injected by {injectorNames[type]}, now also by {entry.Injector.GetType().Name}"
+                                    );
+                                }
                             }
                         }
                     }
+                    catch (Exception ex)
+                    {
+                        ALog.Error(
+                            $"[AsakiGlobalInjector] Injector {entry.Injector.GetType().Name} failed to inject {target.GetType().Name}: {ex}"
+                        );
+                    }
                 }
-                catch (Exception ex)
-                {
-                    ALog.Error(
-                        $"[AsakiGlobalInjector] Injector {entry.Injector.GetType().Name} failed to inject {target.GetType().Name}: {ex}"
-                    );
-                }
-            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            ALog.Info(
-                $"[AsakiGlobalInjector] Injected {injectedCount} injectors into {target.GetType().Name}, types: {injectedTypes.Count}"
-            );
+                ALog.Info(
+                    $"[AsakiGlobalInjector] Injected {injectedCount} injectors into {target.GetType().Name}, types: {injectedTypes.Count}"
+                );
 #endif
+            }
+            finally
+            {
+                _rwLock.ExitReadLock();
+            }
         }
 
+        /// <summary>
+        /// 对注入器按优先级进行排序
+        /// 注意：此方法必须在写锁内调用
+        /// </summary>
         private static void SortInjectors()
         {
             _injectors.Sort((a, b) => a.Priority.CompareTo(b.Priority));
