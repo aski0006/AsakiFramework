@@ -47,11 +47,18 @@ namespace Asaki.Tests.Serialization
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
             );
             debugField?.SetValue(_saveService, true);
+            
+            // 设置配置
+            var configField = typeof(AsakiSaveService).GetField(
+                "_config",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
+            configField?.SetValue(_saveService, new Asaki.Core.FrameworkSettings.AsakiSaveConfig());
+            
             _saveService.OnInit();
 
-            // 创建槽位管理器
-            _slotManager = new AsakiSaveSlotManager();
-            _slotManager.Init(_saveService, _eventService);
+            // 创建槽位管理器（使用新的构造函数）
+            _slotManager = new AsakiSaveSlotManager(_saveService, _eventService);
             _slotManager.OnInit();
         }
 

@@ -26,8 +26,7 @@ namespace Asaki.Unity.Modules
 
         public void OnInit()
         {
-            _slotManager = new AsakiSaveSlotManager();
-            ((AsakiSaveSlotManager)_slotManager).Init(_saveService, _eventService);
+            _slotManager = new AsakiSaveSlotManager(_saveService, _eventService);
             _slotManager.OnInit();
 
             AsakiContext.Register<IAsakiSaveSlotManager>(_slotManager);

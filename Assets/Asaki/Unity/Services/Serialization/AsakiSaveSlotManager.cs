@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
-using Asaki.Core.FrameworkSettings;
 using Asaki.Core.Logging;
 using Asaki.Core.Serialization;
 using Asaki.Unity.Utils;
@@ -20,11 +19,8 @@ namespace Asaki.Unity.Services.Serialization
     {
         private const int DEFAULT_MAX_SLOTS = 99;
         private const string BACKUP_DIR_NAME = "Backups";
-        private const string META_FILE_NAME = "slot.meta";
-        private const string DATA_FILE_NAME = "data.bin";
 
         private IAsakiSaveService _saveService;
-        private IAsakiEventService _eventService;
         private string _rootPath;
         private string _backupPath;
         private Dictionary<int, AsakiSaveSlot> _slotCache;
@@ -38,34 +34,19 @@ namespace Asaki.Unity.Services.Serialization
         /// <inheritdoc />
         public int QuickSaveSlotIndex { get; private set; }
 
+        /// <summary>
+        /// 构造函数，从 SaveService.Config 获取配置
+        /// </summary>
+        /// <param name="saveService">保存服务接口</param>
+        /// <param name="eventService">事件服务接口（保留用于兼容性，事件由 SaveService 发布）</param>
         public AsakiSaveSlotManager(
             IAsakiSaveService saveService,
-            IAsakiEventService eventService,
-            int maxSlots = DEFAULT_MAX_SLOTS,
-            int autoSaveSlotIndex = 0,
-            int quickSaveSlotIndex = 1
-        )
+            IAsakiEventService eventService)
         {
             _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
-            _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
-            MaxSlots = Mathf.Clamp(maxSlots, 1, 999);
-            AutoSaveSlotIndex = Mathf.Clamp(autoSaveSlotIndex, 0, MaxSlots - 1);
-            QuickSaveSlotIndex = Mathf.Clamp(quickSaveSlotIndex, 0, MaxSlots - 1);
             _slotCache = new Dictionary<int, AsakiSaveSlot>();
-        }
 
-        // 无参构造函数供框架使用（配合Init方法）
-        public AsakiSaveSlotManager()
-        {
-            _slotCache = new Dictionary<int, AsakiSaveSlot>();
-        }
-
-        public void Init(IAsakiSaveService saveService, IAsakiEventService eventService)
-        {
-            _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
-            _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));
-
-            // 尝试从 SaveService 获取配置
+            // 从 SaveService 获取配置
             if (saveService is AsakiSaveService asakiSaveService && asakiSaveService.Config != null)
             {
                 var config = asakiSaveService.Config;
@@ -81,17 +62,46 @@ namespace Asaki.Unity.Services.Serialization
             }
         }
 
+        /// <summary>
+        /// 初始化方法，用于框架兼容性
+        /// 如果构造函数已设置依赖，则跳过初始化
+        /// </summary>
+        /// <param name="saveService">保存服务接口</param>
+        /// <param name="eventService">事件服务接口（保留用于兼容性）</param>
+        public void Init(IAsakiSaveService saveService, IAsakiEventService eventService)
+        {
+            // 配置已在构造函数中初始化，此方法保留用于兼容性
+            // 如果 _saveService 已设置，则跳过
+            if (_saveService != null) return;
+
+            _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
+
+            // 从 SaveService 获取配置
+            if (saveService is AsakiSaveService asakiSaveService && asakiSaveService.Config != null)
+            {
+                var config = asakiSaveService.Config;
+                MaxSlots = config.MaxSlots;
+                AutoSaveSlotIndex = config.AutoSaveSlotIndex;
+                QuickSaveSlotIndex = config.QuickSaveSlotIndex;
+            }
+            else
+            {
+                MaxSlots = DEFAULT_MAX_SLOTS;
+                AutoSaveSlotIndex = 0;
+                QuickSaveSlotIndex = 1;
+            }
+        }
+
+        /// <summary>
+        /// 初始化回调方法，设置路径并刷新槽位缓存
+        /// </summary>
         public void OnInit()
         {
-            // 使用 SaveService 的路径，确保与保存服务一致
-            _rootPath =
-                _saveService?.SaveDirectoryPath
-                ?? Path.Combine(Application.persistentDataPath, "Saves");
+            // 使用 SaveService 的路径
+            _rootPath = _saveService.SaveDirectoryPath;
             _backupPath = Path.Combine(_rootPath, BACKUP_DIR_NAME);
 
-            // 确保目录存在
-            if (!Directory.Exists(_rootPath))
-                Directory.CreateDirectory(_rootPath);
+            // 确保备份目录存在
             if (!Directory.Exists(_backupPath))
                 Directory.CreateDirectory(_backupPath);
 
@@ -318,13 +328,11 @@ namespace Asaki.Unity.Services.Serialization
             slot.Status = AsakiSaveSlotStatus.Occupied;
             slot.GameVersion = Application.version;
 
-            // 保存元数据和游戏数据
+            // 保存元数据和游戏数据（事件由 SaveService 发布）
             await SaveSlotDataAsync(slotId, slot, data, token);
 
             // 更新缓存
             _slotCache[slotId] = slot;
-
-            _eventService.Publish(new AsakiSaveSuccessEvent { Filename = $"Slot_{slotId}" });
 
             ALog.Info($"[AsakiSaveSlotManager] Saved to slot {slotId}: {saveName}");
 
@@ -392,7 +400,13 @@ namespace Asaki.Unity.Services.Serialization
             }
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// 复制存档到另一个槽位
+        /// </summary>
+        /// <param name="sourceSlotId">源槽位ID</param>
+        /// <param name="targetSlotId">目标槽位ID，如果为-1则自动选择第一个空槽位</param>
+        /// <param name="token">取消令牌</param>
+        /// <returns>目标槽位信息</returns>
         public async UniTask<IAsakiSaveSlot> CopySaveAsync(
             int sourceSlotId,
             int targetSlotId = -1,
@@ -412,24 +426,15 @@ namespace Asaki.Unity.Services.Serialization
             if (targetSlotId < 0 || targetSlotId >= MaxSlots)
                 throw new ArgumentOutOfRangeException(nameof(targetSlotId));
 
-            var sourceDir = GetSlotDir(sourceSlotId);
-            var targetDir = GetSlotDir(targetSlotId);
+            // 使用 SaveService 复制
+            bool success = await _saveService.CopySlotAsync(sourceSlotId, targetSlotId, token);
+            if (!success)
+                throw new IOException($"Failed to copy slot {sourceSlotId} to {targetSlotId}");
 
-            // 确保目标目录存在
-            if (!Directory.Exists(targetDir))
-                Directory.CreateDirectory(targetDir);
-
-            // 复制所有文件
-            var files = Directory.GetFiles(sourceDir);
-            foreach (var file in files)
-            {
-                var fileName = Path.GetFileName(file);
-                var destFile = Path.Combine(targetDir, fileName);
-                File.Copy(file, destFile, true);
-            }
-
-            // 更新元数据
+            // 刷新目标槽位信息
             await RefreshSlotAsync(targetSlotId, token);
+
+            // 更新元数据，添加 "(复制)" 后缀
             if (_slotCache.TryGetValue(targetSlotId, out var slot))
             {
                 slot.SaveName = $"{slot.SaveName} (复制)";
@@ -442,8 +447,14 @@ namespace Asaki.Unity.Services.Serialization
             return GetSlotInfo(targetSlotId);
         }
 
-        /// <inheritdoc />
-        public UniTask<IAsakiSaveSlot> CreateBackupAsync(
+        /// <summary>
+        /// 创建存档备份
+        /// </summary>
+        /// <param name="slotId">槽位ID</param>
+        /// <param name="backupName">备份名称，如果为null则自动生成</param>
+        /// <param name="token">取消令牌</param>
+        /// <returns>备份信息</returns>
+        public async UniTask<IAsakiSaveSlot> CreateBackupAsync(
             int slotId,
             string backupName = null,
             CancellationToken token = default
@@ -455,17 +466,12 @@ namespace Asaki.Unity.Services.Serialization
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             var backupDir = Path.Combine(_backupPath, $"Slot_{slotId}_Backup_{timestamp}");
 
-            Directory.CreateDirectory(backupDir);
+            // 使用 SaveService 导出
+            bool success = await _saveService.ExportSlotAsync(slotId, backupDir, token);
+            if (!success)
+                throw new IOException($"Failed to create backup for slot {slotId}");
 
-            var sourceDir = GetSlotDir(slotId);
-            var files = Directory.GetFiles(sourceDir);
-            foreach (var file in files)
-            {
-                var destFile = Path.Combine(backupDir, Path.GetFileName(file));
-                File.Copy(file, destFile, true);
-            }
-
-            // 创建备份信息文件
+            // 创建备份信息
             var backupInfo = new AsakiSaveSlot
             {
                 SlotId = slotId,
@@ -476,7 +482,7 @@ namespace Asaki.Unity.Services.Serialization
 
             ALog.Info($"[AsakiSaveSlotManager] Created backup for slot {slotId} at {backupDir}");
 
-            return UniTask.FromResult<IAsakiSaveSlot>(backupInfo);
+            return backupInfo;
         }
 
         /// <inheritdoc />
@@ -548,22 +554,24 @@ namespace Asaki.Unity.Services.Serialization
         // 私有方法
         // =========================================================
 
+        /// <summary>
+        /// 获取槽位目录路径
+        /// </summary>
+        /// <param name="slotId">槽位ID</param>
+        /// <returns>槽位目录路径</returns>
         private string GetSlotDir(int slotId)
         {
-            return _saveService?.GetSlotDirectory(slotId)
-                ?? Path.Combine(_rootPath, $"Slot_{slotId}");
+            return _saveService.GetSlotDirectory(slotId);
         }
 
+        /// <summary>
+        /// 获取槽位元数据文件路径
+        /// </summary>
+        /// <param name="slotId">槽位ID</param>
+        /// <returns>元数据文件路径</returns>
         private string GetMetaPath(int slotId)
         {
-            return _saveService?.GetSlotMetaPath(slotId)
-                ?? Path.Combine(GetSlotDir(slotId), META_FILE_NAME);
-        }
-
-        private string GetDataPath(int slotId)
-        {
-            return _saveService?.GetSlotDataPath(slotId)
-                ?? Path.Combine(GetSlotDir(slotId), DATA_FILE_NAME);
+            return _saveService.GetSlotMetaPath(slotId);
         }
 
         private AsakiSaveSlot GetOrCreateSlotInfo(int slotId)
@@ -581,14 +589,21 @@ namespace Asaki.Unity.Services.Serialization
             return slot;
         }
 
+        /// <summary>
+        /// 刷新单个槽位的信息
+        /// 注意：元数据文件读取是 SlotManager 缓存刷新的特例，
+        /// 不通过 SaveService 进行，因为缓存刷新只需要元数据而不需要游戏数据。
+        /// </summary>
+        /// <param name="slotId">槽位ID</param>
+        /// <param name="token">取消令牌</param>
         private async UniTask RefreshSlotAsync(int slotId, CancellationToken token = default)
         {
-            var slotDir = GetSlotDir(slotId);
-            var metaPath = GetMetaPath(slotId);
-            var dataPath = GetDataPath(slotId);
+            var slotDir = _saveService.GetSlotDirectory(slotId);
+            var metaPath = _saveService.GetSlotMetaPath(slotId);
             var lockFile = Path.Combine(slotDir, ".locked");
 
-            if (!Directory.Exists(slotDir) || !File.Exists(dataPath))
+            // 使用 SaveService 检查槽位存在性
+            if (!_saveService.SlotExists(slotId))
             {
                 _slotCache[slotId] = new AsakiSaveSlot
                 {
@@ -620,7 +635,7 @@ namespace Asaki.Unity.Services.Serialization
                     slot.Deserialize(reader);
                     slot.SlotId = slotId;
                     slot.Status = AsakiSaveSlotStatus.Occupied;
-                    slot.FileSize = new FileInfo(dataPath).Length;
+                    slot.FileSize = _saveService.GetSlotFileSize(slotId);
 
                     _slotCache[slotId] = slot;
                     return;
@@ -637,15 +652,15 @@ namespace Asaki.Unity.Services.Serialization
             // 尝试从二进制数据恢复基本信息
             try
             {
-                var fileInfo = new FileInfo(dataPath);
-                var unixMs = new DateTimeOffset(fileInfo.LastWriteTimeUtc).ToUnixTimeMilliseconds();
+                var fileSize = _saveService.GetSlotFileSize(slotId);
+                var lastModified = _saveService.GetSlotLastModifiedTime(slotId);
                 _slotCache[slotId] = new AsakiSaveSlot
                 {
                     SlotId = slotId,
                     Status = AsakiSaveSlotStatus.Occupied,
-                    LastSaveTime = unixMs,
-                    LastModifyTime = unixMs,
-                    FileSize = fileInfo.Length,
+                    LastSaveTime = lastModified,
+                    LastModifyTime = lastModified,
+                    FileSize = fileSize,
                     SaveName = $"存档 {slotId + 1} (未知)",
                 };
             }
@@ -665,6 +680,14 @@ namespace Asaki.Unity.Services.Serialization
             return File.Exists(lockFile);
         }
 
+        /// <summary>
+        /// 保存槽位数据，委托给 SaveService 处理
+        /// </summary>
+        /// <typeparam name="TData">数据类型</typeparam>
+        /// <param name="slotId">槽位ID</param>
+        /// <param name="slot">槽位元数据</param>
+        /// <param name="data">游戏数据</param>
+        /// <param name="token">取消令牌</param>
         private async UniTask SaveSlotDataAsync<TData>(
             int slotId,
             AsakiSaveSlot slot,
@@ -673,36 +696,18 @@ namespace Asaki.Unity.Services.Serialization
         )
             where TData : IAsakiSavable
         {
-            var slotDir = GetSlotDir(slotId);
-            if (!Directory.Exists(slotDir))
-                Directory.CreateDirectory(slotDir);
-
-            // 保存元数据
-            await SaveSlotMetaAsync(slotId, slot, token);
-
-            // 保存游戏数据（复用现有服务）
-            // 注意：这里我们绕过 SaveSlotAsync，直接保存数据部分
-            var dataPath = GetDataPath(slotId);
-            byte[] dataBuffer;
-            using (var ms = new MemoryStream())
-            {
-                var writer = new AsakiBinaryWriter(ms);
-                data.Serialize(writer);
-                dataBuffer = ms.ToArray();
-            }
-
-#if ASAKI_USE_UNITASK
-            await UniTask.SwitchToThreadPool();
-#endif
-            await File.WriteAllBytesAsync(dataPath, dataBuffer, token);
-#if ASAKI_USE_UNITASK
-            await UniTask.SwitchToMainThread();
-#endif
-
-            // 更新文件大小
-            slot.FileSize = dataBuffer.Length;
+            await _saveService.SaveSlotAsync(slotId, slot, data, token);
+            slot.FileSize = _saveService.GetSlotFileSize(slotId);
         }
 
+        /// <summary>
+        /// 保存槽位元数据
+        /// 注意：此方法用于 SlotManager 特有的元数据更新操作（如复制后添加后缀），
+        /// 主要的保存操作应通过 SaveService.SaveSlotAsync 进行。
+        /// </summary>
+        /// <param name="slotId">槽位ID</param>
+        /// <param name="slot">槽位元数据</param>
+        /// <param name="token">取消令牌</param>
         private async UniTask SaveSlotMetaAsync(
             int slotId,
             AsakiSaveSlot slot,
@@ -724,42 +729,21 @@ namespace Asaki.Unity.Services.Serialization
             }
         }
 
+        /// <summary>
+        /// 加载槽位数据，委托给 SaveService 处理
+        /// </summary>
+        /// <typeparam name="TData">数据类型</typeparam>
+        /// <param name="slotId">槽位ID</param>
+        /// <param name="token">取消令牌</param>
+        /// <returns>槽位元数据和游戏数据的元组</returns>
         private async UniTask<(AsakiSaveSlot Slot, TData Data)> LoadSlotDataAsync<TData>(
             int slotId,
             CancellationToken token
         )
             where TData : IAsakiSavable, new()
         {
-            var dataPath = GetDataPath(slotId);
-            var metaPath = GetMetaPath(slotId);
-
-            // 读取元数据
-            AsakiSaveSlot slot = null;
-            if (File.Exists(metaPath))
-            {
-                var metaText = await File.ReadAllTextAsync(metaPath, token);
-                slot = new AsakiSaveSlot();
-                var reader = AsakiJsonReader.FromJson(metaText);
-                slot.Deserialize(reader);
-                slot.SlotId = slotId;
-            }
-
-            // 读取游戏数据
-            byte[] dataBytes = await File.ReadAllBytesAsync(dataPath, token);
-            var data = new TData();
-
-            await UniTask.SwitchToMainThread();
-
-            using (var ms = new MemoryStream(dataBytes))
-            {
-                var reader = new AsakiBinaryReader(ms);
-                data.Deserialize(reader);
-            }
-
-            return (
-                slot ?? new AsakiSaveSlot { SlotId = slotId, SaveName = $"存档 {slotId + 1}" },
-                data
-            );
+            var (slot, data) = await _saveService.LoadSlotAsync<AsakiSaveSlot, TData>(slotId, token);
+            return (slot, data);
         }
     }
 }
