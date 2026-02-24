@@ -2,6 +2,81 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [1.4.0] - 2025-02-24
+
+### Added
+
+#### 生命周期与注册时序增强
+- **动态注册窗口机制** - `AsakiContext` 支持运行时动态注册服务
+  - `EnterDynamicPhase()` / `ExitDynamicPhase()` 方法控制动态注册阶段
+  - 支持嵌套调用，使用计数器管理
+  - 插件系统可在动态阶段注册新服务类型
+
+- **模块可选性与错误隔离** - 增强模块加载容错能力
+  - `AsakiModuleAttribute.Optional` 属性标记可选模块
+  - `AsakiModuleAttribute.TimeoutMs` 属性设置初始化超时
+  - 可选模块失败不影响框架启动
+  - `ModuleLoadResult` / `ModuleLoadSummary` 提供详细加载报告
+
+- **场景上下文构建状态机** - `AsakiSceneContext.Build()` 状态管理
+  - `BuildState` 枚举：NotBuilt, Building, Built, Failed
+  - 构建失败时记录异常，防止重复尝试
+  - `State` 和 `BuildException` 属性公开查询
+
+#### 依赖注入机制健壮性增强
+- **循环依赖检测** - 防止服务解析时的无限递归
+  - `CircularDependencyException` 异常类，包含完整依赖链信息
+  - `AsakiResolveContext` 使用 `AsyncLocal<HashSet<Type>>` 线程隔离
+  - 所有 Resolver 实现（Global、Transient、Scene）支持循环依赖检测
+
+- **注入器类型冲突检测** - 警告同一类型被多个注入器处理
+  - `IAsakiInjector.Inject` 接口新增 `injectedTypes` 参数
+  - 冲突时输出警告日志，帮助发现配置问题
+
+- **AsakiTransientResolver 类型安全** - 防止参数误用
+  - 构造函数验证参数是否实现 `IAsakiService`
+  - 开发模式下输出警告日志
+
+#### 并发与线程安全增强
+- **服务清理前事件** - `OnAsakiContextClearingEvent`
+  - 在 `AsakiContext.ClearAll()` 销毁服务前发布
+  - 允许使用者提前释放服务引用
+
+- **线程安全销毁接口** - `IAsakiThreadSafeDisposable`
+  - 实现此接口的服务在锁内销毁，确保线程安全
+
+- **注入器线程安全注册** - `AsakiGlobalInjector` 支持运行时动态注册
+  - 使用 `ReaderWriterLockSlim` 读写锁
+  - 支持并发注册与注入操作
+
+#### 内存安全与重复检测增强
+- **弱引用事件订阅** - `AsakiBroker.SubscribeWeak<T>()`
+  - 使用弱引用存储处理程序，避免内存泄漏
+  - 无效弱引用在发布事件时自动清理
+
+- **AsakiMono 取消订阅安全** - 组件销毁时强制取消订阅
+  - `OnDestroy()` 中调用 `AsakiUnregister()`
+  - 防止组件销毁后事件订阅残留
+
+- **全局服务重复实例检测** - 编辑器下检测重复全局服务
+  - `AsakiBootstrapper` 初始化时检测重复实例
+  - 输出警告并跳过重复实例
+
+#### 依赖注入日志增强
+- **源服务追踪** - `AsakiResolveContext.SetSourceType()`
+  - 记录注入请求的发起者信息
+  - 便于追踪完整的依赖关系链
+
+- **标准化日志格式** - 统一的依赖注入日志格式
+  - `[DI] Resolve | Type: xxx | Status: xxx | Source: xxx | Duration: xxxms`
+  - `[DI] Inject | Source: xxx | Status: xxx | Duration: xxxms`
+  - `[DI] InjectComplete | Target: xxx | Success: xxx | Failure: xxx | Duration: xxxms`
+
+### Changed
+- `AsakiContext.Get()` 新增非泛型重载 `Get(Type type)`
+- `AsakiModuleLoader.Startup()` 返回 `ModuleLoadSummary` 汇总
+- `IAsakiInjector.Inject` 接口签名新增 `injectedTypes` 参数
+
 ## [1.3.15] - 2025-02-22
 
 ### Added
