@@ -2,6 +2,34 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.2.0] - 2026-02-25
+
+### Added
+
+#### Architecture 生命周期增强
+- **新增 OnStart() 生命周期方法** - Architecture 初始化完成时的回调
+  - 在所有 System 启动完成后、注册到 ArchitectureRegister 前调用
+  - 子类可重写此方法以执行自定义初始化逻辑
+  - 提供更细粒度的生命周期控制
+
+- **新增 OnAsakiArchitectureReadyEvent 事件** - Architecture 启动完成事件
+  - 当 Architecture 完成所有初始化流程后发布此事件
+  - 包含 ArchitectureType 和 Architecture 实例引用
+  - 便于外部系统监听 Architecture 初始化状态
+
+- **新增 ArchitectureHost 泛型类** - 支持跨场景持久化的 Architecture
+  - 继承 AsakiMono 并实现 IAsakiGlobalService
+  - 自动设置 DontDestroyOnLoad 实现跨场景持久化
+  - 线程安全的实例创建和销毁机制
+  - 与 AsakiBootstrapper 集成，确保正确的初始化顺序
+
+### Fixed
+
+#### 线程安全优化
+- **优化全局注入器的锁机制** - 避免竞争条件
+  - 修复多线程环境下可能出现的竞争条件问题
+  - 提升并发场景下的稳定性
+
 ## [2.1.0] - 2026-02-25
 
 ### Added
