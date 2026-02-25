@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Asaki.Core.Broker;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
 using Asaki.Core.Logging;
@@ -57,6 +58,13 @@ namespace Asaki.Core.Architecture
                 BindSimulation(system); // Start 之后再绑定 Simulation
             }
 
+            // 标记初始化完成
+            _isInited = true;
+
+            // 调用OnStart生命周期方法
+            OnStart();
+
+            // 注册到ArchitectureRegister
             if (_architectureRegister == null)
             {
                 ALog.Error(
@@ -68,11 +76,20 @@ namespace Asaki.Core.Architecture
                 _architectureRegister.RegisterArchitecture((IAsakiArchitecture)this);
             }
 
-            _isInited = true;
+            // 发布Architecture启动完成事件
+            AsakiBroker.Publish(new Events.OnAsakiArchitectureReadyEvent(GetType(), this));
+
             ALog.Info(
                 $"[AsakiArchitecture] {GetType().Name} initialized. (M:{_models.Count}, S:{_systems.Count})"
             );
         }
+
+        /// <summary>
+        /// Architecture启动完成时的生命周期方法。
+        /// 在所有System启动完成后、注册到ArchitectureRegister前调用。
+        /// 子类可重写此方法以执行自定义初始化逻辑。
+        /// </summary>
+        protected virtual void OnStart() { }
 
         protected abstract void OnSetup();
 
