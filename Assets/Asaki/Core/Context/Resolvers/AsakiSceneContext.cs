@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Asaki.Core.Attributes;
 using Asaki.Core.Broker;
 using Asaki.Core.Logging;
@@ -224,13 +225,27 @@ namespace Asaki.Core.Context.Resolvers
         }
 
         /// <summary>
-        /// 递归收集服务组件，带深度限制
+        /// 递归收集服务组件，带深度限制防止无限递归。
         /// </summary>
-        /// <param name="parent">当前遍历的 Transform</param>
-        /// <param name="currentDepth">当前深度</param>
-        /// <param name="maxDepth">最大深度限制</param>
+        /// <param name="parent">当前遍历的 Transform 节点。</param>
+        /// <param name="currentDepth">当前递归深度，从0开始计数。</param>
+        /// <param name="maxDepth">最大深度限制，超过此深度将停止递归并发出警告。</param>
+        /// <remarks>
+        /// 采用深度优先遍历策略，使用反向迭代器避免 enumerator 分配。
+        /// 当达到最大深度时，会发出警告日志并停止该分支的递归扫描。
+        /// </remarks>
         private void CollectServicesRecursive(Transform parent, int currentDepth, int maxDepth)
         {
+            // 检查深度限制：超过限制时发出警告并停止递归
+            if (currentDepth >= maxDepth)
+            {
+                ALog.Warn(
+                    $"[AsakiSceneContext] Recursion depth limit ({maxDepth}) exceeded at '{parent.name}'. " +
+                    $"Current depth: {currentDepth}. Service scan stopped for this branch."
+                );
+                return;
+            }
+
             // 获取组件 (使用非分配方式)
             var services = parent.GetComponents<IAsakiSceneService>();
             foreach (IAsakiSceneService service in services)
@@ -241,18 +256,6 @@ namespace Asaki.Core.Context.Resolvers
                 }
             }
 
-            // 检查深度限制
-            if (currentDepth >= maxDepth)
-            {
-                if (currentDepth == maxDepth)
-                {
-                    ALog.Warn(
-                        $"[AsakiSceneContext] Max recursion depth ({maxDepth}) reached at {parent.name}. Stopping scan."
-                    );
-                }
-                return;
-            }
-
             // 遍历子对象 (使用反向迭代器避免 enumerator 分配)
             for (int i = parent.childCount - 1; i >= 0; i--)
             {
@@ -261,32 +264,51 @@ namespace Asaki.Core.Context.Resolvers
         }
 
         /// <summary>
-        /// 构建上下文。
+        /// 构建上下文，执行待初始化服务的依赖注入。
         /// 此方法必须由 Bootstrapper 在确认全局环境（如 SimulationService）就绪后调用。
         /// </summary>
+        /// <param name="callerMember">调用方成员名称（由编译器自动填充）</param>
+        /// <param name="callerFile">调用方文件路径（由编译器自动填充）</param>
         /// <remarks>
         /// 状态转换：
         /// - NotBuilt -> Building -> Built (成功)
         /// - NotBuilt -> Building -> Failed (异常)
         /// - Built/Failed -> 直接返回（不重复构建）
+        ///
+        /// 调用来源追踪：
+        /// 使用 CallerMemberName 和 CallerFilePath 特性自动记录调用来源，
+        /// 便于调试时序问题和追踪多次调用场景。
         /// </remarks>
-        public void Build()
+        public void Build(
+            [CallerMemberName] string callerMember = "",
+            [CallerFilePath] string callerFile = ""
+        )
         {
             // 快速路径检查 (无锁)：已构建或已失败时直接返回
             if (_buildState == BuildState.Built || _buildState == BuildState.Failed)
+            {
+                ALog.Info(
+                    $"[AsakiSceneContext] Build skipped (State: {_buildState}). Called from: {callerMember} in {callerFile}"
+                );
                 return;
+            }
 
             lock (_buildLock)
             {
                 // 双重检查锁定 (Double-Check Lock)
                 if (_buildState == BuildState.Built || _buildState == BuildState.Failed)
+                {
+                    ALog.Info(
+                        $"[AsakiSceneContext] Build skipped after lock (State: {_buildState}). Called from: {callerMember} in {callerFile}"
+                    );
                     return;
+                }
 
                 // 设置状态为构建中
                 _buildState = BuildState.Building;
 
                 ALog.Info(
-                    $"[AsakiSceneContext] Building {_pendingInitServices.Count} pending services..."
+                    $"[AsakiSceneContext] Build started for {_pendingInitServices.Count} services. Called from: {callerMember} in {callerFile}"
                 );
 
                 int successCount = 0;
@@ -320,12 +342,14 @@ namespace Asaki.Core.Context.Resolvers
                     if (failCount > 0)
                     {
                         ALog.Warn(
-                            $"[AsakiSceneContext] Build completed with {failCount} failures, {successCount} successes."
+                            $"[AsakiSceneContext] Build completed with {failCount} failures, {successCount} successes. Called from: {callerMember} in {callerFile}"
                         );
                     }
                     else
                     {
-                        ALog.Info("[AsakiSceneContext] Build Complete.");
+                        ALog.Info(
+                            $"[AsakiSceneContext] Build completed successfully with {successCount} services. Called from: {callerMember} in {callerFile}"
+                        );
                     }
                 }
                 catch (Exception ex)
@@ -334,7 +358,9 @@ namespace Asaki.Core.Context.Resolvers
                     _buildException = ex;
                     _buildState = BuildState.Failed;
 
-                    ALog.Error($"[AsakiSceneContext] Build failed with exception: {ex}");
+                    ALog.Error(
+                        $"[AsakiSceneContext] Build failed with exception. Called from: {callerMember} in {callerFile}. Exception: {ex}"
+                    );
                 }
             }
         }

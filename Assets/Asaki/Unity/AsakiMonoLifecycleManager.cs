@@ -13,17 +13,17 @@ namespace Asaki.Unity
         : IAsakiHandler<OnAsakiFrameworkReadyEvent>,
             IDisposable
     {
-        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() =>
-            new AsakiMonoLifecycleManager()
-        );
+        private static readonly Lazy<AsakiMonoLifecycleManager> _instance =
+            new(() => new AsakiMonoLifecycleManager());
         public static AsakiMonoLifecycleManager Instance => _instance.Value;
 
         private enum InitState
         {
-            Pending,
-            Injected,
-            Activated,
-            Destroyed,
+            Pending, // 等待注入
+            Injected, // 注入成功
+            Activated, // 激活成功
+            InjectionFailed, // 注入失败
+            Destroyed, // 已销毁
         }
 
         private class ComponentState
@@ -131,11 +131,19 @@ namespace Asaki.Unity
             }
         }
 
-        // 提供给 AsakiMono.Awake 调用的快速通道
-        public void ProcessComponentImmediately(AsakiMono component)
+        /// <summary>
+        /// 立即处理组件的注入和激活流程。
+        /// <para>提供给 AsakiMono.Awake 调用的快速通道，在框架就绪时立即执行注入。</para>
+        /// <para>状态机转换：Pending -> Injected -> Activated（成功）或 Pending -> InjectionFailed（失败）</para>
+        /// </summary>
+        /// <param name="component">要处理的 AsakiMono 组件</param>
+        /// <returns>注入是否成功。true 表示注入成功且组件已激活；false 表示注入失败或参数无效。</returns>
+        public bool ProcessComponentImmediately(AsakiMono component)
         {
             if (!_isFrameworkReady || component == null)
-                return;
+                return false;
+
+            bool injectionSuccess = false;
 
             try
             {
@@ -145,19 +153,34 @@ namespace Asaki.Unity
                     ALog.Info(
                         $"[Lifecycle] Skipping injection for {component.GetType().Name} - already injected by Bootstrapper as IAsakiGlobalService"
                     );
+                    injectionSuccess = true;
                 }
                 else if (component is IAsakiAutoInject)
                 {
                     // 获取 Resolver (优化：缓存 SceneContext 查找)
                     var resolver = GetResolverForComponent(component);
                     AsakiGlobalInjector.Inject(component, resolver);
+                    injectionSuccess = true;
                 }
-                component.ActivateFrameworkReady();
+                else
+                {
+                    // 既不是 IAsakiGlobalService 也不是 IAsakiAutoInject，视为成功
+                    injectionSuccess = true;
+                }
+
+                // 只有注入成功才激活组件
+                if (injectionSuccess)
+                {
+                    component.ActivateFrameworkReady();
+                }
             }
             catch (Exception ex)
             {
                 ALog.Error($"[Lifecycle] Failed to process {component.name}: {ex}");
+                injectionSuccess = false;
             }
+
+            return injectionSuccess;
         }
 
         public void OnEvent(in OnAsakiFrameworkReadyEvent e)
@@ -174,6 +197,10 @@ namespace Asaki.Unity
             ProcessQueue();
         }
 
+        /// <summary>
+        /// 处理待注入队列中的所有组件。
+        /// <para>根据注入结果更新组件状态：成功则 Activated，失败则 InjectionFailed。</para>
+        /// </summary>
         private void ProcessQueue()
         {
             while (_pendingInjection.Count > 0)
@@ -182,8 +209,8 @@ namespace Asaki.Unity
                 if (state.Component == null)
                     continue; // 已销毁
 
-                ProcessComponentImmediately(state.Component);
-                state.State = InitState.Activated;
+                bool success = ProcessComponentImmediately(state.Component);
+                state.State = success ? InitState.Activated : InitState.InjectionFailed;
             }
         }
 
@@ -196,6 +223,12 @@ namespace Asaki.Unity
             ReinjectGlobalServices(scene);
         }
 
+        /// <summary>
+        /// 重新注入持久化组件的全局服务依赖。
+        /// <para>当新场景加载时，持久化组件需要获取新场景的 Resolver 来注入场景特定的服务。</para>
+        /// <para>状态机转换：已激活的组件重新注入后会更新为 Injected 状态，激活后恢复为 Activated。</para>
+        /// </summary>
+        /// <param name="newScene">新加载的场景</param>
         private void ReinjectGlobalServices(Scene newScene)
         {
             IAsakiResolver newResolver = null;
@@ -229,16 +262,24 @@ namespace Asaki.Unity
                     {
                         try
                         {
+                            // 记录注入前的状态用于日志
+                            var previousState = state.State;
+
                             AsakiGlobalInjector.Inject(state.Component, newResolver);
+
+                            // 更新状态机：注入成功后状态更新为 Injected
+                            state.State = InitState.Injected;
                             ALog.Info(
-                                $"[Lifecycle] Re-injected persistent component: {state.Component.GetType().Name}"
+                                $"[Lifecycle] Re-injected persistent component: {state.Component.GetType().Name}, state: {previousState} -> Injected"
                             );
 
                             if (!state.Component.IsActivated)
                             {
                                 state.Component.ActivateFrameworkReady();
+                                // 激活成功后状态更新为 Activated
+                                state.State = InitState.Activated;
                                 ALog.Info(
-                                    $"[Lifecycle] Activated persistent component: {state.Component.GetType().Name}"
+                                    $"[Lifecycle] Activated persistent component: {state.Component.GetType().Name}, state: Injected -> Activated"
                                 );
                             }
                         }
@@ -246,6 +287,11 @@ namespace Asaki.Unity
                         {
                             ALog.Error(
                                 $"[Lifecycle] Failed to re-inject {state.Component.name}: {ex}"
+                            );
+                            // 注入失败时更新状态为 InjectionFailed，允许后续重试
+                            state.State = InitState.InjectionFailed;
+                            ALog.Warn(
+                                $"[Lifecycle] Persistent component injection failed: {state.Component.GetType().Name}, state: -> InjectionFailed"
                             );
                         }
                     }

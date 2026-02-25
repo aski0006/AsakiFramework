@@ -96,7 +96,7 @@ namespace Asaki.Core.Context
         /// <summary>
         /// 对目标对象执行全量注入，按优先级顺序调用所有注入器
         /// 支持类型追踪和冲突检测
-        /// 线程安全：使用读锁保护注入操作，需要排序时升级为写锁
+        /// 线程安全：使用可升级读锁保护注入操作，需要排序时升级为写锁
         /// </summary>
         /// <param name="target">目标对象</param>
         /// <param name="resolver">依赖解析器</param>
@@ -108,17 +108,21 @@ namespace Asaki.Core.Context
             var targetType = target.GetType();
             var totalStopwatch = Stopwatch.StartNew();
 
-            _rwLock.EnterReadLock();
+            // 使用可升级读锁模式，避免手动锁升级的竞争条件风险
+            // 可升级读锁允许在需要时升级为写锁，而不会产生死锁
+            _rwLock.EnterUpgradeableReadLock();
             try
             {
                 // 确保注入器按优先级排序
                 if (!_isSorted)
                 {
-                    // 需要升级为写锁进行排序
-                    _rwLock.ExitReadLock();
+                    // 在可升级读锁内获取写锁进行排序
+                    // ReaderWriterLockSlim 保证同一时间只有一个线程可以持有可升级读锁
+                    // 因此这里不会产生死锁
                     _rwLock.EnterWriteLock();
                     try
                     {
+                        // 双重检查：其他线程可能已经完成排序
                         if (!_isSorted)
                         {
                             SortInjectors();
@@ -127,7 +131,6 @@ namespace Asaki.Core.Context
                     finally
                     {
                         _rwLock.ExitWriteLock();
-                        _rwLock.EnterReadLock();
                     }
                 }
 
@@ -193,7 +196,7 @@ namespace Asaki.Core.Context
             }
             finally
             {
-                _rwLock.ExitReadLock();
+                _rwLock.ExitUpgradeableReadLock();
             }
         }
 

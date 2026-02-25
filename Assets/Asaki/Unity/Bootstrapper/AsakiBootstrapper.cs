@@ -36,7 +36,35 @@ namespace Asaki.Unity.Bootstrapper
 
         private static AsakiBootstrapper _instance;
         private static bool _isReady;
+
+        /// <summary>
+        /// 用于检测全局服务重复实例的集合
+        /// </summary>
         private static readonly HashSet<Type> _globalServiceTypes = new HashSet<Type>();
+
+        /// <summary>
+        /// 记录已成功完成依赖注入的全局服务类型
+        /// </summary>
+        private static readonly HashSet<Type> _injectedServiceTypes = new HashSet<Type>();
+
+        /// <summary>
+        /// 记录已执行初始化的全局服务类型，确保每个类型只初始化一次
+        /// </summary>
+        private static readonly HashSet<Type> _initializedServiceTypes = new HashSet<Type>();
+
+        /// <summary>
+        /// 在编辑器热重载或游戏启动时自动清理静态集合。
+        /// 使用 RuntimeInitializeLoadType.SubsystemRegistration 确保在域重载前执行，
+        /// 避免静态集合保留旧数据导致的问题。
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticCollections()
+        {
+            _globalServiceTypes.Clear();
+            _injectedServiceTypes.Clear();
+            _initializedServiceTypes.Clear();
+        }
+
         private IAsakiLoggingService _logService;
         private readonly List<GameObject> _instantiatedServiceObjects = new();
         private readonly List<IAsakiGlobalService> _allGlobalServices = new();
@@ -335,6 +363,11 @@ namespace Asaki.Unity.Bootstrapper
             return false;
         }
 
+        /// <summary>
+        /// 初始化全局服务，分为两个阶段：
+        /// Phase 1: 依赖注入 - 检测重复服务并执行注入
+        /// Phase 2: 引导初始化 - 调用 OnBootstrapInit 方法
+        /// </summary>
         private void InitializeGlobalServices()
         {
             ALog.Info("== [GlobalServices] Phase 1: Dependency Injection ==");
@@ -351,16 +384,19 @@ namespace Asaki.Unity.Bootstrapper
                     continue;
                 }
 
+                var serviceType = service.GetType();
                 try
                 {
                     AsakiGlobalInjector.Inject(service);
+                    // 只有成功注入的服务才记录到集合中
+                    _injectedServiceTypes.Add(serviceType);
                     injectSuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     injectFailCount++;
                     ALog.Error(
-                        $"[AsakiBootstrapper] Failed to inject service {service.GetType().Name}: {ex}"
+                        $"[AsakiBootstrapper] Failed to inject service {serviceType.Name}: {ex}"
                     );
                 }
             }
@@ -376,11 +412,19 @@ namespace Asaki.Unity.Bootstrapper
             int initSuccessCount = 0;
             int initFailCount = 0;
 
-            // 重置 HashSet 用于第二阶段检测（使用已记录的类型）
+            // 只初始化已成功注入的服务，并确保每个类型只初始化一次
             foreach (var service in _allGlobalServices)
             {
                 var serviceType = service.GetType();
-                if (!_globalServiceTypes.Contains(serviceType))
+
+                // 检查是否已成功注入
+                if (!_injectedServiceTypes.Contains(serviceType))
+                {
+                    continue;
+                }
+
+                // 检查是否已初始化，防止重复初始化
+                if (_initializedServiceTypes.Contains(serviceType))
                 {
                     continue;
                 }
@@ -388,13 +432,15 @@ namespace Asaki.Unity.Bootstrapper
                 try
                 {
                     service.OnBootstrapInit();
+                    // 记录已初始化的服务类型
+                    _initializedServiceTypes.Add(serviceType);
                     initSuccessCount++;
                 }
                 catch (Exception ex)
                 {
                     initFailCount++;
                     ALog.Error(
-                        $"[AsakiBootstrapper] Failed to initialize service {service.GetType().Name}: {ex}"
+                        $"[AsakiBootstrapper] Failed to initialize service {serviceType.Name}: {ex}"
                     );
                 }
             }
@@ -481,6 +527,8 @@ namespace Asaki.Unity.Bootstrapper
             SceneManager.sceneLoaded -= OnSceneLoaded;
             AsakiContext.ClearAll();
             _globalServiceTypes.Clear();
+            _injectedServiceTypes.Clear();
+            _initializedServiceTypes.Clear();
             ALog.Reset();
             _instance = null;
             _isReady = false;

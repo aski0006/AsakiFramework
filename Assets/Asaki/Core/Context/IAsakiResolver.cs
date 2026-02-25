@@ -65,11 +65,32 @@ namespace Asaki.Core.Context
     /// </summary>
     /// <remarks>
     /// 使用AsyncLocal实现线程隔离，确保异步环境下的解析链跟踪正确性。
+    /// 采用栈结构管理解析链，确保每个异步上下文拥有独立的解析链实例。
     /// </remarks>
     public static class AsakiResolveContext
     {
-        private static readonly AsyncLocal<HashSet<Type>> _resolveChain =
-            new AsyncLocal<HashSet<Type>>();
+        /// <summary>
+        /// 解析链上下文数据，封装单个异步上下文的解析链状态。
+        /// </summary>
+        private sealed class ResolveChainContext
+        {
+            /// <summary>
+            /// 当前解析链中的类型集合，用于快速检测循环依赖。
+            /// </summary>
+            public HashSet<Type> ChainSet { get; } = new HashSet<Type>();
+
+            /// <summary>
+            /// 解析链栈，按顺序记录解析路径，用于生成详细的错误信息。
+            /// </summary>
+            public Stack<Type> ChainStack { get; } = new Stack<Type>();
+        }
+
+        /// <summary>
+        /// 当前异步上下文的解析链数据。
+        /// 使用AsyncLocal确保异步上下文隔离。
+        /// </summary>
+        private static readonly AsyncLocal<ResolveChainContext> _context =
+            new AsyncLocal<ResolveChainContext>();
 
         /// <summary>
         /// 当前解析的源服务类型（用于日志追踪依赖关系）
@@ -77,18 +98,31 @@ namespace Asaki.Core.Context
         private static readonly AsyncLocal<Type> _sourceType = new AsyncLocal<Type>();
 
         /// <summary>
-        /// 获取当前线程的解析链。
+        /// 获取当前异步上下文的解析链上下文，如果不存在则创建新实例。
         /// </summary>
-        public static HashSet<Type> CurrentChain
+        /// <remarks>
+        /// 每次访问时检查是否需要创建新实例，确保异步上下文的独立性。
+        /// 当AsyncLocal在新的异步上下文中复制引用时，首次写入操作会触发新实例创建。
+        /// </remarks>
+        private static ResolveChainContext CurrentContext
         {
             get
             {
-                if (_resolveChain.Value == null)
+                if (_context.Value == null)
                 {
-                    _resolveChain.Value = new HashSet<Type>();
+                    _context.Value = new ResolveChainContext();
                 }
-                return _resolveChain.Value;
+                return _context.Value;
             }
+        }
+
+        /// <summary>
+        /// 获取当前解析链的只读快照，用于调试和错误报告。
+        /// </summary>
+        /// <returns>当前解析链的类型集合的只读副本。</returns>
+        public static IReadOnlyCollection<Type> GetCurrentChain()
+        {
+            return new List<Type>(CurrentContext.ChainSet);
         }
 
         /// <summary>
@@ -98,28 +132,62 @@ namespace Asaki.Core.Context
         /// <exception cref="CircularDependencyException">当检测到循环依赖时抛出。</exception>
         public static void BeginResolve(Type type)
         {
-            if (CurrentChain.Contains(type))
+            var context = CurrentContext;
+
+            if (context.ChainSet.Contains(type))
             {
-                throw new CircularDependencyException(type, CurrentChain);
+                throw new CircularDependencyException(type, context.ChainStack);
             }
-            CurrentChain.Add(type);
+
+            context.ChainSet.Add(type);
+            context.ChainStack.Push(type);
         }
 
         /// <summary>
         /// 结束解析指定类型，从解析链中移除。
         /// </summary>
         /// <param name="type">已完成解析的服务类型。</param>
+        /// <remarks>
+        /// 同时从集合和栈中移除，确保数据一致性。
+        /// </remarks>
         public static void EndResolve(Type type)
         {
-            CurrentChain.Remove(type);
+            var context = CurrentContext;
+
+            context.ChainSet.Remove(type);
+
+            // 从栈中移除（栈顶应该是当前类型）
+            if (context.ChainStack.Count > 0 && context.ChainStack.Peek() == type)
+            {
+                context.ChainStack.Pop();
+            }
         }
 
         /// <summary>
         /// 清空当前解析链，用于异常恢复场景。
         /// </summary>
+        /// <remarks>
+        /// 重置整个上下文，确保后续解析从干净状态开始。
+        /// </remarks>
         public static void Clear()
         {
-            CurrentChain.Clear();
+            var context = _context.Value;
+            if (context != null)
+            {
+                context.ChainSet.Clear();
+                context.ChainStack.Clear();
+            }
+        }
+
+        /// <summary>
+        /// 重置当前异步上下文，创建全新的解析链实例。
+        /// </summary>
+        /// <remarks>
+        /// 用于需要完全隔离的解析场景，确保不会继承父上下文的解析链状态。
+        /// </remarks>
+        public static void ResetContext()
+        {
+            _context.Value = new ResolveChainContext();
         }
 
         /// <summary>

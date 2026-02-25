@@ -163,6 +163,7 @@ namespace Asaki.Core.Context
 
         /// <summary>
         /// 内部注册方法，用于注册或替换服务。
+        /// <para>线程安全：所有写操作都在 _writeLock 内原子执行。</para>
         /// </summary>
         /// <param name="type">服务类型。</param>
         /// <param name="service">要注册或替换的服务实例，必须是实现了 <paramref name="type"/> 所表示类型的实例。</param>
@@ -180,6 +181,7 @@ namespace Asaki.Core.Context
                 );
 
             // 1. 获取写锁 (阻塞其他写入者，但不阻塞读取者)
+            // 所有状态检查和字典操作都在锁内原子执行，确保线程安全
             lock (_writeLock)
             {
                 // 2. 状态检查（动态阶段允许新服务注册）
@@ -199,16 +201,33 @@ namespace Asaki.Core.Context
                     );
                 }
 
-                // 4. 写时复制 (Copy - On - Write)
+                // 4. 替换操作验证：确保被替换的服务存在
+                if (isReplacement && !_services.ContainsKey(type))
+                {
+                    throw new InvalidOperationException(
+                        $"[AsakiContext] Cannot replace service '{type.Name}': service not registered. Use Register() instead."
+                    );
+                }
+
+                // 5. 记录替换操作日志（在锁内执行，确保日志顺序正确）
+                if (isReplacement)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    ALog.Info($"[AsakiContext] Service replacement: '{type.Name}' -> '{service.GetType().Name}'");
+#endif
+                }
+
+                // 6. 写时复制 (Copy - On - Write)
                 // 创建一个新字典，大小扩容一点防止频繁 Resize
                 var newServices = new Dictionary<Type, IAsakiService>(_services);
 
                 // 执行写入/覆盖
                 newServices[type] = service;
 
-                // 5. 原子交换 (Atomic Swap)
+                // 7. 原子交换 (Atomic Swap)
                 // 将引用指向新字典。此时所有新的 Get<T> 调用都会看到新数据。
                 // 旧字典会被 GC 回收 (只要没有读取者持有它)。
+                // volatile 写入确保所有线程立即看到新引用
                 _services = newServices;
             }
         }
