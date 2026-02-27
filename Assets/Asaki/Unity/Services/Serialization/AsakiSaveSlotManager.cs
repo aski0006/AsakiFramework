@@ -39,9 +39,7 @@ namespace Asaki.Unity.Services.Serialization
         /// </summary>
         /// <param name="saveService">保存服务接口</param>
         /// <param name="eventService">事件服务接口（保留用于兼容性，事件由 SaveService 发布）</param>
-        public AsakiSaveSlotManager(
-            IAsakiSaveService saveService,
-            IAsakiEventService eventService)
+        public AsakiSaveSlotManager(IAsakiSaveService saveService, IAsakiEventService eventService)
         {
             _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
             _slotCache = new Dictionary<int, AsakiSaveSlot>();
@@ -72,7 +70,8 @@ namespace Asaki.Unity.Services.Serialization
         {
             // 配置已在构造函数中初始化，此方法保留用于兼容性
             // 如果 _saveService 已设置，则跳过
-            if (_saveService != null) return;
+            if (_saveService != null)
+                return;
 
             _saveService = saveService ?? throw new ArgumentNullException(nameof(saveService));
 
@@ -742,7 +741,10 @@ namespace Asaki.Unity.Services.Serialization
         )
             where TData : IAsakiSavable, new()
         {
-            var (slot, data) = await _saveService.LoadSlotAsync<AsakiSaveSlot, TData>(slotId, token);
+            var (slot, data) = await _saveService.LoadSlotAsync<AsakiSaveSlot, TData>(
+                slotId,
+                token
+            );
             return (slot, data);
         }
     }

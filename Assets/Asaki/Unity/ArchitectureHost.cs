@@ -55,7 +55,9 @@ namespace Asaki.Unity
             {
                 if (_isDestroyed)
                 {
-                    ALog.Warn($"[ArchitectureHost] Attempted to initialize after destruction: {_architectureType.Name}");
+                    ALog.Warn(
+                        $"[ArchitectureHost] Attempted to initialize after destruction: {_architectureType.Name}"
+                    );
                     return;
                 }
 
@@ -68,11 +70,15 @@ namespace Asaki.Unity
                     // 设置跨场景持久化
                     DontDestroyOnLoad(gameObject);
 
-                    ALog.Info($"[ArchitectureHost] Created Architecture instance: {_architectureType.Name}");
+                    ALog.Info(
+                        $"[ArchitectureHost] Created Architecture instance: {_architectureType.Name}"
+                    );
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[ArchitectureHost] Failed to create Architecture instance: {_architectureType.Name}, Error: {ex}");
+                    ALog.Error(
+                        $"[ArchitectureHost] Failed to create Architecture instance: {_architectureType.Name}, Error: {ex}"
+                    );
                 }
             }
         }
@@ -90,19 +96,25 @@ namespace Asaki.Unity
             {
                 if (_isDestroyed)
                 {
-                    ALog.Warn($"[ArchitectureHost] Attempted to initialize after destruction: {_architectureType.Name}");
+                    ALog.Warn(
+                        $"[ArchitectureHost] Attempted to initialize after destruction: {_architectureType.Name}"
+                    );
                     return;
                 }
 
                 if (IsArchitectureInitialized)
                 {
-                    ALog.Warn($"[ArchitectureHost] Architecture already initialized: {_architectureType.Name}");
+                    ALog.Warn(
+                        $"[ArchitectureHost] Architecture already initialized: {_architectureType.Name}"
+                    );
                     return;
                 }
 
                 if (Architecture == null)
                 {
-                    ALog.Error($"[ArchitectureHost] Architecture instance is null during bootstrap init: {_architectureType.Name}");
+                    ALog.Error(
+                        $"[ArchitectureHost] Architecture instance is null during bootstrap init: {_architectureType.Name}"
+                    );
                     return;
                 }
 
@@ -112,11 +124,15 @@ namespace Asaki.Unity
                     Architecture.Inject(AsakiGlobalResolver.Instance);
                     IsArchitectureInitialized = true;
 
-                    ALog.Info($"[ArchitectureHost] Architecture initialized successfully: {_architectureType.Name}");
+                    ALog.Info(
+                        $"[ArchitectureHost] Architecture initialized successfully: {_architectureType.Name}"
+                    );
                 }
                 catch (Exception ex)
                 {
-                    ALog.Error($"[ArchitectureHost] Failed to initialize Architecture: {_architectureType.Name}, Error: {ex}");
+                    ALog.Error(
+                        $"[ArchitectureHost] Failed to initialize Architecture: {_architectureType.Name}, Error: {ex}"
+                    );
                     IsArchitectureInitialized = false;
                 }
             }
@@ -145,11 +161,15 @@ namespace Asaki.Unity
                     try
                     {
                         Architecture.Dispose();
-                        ALog.Info($"[ArchitectureHost] Architecture disposed: {_architectureType.Name}");
+                        ALog.Info(
+                            $"[ArchitectureHost] Architecture disposed: {_architectureType.Name}"
+                        );
                     }
                     catch (Exception ex)
                     {
-                        ALog.Error($"[ArchitectureHost] Error disposing Architecture: {_architectureType.Name}, Error: {ex}");
+                        ALog.Error(
+                            $"[ArchitectureHost] Error disposing Architecture: {_architectureType.Name}, Error: {ex}"
+                        );
                     }
                     finally
                     {

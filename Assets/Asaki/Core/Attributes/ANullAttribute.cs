@@ -10,7 +10,5 @@ namespace Asaki.Core.Attributes
     /// 这适用于某些功能可能在依赖不可用时需要优雅降级的场景。
     /// </remarks>
     [AttributeUsage(AttributeTargets.Parameter, AllowMultiple = false)]
-    public sealed class ANullAttribute : Attribute
-    {
-    }
+    public sealed class ANullAttribute : Attribute { }
 }

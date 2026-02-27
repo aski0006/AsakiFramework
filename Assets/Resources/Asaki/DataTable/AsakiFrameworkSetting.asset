@@ -1,0 +1,116 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 825e7577a77b4021b00a1bbbb0debaad, type: 3}
+  m_Name: AsakiFrameworkSetting
+  m_EditorClassIdentifier: 
+  tickRate: 60
+  defaultPoolSize: 128
+  _globalServiceRegistry: {fileID: 0}
+  logConfig:
+    MinLogLevel: 1
+    MaxFileSizeKB: 2048
+    MaxHistoryFiles: 10
+    FilePrefix: GameLog
+    OutputToUnityConsole: 1
+    DashboardRefreshInterval: 0.05
+  resConfig:
+    Mode: 0
+    TimeoutSeconds: 60
+  audioConfig:
+    AsakiSoundAgentPrefab: {fileID: 0}
+    InitialPoolSize: 16
+    MaxPoolSize: 100
+    Items: []
+  uiConfig:
+    ReferenceResolution: {x: 1920, y: 1080}
+    MatchWidthOrHeight: 0.5
+    UIList:
+    - Name: LoginPanel
+      ID: -1218050939
+      Layer: 1
+      AssetPath: Assets/Assets/UI/LoginScene/LoginPanel.prefab
+      UsePool: 0
+    Templates: []
+    ResourceReleaseDelaySeconds: 5
+  webConfig:
+    <BaseUrl>k__BackingField: 
+    <TimeoutSeconds>k__BackingField: 0
+    InitialInterceptors: []
+  saveConfig:
+    SaveDirectoryName: Saves
+    CustomSavePath: 
+    MaxSlots: 99
+    AutoSaveSlotIndex: 0
+    QuickSaveSlotIndex: 1
+    EnableBackup: 1
+    BackupDirectoryName: Backups
+    MaxBackupCount: 3
+    EnableDebugMode: 1
+    VerboseLogging: 0
+    OperationTimeout: 30
+    EnableCompression: 0
+    CompressionLevel: 6
+    AutoSave:
+      <Enabled>k__BackingField: 1
+      <Triggers>k__BackingField: 10
+      <TimeIntervalSeconds>k__BackingField: 300
+      <CountdownSeconds>k__BackingField: 3
+      <ShowNotification>k__BackingField: 1
+      <NotificationText>k__BackingField: "\u6B63\u5728\u81EA\u52A8\u4FDD\u5B58..."
+      <MaxAutoSaveCount>k__BackingField: 3
+      <GenerateThumbnail>k__BackingField: 1
+      <ThumbnailWidth>k__BackingField: 320
+      <ThumbnailHeight>k__BackingField: 180
+      <ThumbnailQuality>k__BackingField: 75
+      <CheckStorageSpace>k__BackingField: 1
+      <MinFreeSpaceMB>k__BackingField: 100
+      <MinIntervalBetweenSaves>k__BackingField: 60
+      <KeepLatestAutoSave>k__BackingField: 1
+      <SaveOnSceneEnter>k__BackingField: 0
+      <SaveOnSceneExit>k__BackingField: 1
+  poolGlobalConfig:
+    DefaultInitialSize: 10
+    DefaultMaxSize: 100
+    DefaultEnableValidation: 1
+    DefaultEnableCollectionCheck: 1
+    DefaultAllowSyncCreation: 0
+    DefaultOperationTimeout: 0
+    DefaultPrewarmItemsPerFrame: 5
+    DefaultPoolCapacity: 16
+    DefaultEnableAutoShrink: 1
+    DefaultCheckInterval: 30
+    DefaultIdleTimeout: 60
+    DefaultKeepMinSize: 5
+    DefaultShrinkRatio: 0.5
+    EventPoolDefaultThreshold: 32
+    EventPoolMaxSize: 64
+    StringBuilderPoolInitialCapacity: 32
+    StringBuilderMaxRetainCapacity: 65536
+    StringBuilderInitialCapacity: 1024
+    LogCommandPoolMaxSize: 256
+    ArchitecturePoolInitialSize: 0
+    ArchitecturePoolMaxSize: 128
+    ArchitecturePoolEnableValidation: 1
+    ArchitecturePoolEnableCollectionCheck: 0
+    ArchitecturePoolAllowSyncCreation: 1
+    AudioPoolDefaultInitialSize: 16
+    AudioPoolDefaultMaxSize: 100
+    AudioPoolDefaultActiveAgentCapacity: 32
+    LightWeightPoolDefaultMaxSize: 1024
+  timerConfig:
+    DefaultInitialCapacity: 64
+    MaxLoopIterations: 10
+    GlobalTimeScale: 1
+    EnableDebugLog: 0
+  references:
+    version: 2
+    RefIds: []

@@ -76,7 +76,8 @@ namespace Asaki.Unity.Services.Serialization
         public AsakiAutoSaveService(
             IAsakiSaveSlotManager slotManager,
             IAsakiEventService eventService,
-            AsakiSaveConfig config)
+            AsakiSaveConfig config
+        )
         {
             _slotManager = slotManager ?? throw new ArgumentNullException(nameof(slotManager));
             _eventService = eventService ?? throw new ArgumentNullException(nameof(eventService));

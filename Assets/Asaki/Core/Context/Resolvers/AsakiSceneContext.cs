@@ -240,8 +240,8 @@ namespace Asaki.Core.Context.Resolvers
             if (currentDepth >= maxDepth)
             {
                 ALog.Warn(
-                    $"[AsakiSceneContext] Recursion depth limit ({maxDepth}) exceeded at '{parent.name}'. " +
-                    $"Current depth: {currentDepth}. Service scan stopped for this branch."
+                    $"[AsakiSceneContext] Recursion depth limit ({maxDepth}) exceeded at '{parent.name}'. "
+                        + $"Current depth: {currentDepth}. Service scan stopped for this branch."
                 );
                 return;
             }
@@ -481,7 +481,9 @@ namespace Asaki.Core.Context.Resolvers
                 {
                     stopwatch.Stop();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    ALog.Info($"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                    ALog.Info(
+                        $"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                    );
 #endif
                     return (T)service;
                 }
@@ -489,14 +491,18 @@ namespace Asaki.Core.Context.Resolvers
                 var result = AsakiContext.Get<T>();
                 stopwatch.Stop();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                ALog.Info($"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: GlobalContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                ALog.Info(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: GlobalContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
 #endif
                 return result;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                ALog.Error($"[DI] Resolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                ALog.Error(
+                    $"[DI] Resolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
                 throw;
             }
             finally
@@ -530,7 +536,9 @@ namespace Asaki.Core.Context.Resolvers
                     service = (T)s;
                     stopwatch.Stop();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    ALog.Info($"[DI] TryResolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                    ALog.Info(
+                        $"[DI] TryResolve | Type: {targetType.Name} | Status: SUCCESS | Source: {sourceType?.Name ?? "Unknown"} | Provider: SceneContext | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                    );
 #endif
                     return true;
                 }
@@ -539,14 +547,18 @@ namespace Asaki.Core.Context.Resolvers
                 stopwatch.Stop();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 var provider = found ? "GlobalContext" : "NotFound";
-                ALog.Info($"[DI] TryResolve | Type: {targetType.Name} | Status: {(found ? "SUCCESS" : "NOT_FOUND")} | Source: {sourceType?.Name ?? "Unknown"} | Provider: {provider} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                ALog.Info(
+                    $"[DI] TryResolve | Type: {targetType.Name} | Status: {(found ? "SUCCESS" : "NOT_FOUND")} | Source: {sourceType?.Name ?? "Unknown"} | Provider: {provider} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
 #endif
                 return found;
             }
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                ALog.Error($"[DI] TryResolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms");
+                ALog.Error(
+                    $"[DI] TryResolve | Type: {targetType.Name} | Status: FAILURE | Source: {sourceType?.Name ?? "Unknown"} | Error: {ex.Message} | Duration: {stopwatch.Elapsed.TotalMilliseconds:F2}ms"
+                );
                 throw;
             }
             finally

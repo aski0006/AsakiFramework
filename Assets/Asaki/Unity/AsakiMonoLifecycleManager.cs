@@ -13,8 +13,9 @@ namespace Asaki.Unity
         : IAsakiHandler<OnAsakiFrameworkReadyEvent>,
             IDisposable
     {
-        private static readonly Lazy<AsakiMonoLifecycleManager> _instance =
-            new(() => new AsakiMonoLifecycleManager());
+        private static readonly Lazy<AsakiMonoLifecycleManager> _instance = new(() =>
+            new AsakiMonoLifecycleManager()
+        );
         public static AsakiMonoLifecycleManager Instance => _instance.Value;
 
         private enum InitState

@@ -213,7 +213,9 @@ namespace Asaki.Core.Context
                 if (isReplacement)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    ALog.Info($"[AsakiContext] Service replacement: '{type.Name}' -> '{service.GetType().Name}'");
+                    ALog.Info(
+                        $"[AsakiContext] Service replacement: '{type.Name}' -> '{service.GetType().Name}'"
+                    );
 #endif
                 }
 

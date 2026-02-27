@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using Asaki.Core.Serialization;
+using UnityEngine;
 
 namespace Asaki.Core.FrameworkSettings
 {
