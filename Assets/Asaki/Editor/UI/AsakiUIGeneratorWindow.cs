@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Asaki.Core.FrameworkSettings;
 using Asaki.Core.UI;
 using UnityEditor;
@@ -70,6 +71,15 @@ namespace Asaki.Editor.UI
             window.minSize = new Vector2(600, 400);
             window.Show();
             window.LoadCurrentConfig();
+        }
+
+        /// <summary>
+        /// 验证 UI 配置与 WindowAssetId 枚举的同步状态
+        /// </summary>
+        [MenuItem("Asaki/Window/Validate UI Config Sync", false, 42)]
+        public static void ValidateConfigSync()
+        {
+            ValidateConfigSyncInternal(autoFix: true);
         }
 
         private void OnGUI()
@@ -251,35 +261,75 @@ namespace Asaki.Editor.UI
             }
         }
 
+        /// <summary>
+        /// 同步配置并生成代码
+        /// </summary>
         private void SyncAndGenerate()
         {
             try
             {
                 EditorUtility.DisplayProgressBar("Asaki UI Gen", "Processing...", 0.5f);
 
-                // [修改] 获取主配置
+                // 获取主配置
                 AsakiFrameworkSetting mainFrameworkSetting = LoadOrCreateConfig();
 
                 GenerateCode(_items);
 
-                // [修改] 同步到 mainFrameworkSetting.UIConfig
+                // 同步到 mainFrameworkSetting.UIConfig
                 UpdateConfigData(mainFrameworkSetting, _items);
 
                 AssetDatabase.Refresh();
-                EditorUtility.DisplayDialog(
-                    "Success",
-                    $"Synced {_items.Count} items to AsakiFrameworkSetting & UIID.cs",
-                    "OK"
-                );
+
+                // 构建成功消息
+                string successMessage = BuildSuccessMessage();
+
+                Debug.Log($"[AsakiUI] 同步完成: {_items.Count} 个条目");
+                EditorUtility.DisplayDialog("Success", successMessage, "OK");
             }
             catch (Exception e)
             {
-                Debug.LogError($"[AsakiUI] Failed: {e.Message}");
+                Debug.LogException(e);
+                EditorUtility.DisplayDialog("Error", $"同步失败: {e.Message}", "OK");
             }
             finally
             {
+                Debug.Log("[AsakiUI] 同步操作结束");
                 EditorUtility.ClearProgressBar();
             }
+        }
+
+        /// <summary>
+        /// 构建成功消息，显示同步的条目数量和枚举值列表
+        /// </summary>
+        /// <returns>格式化的成功消息</returns>
+        private string BuildSuccessMessage()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine($"同步完成，共 {_items.Count} 个条目");
+            sb.AppendLine();
+
+            // 获取排序后的枚举名称列表
+            var sortedItems = _items.OrderBy(x => x.EnumName).ToList();
+
+            if (sortedItems.Count <= 5)
+            {
+                sb.AppendLine("生成的枚举值:");
+                foreach (var item in sortedItems)
+                {
+                    sb.AppendLine($"  - {item.EnumName}");
+                }
+            }
+            else
+            {
+                sb.AppendLine("生成的枚举值 (前5个):");
+                for (int i = 0; i < 5; i++)
+                {
+                    sb.AppendLine($"  - {sortedItems[i].EnumName}");
+                }
+                sb.AppendLine($"  等 {sortedItems.Count - 5} 个条目...");
+            }
+
+            return sb.ToString();
         }
 
         private static void GenerateCode(List<UIItem> items)
@@ -411,5 +461,272 @@ namespace Asaki.Editor.UI
                     Directory.CreateDirectory(dir);
             File.WriteAllText(path, content, Encoding.UTF8);
         }
+
+        #region 配置同步验证
+
+        /// <summary>
+        /// 枚举条目信息，包含名称和ID
+        /// </summary>
+        private struct EnumEntry
+        {
+            public string Name;
+            public int ID;
+
+            public EnumEntry(string name, int id)
+            {
+                Name = name;
+                ID = id;
+            }
+        }
+
+        /// <summary>
+        /// 验证配置同步的内部实现
+        /// </summary>
+        /// <param name="autoFix">是否在检测到差异时自动提示修复</param>
+        private static void ValidateConfigSyncInternal(bool autoFix)
+        {
+            // 加载配置文件
+            AsakiFrameworkSetting frameworkSetting =
+                AssetDatabase.LoadAssetAtPath<AsakiFrameworkSetting>(CONFIG_ASSET_PATH);
+            if (frameworkSetting == null)
+            {
+                Debug.LogError("[AsakiUI] 未找到 AsakiFrameworkSetting 配置文件");
+                return;
+            }
+
+            // 读取枚举文件
+            if (!File.Exists(CODE_GEN_PATH))
+            {
+                Debug.LogError($"[AsakiUI] 未找到枚举文件: {CODE_GEN_PATH}");
+                return;
+            }
+
+            string enumContent = File.ReadAllText(CODE_GEN_PATH);
+            List<EnumEntry> enumEntries = ParseEnumEntries(enumContent);
+
+            // 获取配置中的UI列表
+            Dictionary<string, UIInfo> configDict = new Dictionary<string, UIInfo>();
+            Dictionary<int, UIInfo> configByIdDict = new Dictionary<int, UIInfo>();
+            foreach (UIInfo info in frameworkSetting.UIConfig.UIList)
+            {
+                configDict[info.Name] = info;
+                configByIdDict[info.ID] = info;
+            }
+
+            // 分析差异
+            List<EnumEntry> missingInConfig = new List<EnumEntry>(); // 枚举中有但配置中没有
+            List<string> missingInEnum = new List<string>(); // 配置中有但枚举中没有
+            List<string> idMismatches = new List<string>(); // ID不匹配的条目
+
+            // 检查枚举中的条目是否都在配置中
+            foreach (EnumEntry entry in enumEntries)
+            {
+                if (!configDict.ContainsKey(entry.Name))
+                {
+                    missingInConfig.Add(entry);
+                }
+                else
+                {
+                    UIInfo configInfo = configDict[entry.Name];
+                    if (configInfo.ID != entry.ID)
+                    {
+                        idMismatches.Add(
+                            $"{entry.Name}: 枚举ID={entry.ID}, 配置ID={configInfo.ID}"
+                        );
+                    }
+                }
+            }
+
+            // 检查配置中的条目是否都在枚举中
+            HashSet<string> enumNames = new HashSet<string>(enumEntries.Select(e => e.Name));
+            foreach (UIInfo info in frameworkSetting.UIConfig.UIList)
+            {
+                if (!enumNames.Contains(info.Name))
+                {
+                    missingInEnum.Add(info.Name);
+                }
+            }
+
+            // 输出报告
+            bool hasDiff =
+                missingInConfig.Count > 0 || missingInEnum.Count > 0 || idMismatches.Count > 0;
+
+            Debug.Log("========== UI 配置同步验证报告 ==========");
+
+            if (!hasDiff)
+            {
+                Debug.Log("[AsakiUI] 配置与枚举完全同步，无差异");
+                EditorUtility.DisplayDialog("验证结果", "配置与枚举完全同步，无差异", "确定");
+                return;
+            }
+
+            // 输出缺失条目
+            if (missingInConfig.Count > 0)
+            {
+                Debug.Log($"[缺失条目] 枚举中有但配置中没有 ({missingInConfig.Count} 个):");
+                foreach (EnumEntry entry in missingInConfig)
+                {
+                    Debug.Log($"  - {entry.Name} (ID: {entry.ID})");
+                }
+            }
+
+            // 输出多余条目
+            if (missingInEnum.Count > 0)
+            {
+                Debug.Log($"[多余条目] 配置中有但枚举中没有 ({missingInEnum.Count} 个):");
+                foreach (string name in missingInEnum)
+                {
+                    Debug.Log($"  - {name}");
+                }
+            }
+
+            // 输出ID不匹配
+            if (idMismatches.Count > 0)
+            {
+                Debug.Log($"[ID不匹配] ({idMismatches.Count} 个):");
+                foreach (string mismatch in idMismatches)
+                {
+                    Debug.Log($"  - {mismatch}");
+                }
+            }
+
+            Debug.Log("==========================================");
+
+            // 自动修复
+            if (autoFix && missingInConfig.Count > 0)
+            {
+                bool shouldFix = EditorUtility.DisplayDialog(
+                    "检测到差异",
+                    $"发现 {missingInConfig.Count} 个枚举条目在配置中缺失\n"
+                        + $"是否自动修复？\n\n"
+                        + $"(将根据枚举更新配置，保留现有条目的Layer和UsePool设置)",
+                    "修复",
+                    "取消"
+                );
+
+                if (shouldFix)
+                {
+                    FixConfigSync(frameworkSetting, enumEntries);
+                }
+            }
+            else if (autoFix)
+            {
+                EditorUtility.DisplayDialog(
+                    "验证结果",
+                    $"检测到差异:\n"
+                        + $"- 缺失条目: {missingInConfig.Count}\n"
+                        + $"- 多余条目: {missingInEnum.Count}\n"
+                        + $"- ID不匹配: {idMismatches.Count}\n\n"
+                        + $"请查看控制台获取详细信息",
+                    "确定"
+                );
+            }
+        }
+
+        /// <summary>
+        /// 解析枚举文件中的条目
+        /// </summary>
+        /// <param name="enumContent">枚举文件内容</param>
+        /// <returns>枚举条目列表</returns>
+        private static List<EnumEntry> ParseEnumEntries(string enumContent)
+        {
+            List<EnumEntry> entries = new List<EnumEntry>();
+            // 匹配格式: EnumName = ID,
+            Regex regex = new Regex(@"(\w+)\s*=\s*(\d+)\s*,");
+            MatchCollection matches = regex.Matches(enumContent);
+
+            foreach (Match match in matches)
+            {
+                string name = match.Groups[1].Value;
+                string idStr = match.Groups[2].Value;
+
+                // 跳过 None 枚举值
+                if (name == "None")
+                    continue;
+
+                if (int.TryParse(idStr, out int id))
+                {
+                    entries.Add(new EnumEntry(name, id));
+                }
+            }
+
+            return entries;
+        }
+
+        /// <summary>
+        /// 修复配置同步问题，根据枚举更新配置
+        /// </summary>
+        /// <param name="frameworkSetting">框架设置</param>
+        /// <param name="enumEntries">枚举条目列表</param>
+        private static void FixConfigSync(
+            AsakiFrameworkSetting frameworkSetting,
+            List<EnumEntry> enumEntries
+        )
+        {
+            try
+            {
+                EditorUtility.DisplayProgressBar("修复配置同步", "正在处理...", 0.5f);
+
+                // 保留现有配置的映射
+                Dictionary<string, UIInfo> existingConfig = new Dictionary<string, UIInfo>();
+                foreach (UIInfo info in frameworkSetting.UIConfig.UIList)
+                {
+                    existingConfig[info.Name] = info;
+                }
+
+                // 根据枚举重建配置列表
+                frameworkSetting.UIConfig.UIList.Clear();
+                foreach (EnumEntry entry in enumEntries.OrderBy(e => e.Name))
+                {
+                    UIInfo newInfo;
+                    if (existingConfig.TryGetValue(entry.Name, out UIInfo existingInfo))
+                    {
+                        // 保留现有设置，但更新ID
+                        newInfo = new UIInfo
+                        {
+                            Name = entry.Name,
+                            ID = entry.ID,
+                            Layer = existingInfo.Layer,
+                            AssetPath = existingInfo.AssetPath,
+                            UsePool = existingInfo.UsePool,
+                        };
+                    }
+                    else
+                    {
+                        // 新条目使用默认值
+                        newInfo = new UIInfo
+                        {
+                            Name = entry.Name,
+                            ID = entry.ID,
+                            Layer = AsakiUILayer.Normal,
+                            AssetPath = "",
+                            UsePool = false,
+                        };
+                    }
+                    frameworkSetting.UIConfig.UIList.Add(newInfo);
+                }
+
+                EditorUtility.SetDirty(frameworkSetting);
+                AssetDatabase.SaveAssets();
+
+                Debug.Log($"[AsakiUI] 配置同步修复完成，共 {enumEntries.Count} 个条目");
+                EditorUtility.DisplayDialog(
+                    "修复完成",
+                    $"配置已同步，共 {enumEntries.Count} 个条目",
+                    "确定"
+                );
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                EditorUtility.DisplayDialog("修复失败", $"发生错误: {e.Message}", "确定");
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        #endregion
     }
 }

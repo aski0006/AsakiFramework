@@ -82,16 +82,27 @@ namespace Asaki.Unity.Services.UI
             _resourceManager = new UIResourceManager(_uiConfig?.ResourceReleaseDelaySeconds ?? 0f);
         }
 
+        /// <summary>
+        /// 异步初始化UI配置查找表，并进行运行时验证。
+        /// </summary>
+        /// <returns>完成的UniTask。</returns>
         public UniTask OnInitAsync()
         {
-            if (_uiConfig != null)
-            {
-                _uiConfig.InitializeLookup();
-            }
-            else
+            if (_uiConfig == null)
             {
                 ALog.Warn("[AsakiUI] No UIConfig assigned in AsakiFrameworkSetting!");
+                return UniTask.CompletedTask;
             }
+
+            if (_uiConfig.UIList == null || _uiConfig.UIList.Count == 0)
+            {
+                ALog.Warn("[AsakiUI] UIConfig.UIList is empty. " +
+                    "This may be caused by AsakiUIGeneratorWindow not syncing correctly. " +
+                    "Please use Asaki/Window/UI Asset Generator to regenerate.");
+                return UniTask.CompletedTask;
+            }
+
+            _uiConfig.InitializeLookup();
             return UniTask.CompletedTask;
         }
 
