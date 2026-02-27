@@ -2,6 +2,18 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.2.1] - 2026-02-27
+
+### Fixed
+
+#### UI 配置同步问题修复
+- **修复 UIConfig 与 WindowAssetId 枚举不同步问题** - 解决 UI 无法正常加载的问题
+  - `AsakiUIGeneratorWindow` 新增 `Validate UI Config Sync` 菜单项用于验证同步状态
+  - 实现差异报告输出功能，显示缺失条目、多余条目和 ID 不匹配
+  - 实现自动修复功能，根据枚举更新配置并保留现有 Layer 和 UsePool 设置
+  - `AsakiUIManageService.OnInitAsync()` 添加运行时验证，检测 UIList 为空时输出详细警告
+  - 增强同步操作的成功/失败反馈信息，使用 `Debug.LogException` 输出完整异常堆栈
+
 ## [2.2.0] - 2026-02-25
 
 ### Added
