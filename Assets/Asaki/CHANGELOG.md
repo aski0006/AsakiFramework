@@ -2,6 +2,28 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.2.2] - 2026-02-28
+
+### Added
+
+#### Architecture 生命周期事件增强
+- **新增 OnAsakiArchitectureDisposeEvent 事件** - Architecture 释放时的通知事件
+  - 当 Architecture 调用 `Dispose()` 时发布此事件
+  - 包含 ArchitectureType 和 Architecture 实例引用
+  - 便于外部系统监听 Architecture 销毁状态，进行资源清理
+
+#### 框架配置
+- **新增 AsakiFrameworkSetting 资产文件** - 框架运行时配置
+  - 集中管理框架各项配置参数
+  - 支持通过 Unity Inspector 进行可视化配置
+
+### Changed
+
+#### 代码优化
+- **优化 ArchitectureHost** - 改进跨场景持久化逻辑
+- **优化代码格式** - 统一代码块大括号格式和 using 语句顺序
+- **优化日志输出** - 改进多行日志消息的格式化
+
 ## [2.2.1] - 2026-02-27
 
 ### Fixed
