@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Asaki.Core.Architecture.Events;
 using Asaki.Core.Broker;
 using Asaki.Core.Context;
 using Asaki.Core.Context.Resolvers;
@@ -77,7 +78,7 @@ namespace Asaki.Core.Architecture
             }
 
             // 发布Architecture启动完成事件
-            AsakiBroker.Publish(new Events.OnAsakiArchitectureReadyEvent(GetType(), this));
+            AsakiBroker.Publish(new OnAsakiArchitectureReadyEvent(GetType(), this));
 
             ALog.Info(
                 $"[AsakiArchitecture] {GetType().Name} initialized. (M:{_models.Count}, S:{_systems.Count})"
@@ -226,7 +227,7 @@ namespace Asaki.Core.Architecture
             {
                 return;
             }
-
+            AsakiBroker.Publish(new OnAsakiArchitectureDisposeEvent(GetType()));
             // 分别处理每个 System，避免一个失败影响其他
             foreach (IAsakiSystem system in _systems.Values)
             {
