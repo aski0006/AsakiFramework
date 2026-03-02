@@ -2,6 +2,37 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.3.0] - 2026-03-02
+
+### Added
+
+#### AsakiMono 组件缓存方法扩展
+- **新增 GetCachedComponentInParent<T>()** - 获取父级组件（带缓存）
+- **新增 GetCachedComponentInSelfOrParent<T>()** - 获取自身或父级组件（带缓存）
+- **新增 GetCachedComponentExact<T>()** - 精确获取特定类型组件（排除自身）
+- 所有方法泛型约束为 `where T : Component`，支持任意 Unity 组件类型
+
+#### 编辑器工具
+- **新增 CompilationTimeMonitor** - 编译耗时监控工具
+  - 自动监控 Unity 编译过程并输出耗时
+  - 根据编译时间显示不同颜色（绿/黄/橙/红）
+  - 支持通过 EditorPrefs 启用/禁用
+
+### Changed
+
+#### AsakiMono 生命周期重构
+- **Unity 原生生命周期方法改为 private** - 强制子类通过 OnXxx 虚方法接入
+  - `Awake`、`OnEnable`、`OnDisable`、`Update`、`FixedUpdate`、`LateUpdate`、`OnDestroy` 改为 private
+  - 添加 `[MethodImpl(MethodImplOptions.AggressiveInlining)]` 优化性能
+  - 防止子类忘记调用 base 方法导致框架初始化逻辑被跳过
+- **代码结构优化** - 使用 #region 划分功能区域
+  - 字段和属性、Unity 生命周期、框架生命周期虚方法、框架核心方法、组件缓存方法、工具方法、静态方法、内部类型
+
+#### 日志系统性能优化
+- **Trace 日志跳过时间戳输出** - 高频日志（Update 中的 Trace）不再输出时间戳
+  - 新增 `isHighFrequency` 参数到 `IALogUnityBridge.ForwardToUnityConsole`
+  - 减少 `DateTime.Now.ToString()` 调用开销
+
 ## [2.2.2] - 2026-02-28
 
 ### Added
