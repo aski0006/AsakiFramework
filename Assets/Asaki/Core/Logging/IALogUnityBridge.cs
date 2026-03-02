@@ -17,13 +17,21 @@ namespace Asaki.Core.Logging
         /// <summary>
         /// 将日志转发到 Unity 控制台
         /// </summary>
+        /// <param name="level">日志级别</param>
+        /// <param name="message">日志消息</param>
+        /// <param name="payload">附加数据</param>
+        /// <param name="callerPath">调用者文件路径</param>
+        /// <param name="callerLine">调用者行号</param>
+        /// <param name="exception">异常对象（可选）</param>
+        /// <param name="isHighFrequency">是否为高频日志（如 Update 中的 Trace），高频日志跳过时间戳输出以提升性能</param>
         void ForwardToUnityConsole(
             AsakiLogLevel level,
             string message,
             string payload,
             string callerPath,
             int callerLine,
-            Exception exception = null
+            Exception exception = null,
+            bool isHighFrequency = false
         );
     }
 

@@ -29,38 +29,41 @@ namespace Asaki.Unity.Logging
     public class ALogUnityBridge : IALogUnityBridge
     {
         private static ALogUnityBridge _instance;
-        private static readonly Dictionary<AsakiLogLevel, LogType> LogTypeMap = new()
-        {
-            { AsakiLogLevel.Debug, LogType.Log },
-            { AsakiLogLevel.Info, LogType.Log },
-            { AsakiLogLevel.Warning, LogType.Warning },
-            { AsakiLogLevel.Error, LogType.Error },
-            { AsakiLogLevel.Fatal, LogType.Error },
-        };
+        private static readonly Dictionary<AsakiLogLevel, LogType> LogTypeMap =
+            new()
+            {
+                { AsakiLogLevel.Debug, LogType.Log },
+                { AsakiLogLevel.Info, LogType.Log },
+                { AsakiLogLevel.Warning, LogType.Warning },
+                { AsakiLogLevel.Error, LogType.Error },
+                { AsakiLogLevel.Fatal, LogType.Error },
+            };
 
         /// <summary>
         /// 日志级别对应的富文本颜色
         /// </summary>
-        private static readonly Dictionary<AsakiLogLevel, string> LevelColors = new()
-        {
-            { AsakiLogLevel.Debug, "#808080" },
-            { AsakiLogLevel.Info, "#FFFFFF" },
-            { AsakiLogLevel.Warning, "#FFDD00" },
-            { AsakiLogLevel.Error, "#FF5555" },
-            { AsakiLogLevel.Fatal, "#FF0000" },
-        };
+        private static readonly Dictionary<AsakiLogLevel, string> LevelColors =
+            new()
+            {
+                { AsakiLogLevel.Debug, "#808080" },
+                { AsakiLogLevel.Info, "#FFFFFF" },
+                { AsakiLogLevel.Warning, "#FFDD00" },
+                { AsakiLogLevel.Error, "#FF5555" },
+                { AsakiLogLevel.Fatal, "#FF0000" },
+            };
 
         /// <summary>
         /// 日志级别对应的标签文本
         /// </summary>
-        private static readonly Dictionary<AsakiLogLevel, string> LevelLabels = new()
-        {
-            { AsakiLogLevel.Debug, "🔍 DBG" },
-            { AsakiLogLevel.Info, "ℹ️ INF" },
-            { AsakiLogLevel.Warning, "⚠️ WRN" },
-            { AsakiLogLevel.Error, "❌ ERR" },
-            { AsakiLogLevel.Fatal, "💀 FTL" },
-        };
+        private static readonly Dictionary<AsakiLogLevel, string> LevelLabels =
+            new()
+            {
+                { AsakiLogLevel.Debug, "🔍 DBG" },
+                { AsakiLogLevel.Info, "ℹ️ INF" },
+                { AsakiLogLevel.Warning, "⚠️ WRN" },
+                { AsakiLogLevel.Error, "❌ ERR" },
+                { AsakiLogLevel.Fatal, "💀 FTL" },
+            };
 
         private bool? _isEnabled;
 
@@ -112,24 +115,24 @@ namespace Asaki.Unity.Logging
             string payload,
             string callerPath,
             int callerLine,
-            Exception exception
+            Exception exception,
+            bool isHighFrequency
         )
         {
             if (!IsEnabled)
                 return;
 
-            // 获取时间戳（精确到毫秒）
-            string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
-
-            // 获取级别颜色和标签
             string color = LevelColors.TryGetValue(level, out string c) ? c : "#FFFFFF";
             string label = LevelLabels.TryGetValue(level, out string l) ? l : "???";
 
-            // 构建富文本消息
             var sb = new StringBuilder();
 
-            // 时间戳（灰色）
-            sb.Append("<color=#888888>[").Append(timestamp).Append("]</color> ");
+            // 高频日志（Trace）跳过时间戳输出以提升性能
+            if (!isHighFrequency)
+            {
+                string timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+                sb.Append("<color=#888888>[").Append(timestamp).Append("]</color> ");
+            }
 
             // 级别标签（带颜色）
             sb.Append("<color=").Append(color).Append(">").Append(label).Append("</color> ");

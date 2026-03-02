@@ -179,7 +179,15 @@ namespace Asaki.Core.Logging
 #if UNITY_EDITOR
             ALogBridgeManager
                 .GetBridge()
-                ?.ForwardToUnityConsole(AsakiLogLevel.Debug, message, pJson, file, line);
+                ?.ForwardToUnityConsole(
+                    AsakiLogLevel.Debug,
+                    message,
+                    pJson,
+                    file,
+                    line,
+                    null,
+                    true
+                );
 #endif
 
             IAsakiLoggingService s = Service;
