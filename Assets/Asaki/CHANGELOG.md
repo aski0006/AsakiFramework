@@ -2,6 +2,21 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.3.1] - 2026-03-03
+
+### Added
+
+#### 架构文档模块
+- **新增 Doc 目录** - 框架架构文档系统
+  - Core 模块架构文档 (19个子模块): async, attributes, audio, blackboard, broker, context, datatable, frameworksettings, fsm, graphs, logging, network, pooling, reactive, resources, scene, serialization, simulation, time, ui
+  - Unity 模块架构文档: bootstrapper, modules
+  - 文档遵循统一结构: 设计理念 → 软件架构 → API 使用指南 → 正确示例 → 错误示例
+
+### Changed
+
+#### .gitignore 更新
+- **移除 Doc 目录忽略规则** - 启用文档版本控制
+
 ## [2.3.0] - 2026-03-02
 
 ### Added
