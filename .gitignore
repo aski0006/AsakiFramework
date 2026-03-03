@@ -122,7 +122,6 @@ crashlytics-build.properties
 # 自动生成的代码
 /Asaki.CodeGen/
 /[Aa]ssets/Asaki/Generated/
-/[Aa]ssets/Asaki/Doc/
 
 # UIElements Schema (自动生成)
 /[Uu]I[Ee]lements[Ss]chema/
