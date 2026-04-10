@@ -2,6 +2,89 @@
 
 All notable changes to the Asaki Framework will be documented in this file.
 
+## [2.3.2] - 2026-04-10
+
+### Added
+
+#### UI 诊断系统
+
+- **新增诊断开关机制** - 支持运行时启用/禁用诊断埋点
+    - 默认配置：编辑器/开发版本启用，发布版本禁用
+    - 可通过 `DiagnosticsEnabled` 属性动态控制
+    - 所有诊断埋点方法内置 guard 检查，零性能开销
+
+- **新增 JSON 格式诊断导出** - 替代原有文本格式
+    - `DumpDiagnosticsJson(bool pretty)` - 导出 JSON 字符串
+    - `LogDiagnosticsJson(bool pretty)` - 直接输出到日志
+    - `TryWriteDiagnosticsJsonToFile(string path, bool pretty)` - 写入文件
+    - 数据结构：
+        - `UIDiagnosticsSnapshot` - 诊断快照根对象
+        - `LayerCounterItem` - 各层级窗口数量统计
+        - `OpenPerfItem` - 窗口打开性能统计（计数/平均耗时/最大耗时/最后耗时）
+        - `ErrorCounterItem` - 错误码计数器
+        - `RecentErrorItem` - 最近错误事件队列（最多 64 条）
+
+- **诊断数据序列化优化** - 使用 `[Serializable]` 特性标记
+    - 兼容 Unity `JsonUtility` 序列化系统
+    - 支持格式化输出（pretty 参数）
+    - 禁用状态下返回 `{"disabled":true}` 占位符
+
+#### UI 诊断配置化
+
+- **新增 AsakiUIConfig.EnableDiagnostics 配置项** - Unity Inspector 可视化配置
+    - 位置：AsakiFrameworkSetting → UIConfig → Diagnostics
+    - 默认值：`true`（开发环境建议启用）
+    - 作用：控制 UI 诊断系统的启用/禁用状态
+    - Unity Inspector 支持：
+        - `[Header("Diagnostics")]` 分组显示
+        - `[Tooltip("...")]` 提供配置说明
+
+- **AsakiUIModule 自动应用配置** - 模块初始化时同步配置
+    - `OnInit()` 方法中自动读取 `EnableDiagnostics` 配置
+    - 赋值给 `_uiManageService.DiagnosticsEnabled`
+    - 实现配置驱动的动态开关控制
+
+#### 类型安全接口
+
+- **新增 OpenAsync<TWindow, TArg> 泛型接口** - 推荐用于打开窗口
+    - 类型安全的异步窗口打开方法
+    - 提供编译时类型检查和更好的 IDE 智能提示
+
+- **新增 Back<TResult> 泛型接口** - 推荐用于关闭窗口并返回值
+    - 类型安全的返回值方法
+    - 避免装箱/拆箱操作，提升性能
+
+### Changed
+
+#### API 推荐用法更新
+
+- **类型安全的 OpenAsync 泛型接口** - 推荐用于打开窗口
+- **类型安全的 Back 泛型接口** - 推荐用于关闭窗口并返回值
+
+#### 旧接口弃用提示
+
+- **非泛型 object 路径接口将逐步废弃** - 迁移指南
+    - 当前版本：旧接口仍可正常使用，但添加注释说明推荐新用法
+    - 下一版本：在 XML 文档中添加 `<deprecated>` 标签
+    - 未来版本：可能添加 `[Obsolete]` 特性（提前一个版本通知）
+
+#### 文档更新
+
+- **XML 文档添加 <deprecated> 标签** - IAsakiWindow 和 IAsakiUIService
+    - `IAsakiWindowWithResult` 标记为弃用（推荐使用泛型版本）
+    - `OpenAsync<T>` 标记为弃用（推荐使用 `OpenAsync<TWindow, TArg>`）
+    - `Back(object)` 标记为弃用（推荐使用 `Back<TResult>`）
+    - `ReplaceAsync<T>` 标记为弃用（后续版本将提供泛型版本）
+
+#### 诊断埋点优化
+
+- **所有诊断埋点方法添加 guard 检查**
+    - `RecordOpenPerf()` - 添加开关检查
+    - `IncLayerCounter()` - 添加开关检查
+    - `DecLayerCounter()` - 添加开关检查
+    - `PushRecentError()` - 添加开关检查
+    - `CountUiError()` - 添加开关检查
+
 ## [2.3.1] - 2026-03-03
 
 ### Added
