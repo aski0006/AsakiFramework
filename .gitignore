@@ -194,3 +194,11 @@ AGENTS.md
 # Python Tool 目录
 /Tools/
 DOCUMENTATION_ROADMAP.md
+DOCUMENTATION_TASKS.md
+local_cache/fast-bge-small-en-v1.5/config.json
+local_cache/fast-bge-small-en-v1.5/model_optimized.onnx
+local_cache/fast-bge-small-en-v1.5/ort_config.json
+local_cache/fast-bge-small-en-v1.5/special_tokens_map.json
+local_cache/fast-bge-small-en-v1.5/tokenizer.json
+local_cache/fast-bge-small-en-v1.5/tokenizer_config.json
+local_cache/fast-bge-small-en-v1.5/vocab.txt
