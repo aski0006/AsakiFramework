@@ -45,7 +45,7 @@ namespace Asaki.Core.Resources
         /// <summary>
         /// 句柄是否有效（资源非空）
         /// </summary>
-        public bool IsValid => Asset != null;
+        public virtual bool IsValid => Asset != null;
 
         /// <summary>
         /// 创建资源句柄实例
@@ -64,7 +64,7 @@ namespace Asaki.Core.Resources
         /// 释放资源引用
         /// <para>减少引用计数，当计数归零时卸载资源。</para>
         /// </summary>
-        public void Dispose()
+        public virtual void Dispose()
         {
             if (IsValid)
             {

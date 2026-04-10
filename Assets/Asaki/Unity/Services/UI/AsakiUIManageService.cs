@@ -46,6 +46,10 @@ namespace Asaki.Unity.Services.UI
         private readonly ConcurrentQueue<IAsakiWindow> _pendingDestroyQueue =
             new ConcurrentQueue<IAsakiWindow>();
 
+        // [Phase1] 防止同一窗口重复进入关闭流程（Close/Back/ClearStack/Replace 竞争）
+        private readonly ConcurrentDictionary<IAsakiWindow, byte> _closingWindows =
+            new ConcurrentDictionary<IAsakiWindow, byte>();
+
         public AsakiUIManageService(
             AsakiUIConfig configAsset,
             Vector2 refRes,
@@ -82,23 +86,21 @@ namespace Asaki.Unity.Services.UI
             _resourceManager = new UIResourceManager(_uiConfig?.ResourceReleaseDelaySeconds ?? 0f);
         }
 
-        /// <summary>
-        /// 异步初始化UI配置查找表，并进行运行时验证。
-        /// </summary>
-        /// <returns>完成的UniTask。</returns>
         public UniTask OnInitAsync()
         {
             if (_uiConfig == null)
             {
-                ALog.Warn("[AsakiUI] No UIConfig assigned in AsakiFrameworkSetting!");
+                ALog.Warn("[AsakiUI][Init] No UIConfig assigned in AsakiFrameworkSetting!");
                 return UniTask.CompletedTask;
             }
 
             if (_uiConfig.UIList == null || _uiConfig.UIList.Count == 0)
             {
-                ALog.Warn("[AsakiUI] UIConfig.UIList is empty. " +
-                    "This may be caused by AsakiUIGeneratorWindow not syncing correctly. " +
-                    "Please use Asaki/Window/UI Asset Generator to regenerate.");
+                ALog.Warn(
+                    "[AsakiUI][Init] UIConfig.UIList is empty. "
+                        + "This may be caused by AsakiUIGeneratorWindow not syncing correctly. "
+                        + "Please use Asaki/Window/UI Asset Generator to regenerate."
+                );
                 return UniTask.CompletedTask;
             }
 
@@ -114,11 +116,14 @@ namespace Asaki.Unity.Services.UI
             where T : class, IAsakiWindow
         {
             if (token.IsCancellationRequested)
+            {
+                ALog.Warn($"[AsakiUI][OpenCanceled] uiId={uiId}, reason=TokenCanceledBeforeStart");
                 return null;
+            }
 
             if (_uiConfig == null || !_uiConfig.TryGet(uiId, out UIInfo info))
             {
-                ALog.Warn($"[AsakiUI] UI ID {uiId} not found.");
+                ALog.Warn($"[AsakiUI][OpenFailed] uiId={uiId}, reason=ConfigNotFound");
                 return null;
             }
 
@@ -134,18 +139,28 @@ namespace Asaki.Unity.Services.UI
                 {
                     window = await CreatePooledWindowAsync<T>(info, parent, token);
                     if (window == null)
+                    {
+                        ALog.Warn(
+                            $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=CreatePooledWindowFailed"
+                        );
                         return null;
+                    }
+
                     instance = (window as Component)?.gameObject;
                 }
                 else
                 {
                     (window, rawHandle, instance) = await CreateWindowAsync<T>(info, parent, token);
                     if (window == null)
+                    {
+                        ALog.Warn(
+                            $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=CreateWindowFailed"
+                        );
                         return null;
+                    }
                 }
 
                 _windowLayerMap[window] = info.Layer;
-
                 _inputBlocker.OnWindowOpened(info.Layer);
 
                 await window.OnOpenAsync(args, token);
@@ -154,13 +169,17 @@ namespace Asaki.Unity.Services.UI
                 {
                     _navigationStack.Push(window);
                 }
+
                 _windowInstanceMap[uiId] = window;
                 return window;
             }
             catch (Exception e)
             {
                 HandleOpenFailure(instance, info, rawHandle);
-                ALog.Error($"[AsakiUI] OpenUI Failed: {e.Message}", e);
+                ALog.Error(
+                    $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=Exception, message={e.Message}",
+                    e
+                );
                 return null;
             }
         }
@@ -225,6 +244,7 @@ namespace Asaki.Unity.Services.UI
                     baseWindow.IsPooled = false;
                     baseWindow.ResHandle = reusableHandle;
                 }
+
                 return (window, null, instance);
             }
 
@@ -267,8 +287,11 @@ namespace Asaki.Unity.Services.UI
                         Object.Destroy(instance);
                 }
                 else
+                {
                     Object.Destroy(instance);
+                }
             }
+
             handle?.Dispose();
         }
 
@@ -296,7 +319,12 @@ namespace Asaki.Unity.Services.UI
         {
             if (window == null)
                 return;
-            _pendingDestroyQueue.Enqueue(window);
+
+            // [Phase1] 去重，防止重复 close 入队
+            if (_closingWindows.TryAdd(window, 0))
+            {
+                _pendingDestroyQueue.Enqueue(window);
+            }
         }
 
         public void Back()
@@ -311,43 +339,54 @@ namespace Asaki.Unity.Services.UI
         {
             while (_pendingDestroyQueue.TryDequeue(out var window))
             {
-                ProcessCloseRequest(window);
+                CloseInternalAsync(window, CancellationToken.None).Forget();
             }
 
             _resourceManager.ProcessDelayedRelease(deltaTime);
         }
 
-        private void ProcessCloseRequest(IAsakiWindow window)
+        // [Phase1] 统一关闭管线
+        private async UniTask CloseInternalAsync(IAsakiWindow window, CancellationToken token)
         {
-            if (_navigationStack.Peek() == window)
+            try
             {
-                _navigationStack.Pop();
-            }
-            else if (_navigationStack.Contains(window))
-            {
-                _navigationStack.RemoveFromMiddle(window);
-            }
+                if (window == null)
+                    return;
 
-            if (_windowLayerMap.TryGetValue(window, out var layer))
-            {
-                _inputBlocker.OnWindowClosed(layer);
-                _windowLayerMap.TryRemove(window, out _);
-            }
-
-            HandleCloseAsync(window).Forget();
-
-            foreach (var pair in _windowInstanceMap)
-            {
-                if (pair.Value == window)
+                if (_navigationStack.Peek() == window)
                 {
-                    _windowInstanceMap.TryRemove(pair.Key, out _);
-                    _typeToIdCache.Clear();
-                    break;
+                    _navigationStack.Pop();
                 }
+                else if (_navigationStack.Contains(window))
+                {
+                    _navigationStack.RemoveFromMiddle(window);
+                }
+
+                if (_windowLayerMap.TryGetValue(window, out var layer))
+                {
+                    _inputBlocker.OnWindowClosed(layer);
+                    _windowLayerMap.TryRemove(window, out _);
+                }
+
+                await HandleCloseAsync(window, token);
+
+                foreach (var pair in _windowInstanceMap)
+                {
+                    if (pair.Value == window)
+                    {
+                        _windowInstanceMap.TryRemove(pair.Key, out _);
+                        _typeToIdCache.Clear();
+                        break;
+                    }
+                }
+            }
+            finally
+            {
+                _closingWindows.TryRemove(window, out _);
             }
         }
 
-        private async UniTask HandleCloseAsync(IAsakiWindow window)
+        private async UniTask HandleCloseAsync(IAsakiWindow window, CancellationToken token)
         {
             AsakiUIResourceHandleAdapter handle = default;
             string assetPath = null;
@@ -360,11 +399,12 @@ namespace Asaki.Unity.Services.UI
                     handle = adapter;
                     assetPath = handle.Location;
                 }
+
                 isPooled = uiWindow.IsPooled;
                 uiWindow.ResHandle = null;
             }
 
-            await window.OnCloseAsync(CancellationToken.None);
+            await window.OnCloseAsync(token);
 
             if (!isPooled && handle.HasResource && !string.IsNullOrEmpty(assetPath))
             {
@@ -374,10 +414,7 @@ namespace Asaki.Unity.Services.UI
 
         #region 查询接口实现
 
-        public bool IsOpened(int uiId)
-        {
-            return _windowInstanceMap.ContainsKey(uiId);
-        }
+        public bool IsOpened(int uiId) => _windowInstanceMap.ContainsKey(uiId);
 
         public T GetWindow<T>()
             where T : class, IAsakiWindow
@@ -387,6 +424,7 @@ namespace Asaki.Unity.Services.UI
                 if (pair.Value is T target)
                     return target;
             }
+
             return null;
         }
 
@@ -406,10 +444,7 @@ namespace Asaki.Unity.Services.UI
                 .ToList();
         }
 
-        public bool HasPopup()
-        {
-            return _inputBlocker.HasActivePopup;
-        }
+        public bool HasPopup() => _inputBlocker.HasActivePopup;
 
         public int GetActiveWindowCount(AsakiUILayer layer)
         {
@@ -429,6 +464,7 @@ namespace Asaki.Unity.Services.UI
                 ALog.Warn($"[AsakiUI] Target window {typeof(T).Name} not in stack.");
                 return;
             }
+
             BackTo(target);
         }
 
@@ -440,6 +476,7 @@ namespace Asaki.Unity.Services.UI
                 ALog.Warn($"[AsakiUI] UI ID {uiId} not in navigation stack.");
                 return;
             }
+
             BackTo(target);
         }
 
@@ -451,15 +488,19 @@ namespace Asaki.Unity.Services.UI
             }
         }
 
+        // [Phase1] 修复：Back(returnValue) 统一走服务关闭管线，避免只调用 OnCloseAsync
         public async UniTask Back(object returnValue)
         {
             if (_navigationStack.Count == 0)
                 return;
 
+            var topWindow = _navigationStack.Peek();
             _navigationStack.PushReturnValue(returnValue);
 
-            var topWindow = _navigationStack.Peek();
-            await topWindow.OnCloseAsync(CancellationToken.None);
+            if (_closingWindows.TryAdd(topWindow, 0))
+            {
+                await CloseInternalAsync(topWindow, CancellationToken.None);
+            }
 
             if (_navigationStack.Count > 0)
             {
@@ -475,7 +516,10 @@ namespace Asaki.Unity.Services.UI
             while (_navigationStack.Count > 0)
             {
                 var window = _navigationStack.Pop();
-                _pendingDestroyQueue.Enqueue(window);
+                if (_closingWindows.TryAdd(window, 0))
+                {
+                    _pendingDestroyQueue.Enqueue(window);
+                }
             }
 
             if (includePopup)
@@ -487,7 +531,10 @@ namespace Asaki.Unity.Services.UI
 
                 foreach (var popup in popupWindows)
                 {
-                    _pendingDestroyQueue.Enqueue(popup);
+                    if (_closingWindows.TryAdd(popup, 0))
+                    {
+                        _pendingDestroyQueue.Enqueue(popup);
+                    }
                 }
             }
         }
@@ -502,7 +549,10 @@ namespace Asaki.Unity.Services.UI
             if (_navigationStack.Count > 0)
             {
                 var oldWindow = _navigationStack.Peek();
-                await oldWindow.OnCloseAsync(token);
+                if (_closingWindows.TryAdd(oldWindow, 0))
+                {
+                    await CloseInternalAsync(oldWindow, token);
+                }
             }
 
             return await OpenAsync<T>(uiId, args, token);
@@ -520,6 +570,7 @@ namespace Asaki.Unity.Services.UI
                     uiWindow.DisposeImmediately();
                 }
             }
+
             _navigationStack.Clear();
 
             while (_pendingDestroyQueue.TryDequeue(out var window))
@@ -543,20 +594,16 @@ namespace Asaki.Unity.Services.UI
             {
                 ALog.Warn("[AsakiUI] PoolService is null during disposal, pooled assets may leak.");
             }
+
             _pooledAssets.Clear();
             _windowLayerMap.Clear();
             _windowInstanceMap.Clear();
             _typeToIdCache.Clear();
+            _closingWindows.Clear();
 
-            if (_inputBlocker != null)
-            {
-                _inputBlocker.Reset();
-            }
+            _inputBlocker?.Reset();
 
-            if (_simulationService != null)
-            {
-                _simulationService.Unregister(this);
-            }
+            _simulationService?.Unregister(this);
 
             if (_uiRoot != null && !_uiRoot.Equals(null))
             {

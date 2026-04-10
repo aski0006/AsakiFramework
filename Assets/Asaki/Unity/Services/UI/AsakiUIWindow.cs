@@ -190,7 +190,7 @@ namespace Asaki.Unity.Services.UI
         /// 异步关闭窗口
         /// </summary>
         /// <param name="token">取消令牌</param>
-        public async UniTask OnCloseAsync(CancellationToken token)
+        public virtual async UniTask OnCloseAsync(CancellationToken token)
         {
             if (!IsOpen || IsClosing)
                 return;
