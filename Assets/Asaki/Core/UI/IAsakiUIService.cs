@@ -20,13 +20,20 @@ namespace Asaki.Core.UI
     public interface IAsakiUIService : IAsakiModule
     {
         /// <summary>
-        /// 异步打开指定ID的UI窗口。
+        /// 异步打开指定 ID 的 UI 窗口。
         /// </summary>
         /// <typeparam name="T">窗口类型，必须实现 IAsakiWindow 接口</typeparam>
-        /// <param name="uiId">UI配置ID，对应 UIConfig 中的配置项</param>
+        /// <param name="uiId">UI 配置 ID，对应 UIConfig 中的配置项</param>
         /// <param name="args">传递给窗口 OnOpenAsync 方法的参数对象</param>
         /// <param name="token">取消令牌，用于取消异步操作</param>
         /// <returns>打开的窗口实例；如果打开失败或被取消，返回 null</returns>
+        /// <remarks>
+        /// <deprecated type="method">
+        /// 2.3.1 - 请使用 <see cref="OpenAsync{TWindow, TArg}"/> 泛型方法替代。
+        /// 旧版本使用 <c>object args</c> 参数会丢失类型信息，新接口提供编译时类型检查和更好的 IDE 智能提示。
+        /// 迁移：将 <c>OpenAsync&lt;MyWindow&gt;(uiId, arg)</c> 改为 <c>OpenAsync&lt;MyWindow, MyArg&gt;(uiId, arg)</c>
+        /// </deprecated>
+        /// </remarks>
         UniTask<T> OpenAsync<T>(int uiId, object args = null, CancellationToken token = default)
             where T : class, IAsakiWindow;
 
@@ -66,7 +73,60 @@ namespace Asaki.Core.UI
         /// </summary>
         /// <param name="returnValue">传递给上一级窗口的返回值</param>
         /// <returns>异步任务</returns>
+        /// <remarks>
+        /// <deprecated type="method">
+        /// 2.3.1 - 请使用 <see cref="Back{TResult}"/> 泛型方法替代。
+        /// 旧版本使用 <c>object returnValue</c> 会导致装箱/拆箱操作，新接口提供类型安全的返回值处理。
+        /// 迁移：将 <c>Back(result)</c> 改为 <c>Back&lt;SpecificType&gt;(result)</c>
+        /// </deprecated>
+        /// </remarks>
         UniTask Back(object returnValue);
+
+        /// <summary>
+        /// [Phase2] 强类型参数打开窗口（推荐用法）。
+        /// </summary>
+        /// <typeparam name="TWindow">窗口类型，必须实现 IAsakiWindow 接口</typeparam>
+        /// <typeparam name="TArg">参数类型，必须与窗口定义的参数类型匹配</typeparam>
+        /// <param name="uiId">UI 配置 ID</param>
+        /// <param name="args">类型安全的参数对象</param>
+        /// <param name="token">取消令牌</param>
+        /// <returns>打开的窗口实例</returns>
+        /// <remarks>
+        /// <para>此方法提供编译时类型检查，避免运行时类型错误。</para>
+        /// <para>示例：</para>
+        /// <code>
+        /// 旧用法（已弃用）
+        /// await uiService.OpenAsync&lt;LoginWindow&gt;(uiId, loginArgs);
+        ///
+        /// 新用法（推荐）
+        /// await uiService.OpenAsync&lt;LoginWindow, LoginArgs&gt;(uiId, loginArgs);
+        /// </code>
+        /// </remarks>
+        UniTask<TWindow> OpenAsync<TWindow, TArg>(
+            int uiId,
+            TArg args,
+            CancellationToken token = default
+        )
+            where TWindow : class, IAsakiWindow;
+
+        /// <summary>
+        /// [Phase2] 强类型返回值 Back（推荐用法）。
+        /// </summary>
+        /// <typeparam name="TResult">返回值类型，必须与目标窗口定义的返回值类型匹配</typeparam>
+        /// <param name="returnValue">类型安全的返回值</param>
+        /// <returns>异步任务</returns>
+        /// <remarks>
+        /// <para>此方法提供编译时类型检查，避免装箱/拆箱操作。</para>
+        /// <para>示例：</para>
+        /// <code>
+        /// // 旧用法（已弃用）
+        /// await uiService.Back(result);
+        ///
+        /// // 新用法（推荐）
+        /// await uiService.Back&lt;string&gt;(result);
+        /// </code>
+        /// </remarks>
+        UniTask Back<TResult>(TResult returnValue);
 
         /// <summary>
         /// 清空导航栈。
@@ -78,10 +138,16 @@ namespace Asaki.Core.UI
         /// 异步替换当前栈顶窗口（先关闭栈顶，再打开新窗口）。
         /// </summary>
         /// <typeparam name="T">新窗口类型</typeparam>
-        /// <param name="uiId">新窗口的UI ID</param>
+        /// <param name="uiId">新窗口的 UI ID</param>
         /// <param name="args">传递给新窗口的参数</param>
         /// <param name="token">取消令牌</param>
         /// <returns>新打开的窗口实例</returns>
+        /// <remarks>
+        /// <deprecated type="method">
+        /// 2.3.1 - 请使用 <c>ReplaceAsync&lt;TWindow, TArg&gt;</c> 泛型方法替代（待添加）。
+        /// 当前版本仍可使用，后续版本将提供类型安全的泛型版本。
+        /// </deprecated>
+        /// </remarks>
         UniTask<T> ReplaceAsync<T>(int uiId, object args = null, CancellationToken token = default)
             where T : class, IAsakiWindow;
 

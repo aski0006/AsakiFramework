@@ -241,6 +241,11 @@ namespace Asaki.Unity.Services.UI
         /// <param name="args">打开参数</param>
         protected virtual void OnRefresh(object args) { }
 
+        protected virtual void OnRefresh<TArg>(TArg args)
+        {
+            OnRefresh((object)args);
+        }
+
         /// <summary>
         /// 播放入场动画，子类重写以实现自定义动画
         /// </summary>

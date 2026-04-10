@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using Asaki.Core.Broker;
@@ -49,6 +50,270 @@ namespace Asaki.Unity.Services.UI
         // [Phase1] 防止同一窗口重复进入关闭流程（Close/Back/ClearStack/Replace 竞争）
         private readonly ConcurrentDictionary<IAsakiWindow, byte> _closingWindows =
             new ConcurrentDictionary<IAsakiWindow, byte>();
+
+        private readonly ConcurrentDictionary<string, int> _uiErrorCounters =
+            new ConcurrentDictionary<string, int>();
+        private readonly ConcurrentDictionary<int, float> _uiLastOpenDurationMs =
+            new ConcurrentDictionary<int, float>();
+
+        private readonly ConcurrentDictionary<AsakiUILayer, int> _layerOpenCounters =
+            new ConcurrentDictionary<AsakiUILayer, int>();
+
+        private readonly ConcurrentDictionary<int, OpenPerfStats> _openPerfByUiId =
+            new ConcurrentDictionary<int, OpenPerfStats>();
+
+        private readonly object _recentErrorsLock = new object();
+        private readonly Queue<UIErrorEvent> _recentErrors = new Queue<UIErrorEvent>(64);
+        private const int MaxRecentErrors = 64;
+
+        // 诊断开关（默认编辑器/开发开，发布关）
+        private bool _diagnosticsEnabled =
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            true;
+#else
+            false;
+#endif
+
+        public bool DiagnosticsEnabled
+        {
+            get => _diagnosticsEnabled;
+            set => _diagnosticsEnabled = value;
+        }
+
+        [Serializable]
+        private class UIDiagnosticsSnapshot
+        {
+            public string generatedAtUtc;
+            public int openedWindowCount;
+            public int navigationStackCount;
+            public bool hasPopup;
+
+            public List<LayerCounterItem> layerCounters = new();
+            public List<OpenPerfItem> openPerf = new();
+            public List<ErrorCounterItem> errorCounters = new();
+            public List<RecentErrorItem> recentErrors = new();
+        }
+
+        [Serializable]
+        private class LayerCounterItem
+        {
+            public string layer;
+            public int count;
+        }
+
+        [Serializable]
+        private class OpenPerfItem
+        {
+            public int uiId;
+            public int count;
+            public float avgMs;
+            public float maxMs;
+            public float lastMs;
+        }
+
+        [Serializable]
+        private class ErrorCounterItem
+        {
+            public string code;
+            public int count;
+        }
+
+        [Serializable]
+        private class RecentErrorItem
+        {
+            public string timeUtc;
+            public int uiId;
+            public string code;
+            public string message;
+        }
+
+        private struct OpenPerfStats
+        {
+            public int Count;
+            public float TotalMs;
+            public float MaxMs;
+            public float LastMs;
+        }
+
+        private struct UIErrorEvent
+        {
+            public string TimeUtc;
+            public int UiId;
+            public string Code;
+            public string Message;
+        }
+
+        private void RecordOpenPerf(int uiId, float ms)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            _openPerfByUiId.AddOrUpdate(
+                uiId,
+                _ => new OpenPerfStats
+                {
+                    Count = 1,
+                    TotalMs = ms,
+                    MaxMs = ms,
+                    LastMs = ms,
+                },
+                (_, old) =>
+                {
+                    old.Count++;
+                    old.TotalMs += ms;
+                    if (ms > old.MaxMs)
+                        old.MaxMs = ms;
+                    old.LastMs = ms;
+                    return old;
+                }
+            );
+        }
+
+        private void IncLayerCounter(AsakiUILayer layer)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            _layerOpenCounters.AddOrUpdate(layer, 1, (_, old) => old + 1);
+        }
+
+        private void DecLayerCounter(AsakiUILayer layer)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            _layerOpenCounters.AddOrUpdate(layer, 0, (_, old) => Mathf.Max(0, old - 1));
+        }
+
+        private void PushRecentError(int uiId, string code, string message)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            lock (_recentErrorsLock)
+            {
+                if (_recentErrors.Count >= MaxRecentErrors)
+                    _recentErrors.Dequeue();
+
+                _recentErrors.Enqueue(
+                    new UIErrorEvent
+                    {
+                        TimeUtc = DateTime.UtcNow.ToString("o"),
+                        UiId = uiId,
+                        Code = code,
+                        Message = message,
+                    }
+                );
+            }
+        }
+
+        private void CountAndRecordError(int uiId, string code, string message)
+        {
+            CountUiError(code);
+            PushRecentError(uiId, code, message);
+        }
+
+        private void CountUiError(string code)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            _uiErrorCounters.AddOrUpdate(code, 1, (_, old) => old + 1);
+        }
+
+        private static float ElapsedMs(long startTicks)
+        {
+            long end = DateTime.UtcNow.Ticks;
+            return (end - startTicks) / 10000f; // ticks -> ms
+        }
+
+        // 可公开给调试台调用
+        private UIDiagnosticsSnapshot BuildSnapshot()
+        {
+            var snap = new UIDiagnosticsSnapshot
+            {
+                generatedAtUtc = DateTime.UtcNow.ToString("o"),
+                openedWindowCount = _windowInstanceMap.Count,
+                navigationStackCount = _navigationStack.Count,
+                hasPopup = _inputBlocker?.HasActivePopup ?? false,
+            };
+
+            foreach (AsakiUILayer layer in Enum.GetValues(typeof(AsakiUILayer)))
+            {
+                _layerOpenCounters.TryGetValue(layer, out int c);
+                snap.layerCounters.Add(
+                    new LayerCounterItem { layer = layer.ToString(), count = c }
+                );
+            }
+
+            foreach (var kv in _openPerfByUiId.OrderBy(x => x.Key))
+            {
+                var s = kv.Value;
+                float avg = s.Count > 0 ? s.TotalMs / s.Count : 0f;
+                snap.openPerf.Add(
+                    new OpenPerfItem
+                    {
+                        uiId = kv.Key,
+                        count = s.Count,
+                        avgMs = avg,
+                        maxMs = s.MaxMs,
+                        lastMs = s.LastMs,
+                    }
+                );
+            }
+
+            foreach (var kv in _uiErrorCounters.OrderByDescending(x => x.Value))
+            {
+                snap.errorCounters.Add(new ErrorCounterItem { code = kv.Key, count = kv.Value });
+            }
+
+            lock (_recentErrorsLock)
+            {
+                foreach (var e in _recentErrors)
+                {
+                    snap.recentErrors.Add(
+                        new RecentErrorItem
+                        {
+                            timeUtc = e.TimeUtc,
+                            uiId = e.UiId,
+                            code = e.Code,
+                            message = e.Message,
+                        }
+                    );
+                }
+            }
+
+            return snap;
+        }
+
+        public string DumpDiagnosticsJson(bool pretty = true)
+        {
+            if (!_diagnosticsEnabled)
+                return "{\"disabled\":true}";
+
+            var snap = BuildSnapshot();
+            return JsonUtility.ToJson(snap, pretty);
+        }
+
+        public void LogDiagnosticsJson(bool pretty = false)
+        {
+            if (!_diagnosticsEnabled)
+                return;
+            ALog.Info(DumpDiagnosticsJson(pretty));
+        }
+
+        public bool TryWriteDiagnosticsJsonToFile(string absolutePath, bool pretty = true)
+        {
+            if (!_diagnosticsEnabled)
+                return false;
+
+            try
+            {
+                var json = DumpDiagnosticsJson(pretty);
+                File.WriteAllText(absolutePath, json);
+                return true;
+            }
+            catch (Exception e)
+            {
+                ALog.Warn($"[AsakiUI][Diagnostics] Write file failed: {e.Message}");
+                return false;
+            }
+        }
 
         public AsakiUIManageService(
             AsakiUIConfig configAsset,
@@ -115,14 +380,22 @@ namespace Asaki.Unity.Services.UI
         )
             where T : class, IAsakiWindow
         {
+            long beginTicks = DateTime.UtcNow.Ticks;
+
             if (token.IsCancellationRequested)
             {
+                CountAndRecordError(
+                    uiId,
+                    "OpenCanceledBeforeStart",
+                    "Token canceled before open started."
+                );
                 ALog.Warn($"[AsakiUI][OpenCanceled] uiId={uiId}, reason=TokenCanceledBeforeStart");
                 return null;
             }
 
             if (_uiConfig == null || !_uiConfig.TryGet(uiId, out UIInfo info))
             {
+                CountAndRecordError(uiId, "ConfigNotFound", "UI config entry not found.");
                 ALog.Warn($"[AsakiUI][OpenFailed] uiId={uiId}, reason=ConfigNotFound");
                 return null;
             }
@@ -140,6 +413,11 @@ namespace Asaki.Unity.Services.UI
                     window = await CreatePooledWindowAsync<T>(info, parent, token);
                     if (window == null)
                     {
+                        CountAndRecordError(
+                            uiId,
+                            "CreatePooledWindowFailed",
+                            $"CreatePooledWindow failed. assetPath={info.AssetPath}"
+                        );
                         ALog.Warn(
                             $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=CreatePooledWindowFailed"
                         );
@@ -153,6 +431,11 @@ namespace Asaki.Unity.Services.UI
                     (window, rawHandle, instance) = await CreateWindowAsync<T>(info, parent, token);
                     if (window == null)
                     {
+                        CountAndRecordError(
+                            uiId,
+                            "CreateWindowFailed",
+                            $"CreateWindow failed. assetPath={info.AssetPath}"
+                        );
                         ALog.Warn(
                             $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=CreateWindowFailed"
                         );
@@ -170,14 +453,22 @@ namespace Asaki.Unity.Services.UI
                     _navigationStack.Push(window);
                 }
 
-                _windowInstanceMap[uiId] = window;
+                float totalMs = ElapsedMs(beginTicks);
+                _uiLastOpenDurationMs[uiId] = totalMs;
+                RecordOpenPerf(uiId, totalMs);
+                IncLayerCounter(info.Layer);
+                ALog.Trace(
+                    $"[AsakiUI][OpenSuccess] uiId={uiId}, layer={info.Layer}, ms={totalMs:F2}"
+                );
                 return window;
             }
             catch (Exception e)
             {
                 HandleOpenFailure(instance, info, rawHandle);
+                CountAndRecordError(uiId, "OpenException", e.Message);
+                float totalMs = ElapsedMs(beginTicks);
                 ALog.Error(
-                    $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=Exception, message={e.Message}",
+                    $"[AsakiUI][OpenFailed] uiId={uiId}, assetPath={info.AssetPath}, reason=Exception, ms={totalMs:F2}, message={e.Message}",
                     e
                 );
                 return null;
@@ -366,6 +657,7 @@ namespace Asaki.Unity.Services.UI
                 {
                     _inputBlocker.OnWindowClosed(layer);
                     _windowLayerMap.TryRemove(window, out _);
+                    DecLayerCounter(layer);
                 }
 
                 await HandleCloseAsync(window, token);
@@ -600,7 +892,10 @@ namespace Asaki.Unity.Services.UI
             _windowInstanceMap.Clear();
             _typeToIdCache.Clear();
             _closingWindows.Clear();
-
+            _layerOpenCounters.Clear();
+            _openPerfByUiId.Clear();
+            lock (_recentErrorsLock)
+                _recentErrors.Clear();
             _inputBlocker?.Reset();
 
             _simulationService?.Unregister(this);
@@ -610,6 +905,21 @@ namespace Asaki.Unity.Services.UI
                 Object.Destroy(_uiRoot.gameObject);
                 _uiRoot = null;
             }
+        }
+
+        public UniTask<TWindow> OpenAsync<TWindow, TArg>(
+            int uiId,
+            TArg args,
+            CancellationToken token = default
+        )
+            where TWindow : class, IAsakiWindow
+        {
+            return OpenAsync<TWindow>(uiId, args, token);
+        }
+
+        public UniTask Back<TResult>(TResult returnValue)
+        {
+            return Back((object)returnValue);
         }
     }
 }

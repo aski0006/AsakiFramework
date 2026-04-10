@@ -61,6 +61,9 @@ namespace Asaki.Unity.Modules
             // 内部 OnInit 会调用 Resources 接口，此时 Resources 已注册
             _uiManageService.OnInit();
 
+            // 应用配置化的诊断开关
+            _uiManageService.DiagnosticsEnabled = frameworkSetting.UIConfig.EnableDiagnostics;
+
             AsakiContext.Register<IAsakiUIService>(_uiManageService);
         }
 

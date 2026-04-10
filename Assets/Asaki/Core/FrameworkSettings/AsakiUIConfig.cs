@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Asaki.Core.UI;
 using UnityEngine;
@@ -92,12 +92,21 @@ namespace Asaki.Core.FrameworkSettings
         /// 设置为0表示立即释放（不延迟）。
         /// </summary>
         [Header("Resource Management")]
-        [Tooltip("UI关闭后资源保留时间（秒），用于避免快速开关造成的重复加载开销")]
+        [Tooltip("UI 关闭后资源保留时间（秒），用于避免快速开关造成的重复加载开销")]
         [Min(0)]
         public float ResourceReleaseDelaySeconds = 5f;
 
         /// <summary>
-        /// 根据给定的UI小部件类型获取对应的预制体。
+        /// 诊断系统启用开关，默认值为 true。
+        /// 启用后会收集窗口打开性能、错误统计等诊断数据。
+        /// 建议在开发环境启用，发布环境禁用以提升性能。
+        /// </summary>
+        [Header("Diagnostics")]
+        [Tooltip("启用 UI 诊断系统，收集性能统计和错误日志（开发环境建议启用，发布环境建议禁用）")]
+        public bool EnableDiagnostics = true;
+
+        /// <summary>
+        /// 根据给定的 UI 小部件类型获取对应的预制体。
         /// 通过线性查找Templates列表来找到匹配的预制体。
         /// </summary>
         /// <param name="type">要查找的UI小部件类型。</param>
